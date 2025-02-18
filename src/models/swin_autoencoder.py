@@ -112,13 +112,9 @@ class SwinTransformerAutoencoder(nn.Module):
         super().__init__()
         self.encoder_weights = encoder_weights
         self.encoder = swin_v2_t(weights=encoder_weights).features
-        # for param in self.encoder.parameters():
-        #     param.requires_grad = False
 
         # self.linear TODO: introduce immediate linear layer to enhance compression
         self.decoder = SwinTransformerDecoder()
-        # for param in self.decoder.parameters():
-        #     param.requires_grad = True
 
     def forward(self, x):
         encoder_features = self.encoder(x)
