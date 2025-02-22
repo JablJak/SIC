@@ -1,5 +1,6 @@
-import mlflow
+
 import torch
+from clearml import Task, OutputModel
 from torch.optim import AdamW
 from torch.utils.data import DataLoader, random_split
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
@@ -12,9 +13,8 @@ from src.losses.mse_ssim import MSE_SSIM
 from src.utils.postprocess import denormalize
 from src.viz.plotter import plot_reconstructions
 
-import matplotlib.pyplot as plt
 
-def train(model, dataloader, criterion, optimizer, num_epochs):
+def train(model, dataloader, criterion, optimizer, num_epochs, logger):
     model.train()
     for epoch in range(num_epochs):
         epoch_loss = 0
@@ -46,14 +46,20 @@ def train(model, dataloader, criterion, optimizer, num_epochs):
         avg_loss = epoch_loss / len(dataloader)
         avg_psnr = epoch_psnr / len(dataloader)
         avg_ssim = epoch_ssim / len(dataloader)
-        mlflow.log_metric("epoch_loss", epoch_loss)
+
         print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {avg_loss:.4f}, PSNR: {avg_psnr:.4f}, SSIM: {avg_ssim:.4f}")
-        torch.save(model.state_dict(), f"checkpoint/model_v1.pth")
+
+        logger.report_scalar(title="Loss", series="train", value=avg_loss, iteration=epoch)
+        logger.report_scalar(title="PSNR", series="train", value=avg_psnr, iteration=epoch)
+        logger.report_scalar(title="SSIM", series="train", value=avg_ssim, iteration=epoch)
+
+        torch.save(model.state_dict(), f"checkpoint/model_v0.1.1.pth")
     return model
 
 if __name__ == '__main__':
-    mlflow.set_tracking_uri("http://127.0.0.1:8080")
-    mlflow.set_experiment("/mlflow-pytorch-quickstart")
+    task = Task.init(project_name="INZ", task_name="Init")
+
+    logger = task.get_logger()
 
     device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
     print("Device:", device)
@@ -78,7 +84,8 @@ if __name__ == '__main__':
         dataloader=train_dataloader,
         criterion=loss,
         optimizer=AdamW(model.parameters(), lr=8e-5, weight_decay=1e-2),
-        num_epochs=5
+        num_epochs=5,
+        logger=logger
     )
 
     model.eval()
@@ -91,6 +98,14 @@ if __name__ == '__main__':
     x_batch = denormalize(x_batch, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
     x_recon = denormalize(x_recon, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
 
-    mlflow.pytorch.log_model(model, "model_v0.1.1")
+
+
+    output_model = OutputModel(task=task, name="init_v0.1.1")
+    output_model.update_weights("checkpoint/model_v0.1.1.pth")
+    # output_model.comment("Initial test pretrained model")
+
+    model_id = output_model.id
+    print(f"Saved ClearML model with ID: {model_id}")
+
 
     plot_reconstructions(x_batch, x_recon)
