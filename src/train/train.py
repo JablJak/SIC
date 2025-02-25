@@ -1,4 +1,3 @@
-
 import torch
 from clearml import Task, OutputModel
 from torch.optim import AdamW
@@ -99,10 +98,9 @@ if __name__ == '__main__':
     x_recon = denormalize(x_recon, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
 
 
-
     output_model = OutputModel(task=task, name="init_v0.1.1")
     output_model.update_weights("checkpoint/model_v0.1.1.pth")
-    # output_model.comment("Initial test pretrained model")
+    output_model.comment("Initial test pretrained model")
 
     model_id = output_model.id
     print(f"Saved ClearML model with ID: {model_id}")
