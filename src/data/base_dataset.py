@@ -1,4 +1,6 @@
 import copy
+from pathlib import Path
+from typing import Union
 
 from torchvision.datasets import ImageFolder
 
@@ -11,6 +13,7 @@ class BaseDataset(ImageFolder):
         transform (callable, optional): Optional transform to be applied on a sample.
         csv_file (string, optional): Path to the csv file with annotations.
         """
+        super().__init__(root_dir, transform)
         self.root_dir = root_dir
         self.transform = transform
         self.csv_file = csv_file

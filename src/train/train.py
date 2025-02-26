@@ -8,7 +8,7 @@ from torchvision.transforms._presets import ImageClassification
 
 from src.models.swin_autoencoder import SwinTransformerAutoencoder
 from src.data.imagenet_dataset import ImageNetDataset
-from src.losses.mse_ssim import MSE_SSIM
+from src.losses.mse_ssim import MSESSIM
 from src.utils.postprocess import denormalize
 from src.viz.plotter import plot_reconstructions
 
@@ -52,7 +52,7 @@ def train(model, dataloader, criterion, optimizer, num_epochs, logger):
         logger.report_scalar(title="PSNR", series="train", value=avg_psnr, iteration=epoch)
         logger.report_scalar(title="SSIM", series="train", value=avg_ssim, iteration=epoch)
 
-        torch.save(model.state_dict(), f"checkpoint/model_v0.1.1.pth")
+        torch.save(model.state_dict(), f"checkpoint/model_v0.2.0.pth")
     return model
 
 if __name__ == '__main__':
@@ -73,9 +73,8 @@ if __name__ == '__main__':
 
     model = SwinTransformerAutoencoder()
     model.to(device)
-    model.load_state_dict(torch.load(f"checkpoint/model_v0.1.0.pth", map_location=device, weights_only=True))
 
-    loss = MSE_SSIM()
+    loss = MSESSIM()
     loss.to(device)
 
     train(
@@ -97,10 +96,9 @@ if __name__ == '__main__':
     x_batch = denormalize(x_batch, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
     x_recon = denormalize(x_recon, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
 
-
-    output_model = OutputModel(task=task, name="init_v0.1.1")
-    output_model.update_weights("checkpoint/model_v0.1.1.pth")
-    output_model.comment("Initial test pretrained model")
+    output_model = OutputModel(task=task, name="init_v0.2.0")
+    output_model.update_weights("checkpoint/model_v0.2.0.pth")
+    # output_model.comment("Initial test pretrained model")
 
     model_id = output_model.id
     print(f"Saved ClearML model with ID: {model_id}")

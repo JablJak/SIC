@@ -3,7 +3,7 @@ from piqa.ssim import ms_ssim
 from piqa.utils.functional import gaussian_kernel
 
 
-class MSE_SSIM(torch.nn.Module):
+class MSESSIM(torch.nn.Module):
     """
     A PyTorch module that combines Mean Squared Error (MSE) loss and Structural Similarity Index (SSIM) loss
     for image reconstruction tasks. The combination is controlled by a weighting parameter alpha, which determines
@@ -17,7 +17,7 @@ class MSE_SSIM(torch.nn.Module):
         Args:
         alpha (float): Weighting factor between MSE (1 - alpha) and SSIM (alpha). Defaults to 0.75.
         """
-        super(MSE_SSIM, self).__init__()
+        super(MSESSIM, self).__init__()
         self.l2 = torch.nn.MSELoss()
         self.activation = torch.nn.Sigmoid()
         self.alpha = alpha
