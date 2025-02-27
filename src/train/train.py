@@ -9,6 +9,7 @@ from torchvision.transforms._presets import ImageClassification
 from src.models.swin_autoencoder import SwinTransformerAutoencoder
 from src.data.imagenet_dataset import ImageNetDataset
 from src.losses.mse_ssim import MSESSIM
+from src.utils.const import PROJECT_ROOT
 from src.utils.postprocess import denormalize
 from src.viz.plotter import plot_reconstructions
 
@@ -52,7 +53,7 @@ def train(model, dataloader, criterion, optimizer, num_epochs, logger):
         logger.report_scalar(title="PSNR", series="train", value=avg_psnr, iteration=epoch)
         logger.report_scalar(title="SSIM", series="train", value=avg_ssim, iteration=epoch)
 
-        torch.save(model.state_dict(), f"checkpoint/model_v0.2.0.pth")
+        torch.save(model.state_dict(), f"{PROJECT_ROOT}/checkpoint/model_v0.2.0.pth")
     return model
 
 if __name__ == '__main__':

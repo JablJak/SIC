@@ -138,7 +138,7 @@ class SwinTransformerAutoencoder(nn.Module):
         self.encoder_weights = encoder_weights
         self.encoder = self._create_encoder(encoder_type, encoder_weights)
 
-        # TODO: introduce immediate linear layer to enhance compression
+        # TODO: Introduce intermediate linear layer to enhance compression
 
         self.decoder = SwinTransformerDecoder(
             dim=decoder_dim,
