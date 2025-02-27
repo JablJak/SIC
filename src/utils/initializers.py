@@ -9,7 +9,6 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 
-from src.utils.const import PROJECT_ROOT
 
 # Based on pyTorch implementation
 ParamsT: TypeAlias = Union[
@@ -17,6 +16,19 @@ ParamsT: TypeAlias = Union[
 ]
 
 def read_config(config_file_path: str) -> dict[str, Any]:
+    """
+    Reads a YAML configuration file and returns its content as a dictionary.
+
+    Args:
+        config_file_path (str): Path to the YAML file.
+
+    Returns:
+        dict[str, Any]: Parsed YAML content.
+
+    Example:
+        config = read_config("config.yaml")
+        print(config)  # -> {'module': '...', 'args': {...}, ...}
+    """
     data = yaml.safe_load(open(config_file_path))
     return data
 
@@ -59,6 +71,11 @@ def dataset_from_config(config: dict[str, Any]) -> Dataset:
     package, module = config['module'].rsplit('.', 1)
     package = importlib.import_module(package)
     type = getattr(package, module)
+    if 'subset_classes' in args and 'subset_samples' in args:
+        num_classes = int(args.pop('subset_classes'))
+        num_samples = int(args.pop('subset_samples'))
+        return type(**args).subset(num_classes, num_samples)
+
     return type(**args)
 
 
@@ -169,7 +186,7 @@ def optimizer_from_config(parameters: ParamsT, config: dict[str, Any]) -> Optimi
     return type(params=parameters, **args)
 
 
-def scheduler_from_config(optimizer: Optimizer, config: dict[str, Any]) -> LRScheduler:
+def scheduler_from_config(optimizer: Optimizer, config: dict[str, Any]) -> LRScheduler | None:
     """
     Initializes a learning rate scheduler based on the configuration provided.
 
@@ -201,6 +218,8 @@ def scheduler_from_config(optimizer: Optimizer, config: dict[str, Any]) -> LRSch
         }
         scheduler = init_scheduler(optimizer, config)
     """
+    if not bool(config['enabled']):
+        return None
     args = config['args']
     package, module = config['module'].rsplit('.', 1)
     package = importlib.import_module(package)
@@ -208,3 +227,9 @@ def scheduler_from_config(optimizer: Optimizer, config: dict[str, Any]) -> LRSch
     return type(optimizer=optimizer, **args)
 
 
+def loss_from_config(config: dict[str, Any]) -> Module:
+    args = config['args']
+    package, module = config['module'].rsplit('.', 1)
+    package = importlib.import_module(package)
+    type = getattr(package, module)
+    return type(**args)
