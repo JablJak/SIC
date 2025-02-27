@@ -57,16 +57,15 @@ def train(model, dataloader, criterion, optimizer, num_epochs, logger):
     return model
 
 if __name__ == '__main__':
-    task = Task.init(project_name="INZ", task_name="Init")
-
-    logger = task.get_logger()
-
     device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
     print("Device:", device)
 
-    transform = Swin_V2_T_Weights.DEFAULT.transforms()
+    task = Task.init(project_name="INZ", task_name="Init")
+    logger = task.get_logger()
 
+    transform = Swin_V2_T_Weights.DEFAULT.transforms()
     imagenet_dataset = ImageNetDataset(transform=transform)
+
     imagenet_subset = imagenet_dataset.subset(num_classes=2, num_samples=50)
     train_dataset, val_dataset = random_split(imagenet_subset, [0.8, 0.2])
     train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=8)
@@ -87,6 +86,8 @@ if __name__ == '__main__':
         logger=logger
     )
 
+    # TODO: TRAIN TIME
+
     model.eval()
     with torch.no_grad():
         x_batch, _ = next(iter(val_dataloader))
@@ -97,9 +98,10 @@ if __name__ == '__main__':
     x_batch = denormalize(x_batch, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
     x_recon = denormalize(x_recon, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
 
+
     output_model = OutputModel(task=task, name="init_v0.2.0")
     output_model.update_weights("checkpoint/model_v0.2.0.pth")
-    # output_model.comment("Initial test pretrained model")
+    output_model.comment = "Initial model"
 
     model_id = output_model.id
     print(f"Saved ClearML model with ID: {model_id}")

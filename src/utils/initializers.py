@@ -8,6 +8,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
+from torchvision import transforms
 
 from src.utils.const import PROJECT_ROOT
 
@@ -17,6 +18,19 @@ ParamsT: TypeAlias = Union[
 ]
 
 def read_config(config_file_path: str) -> dict[str, Any]:
+    """
+    Reads a YAML configuration file and returns its content as a dictionary.
+
+    Args:
+        config_file_path (str): Path to the YAML file.
+
+    Returns:
+        dict[str, Any]: Parsed YAML content.
+
+    Example:
+        config = read_config("config.yaml")
+        print(config)  # -> {'module': '...', 'args': {...}, ...}
+    """
     data = yaml.safe_load(open(config_file_path))
     return data
 
@@ -59,6 +73,9 @@ def dataset_from_config(config: dict[str, Any]) -> Dataset:
     package, module = config['module'].rsplit('.', 1)
     package = importlib.import_module(package)
     type = getattr(package, module)
+    if 'subset_classes' in args and 'subset_samples' in args:
+        return type(**args).subset(num_classes=int(args['subset_classes']), num_samples=args['subset_samples'])
+
     return type(**args)
 
 
@@ -206,5 +223,3 @@ def scheduler_from_config(optimizer: Optimizer, config: dict[str, Any]) -> LRSch
     package = importlib.import_module(package)
     type = getattr(package, module)
     return type(optimizer=optimizer, **args)
-
-

@@ -1,6 +1,8 @@
 dataset:
   module: src.data.imagenet_dataset.ImageNetDataset
-  args: {}
+  args:
+    subset_classes: 20
+    subset_samples: 200
 
 model:
   module: src.models.swin_autoencoder.SwinTransformerAutoencoder
@@ -26,11 +28,13 @@ scheduler:
     start_factor: 0.5
     total_iters: 4
 
-epochs: 5
+epochs: 300
 
 output:
   model:
     name: SWIN-T-IC
     version: 0.1.0-test
 
+project_name: INZ
+task_name: SWIN Autoencoder v0.2.1
 comments: An example experiment on SWIN Autoencoder
