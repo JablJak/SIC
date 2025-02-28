@@ -72,7 +72,9 @@ def dataset_from_config(config: dict[str, Any]) -> Dataset:
     package = importlib.import_module(package)
     type = getattr(package, module)
     if 'subset_classes' in args and 'subset_samples' in args:
-        return type(**args).subset(num_classes=int(args['subset_classes']), num_samples=args['subset_samples'])
+        num_classes = int(args.pop('subset_classes'))
+        num_samples = int(args.pop('subset_samples'))
+        return type(**args).subset(num_classes, num_samples)
 
     return type(**args)
 
