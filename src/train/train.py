@@ -14,7 +14,7 @@ from src.utils.postprocess import denormalize
 from src.viz.plotter import plot_reconstructions
 
 
-def train(model, dataloader, criterion, optimizer, num_epochs, logger):
+def _train(model, dataloader, criterion, optimizer, num_epochs, logger):
     model.train()
     for epoch in range(num_epochs):
         epoch_loss = 0
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     loss = MSESSIM()
     loss.to(device)
 
-    train(
+    _train(
         model=model,
         dataloader=train_dataloader,
         criterion=loss,

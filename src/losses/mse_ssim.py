@@ -15,7 +15,7 @@ class MSESSIM(torch.nn.Module):
         Initialize the MSE_SSIM module.
 
         Args:
-        alpha (float): Weighting factor between MSE (1 - alpha) and SSIM (alpha). Defaults to 0.75.
+            alpha (float): Weighting factor between MSE (1 - alpha) and SSIM (alpha). Defaults to 0.75.
         """
         super(MSESSIM, self).__init__()
         self.l2 = torch.nn.MSELoss()
@@ -27,11 +27,11 @@ class MSESSIM(torch.nn.Module):
         Compute the combined MSE and SSIM loss.
 
         Args:
-        pred (torch.Tensor): Predicted image tensor with shape (N, C, H, W).
-        target (torch.Tensor): Target image tensor with shape (N, C, H, W).
+            pred (torch.Tensor): Predicted image tensor with shape (N, C, H, W).
+            target (torch.Tensor): Target image tensor with shape (N, C, H, W).
 
         Returns:
-        torch.Tensor: The calculated loss value.
+            torch.Tensor: The calculated loss value.
         """
         pred = self.activation(pred)
         target = self.activation(target)

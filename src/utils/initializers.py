@@ -8,9 +8,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
-from torchvision import transforms
 
-from src.utils.const import PROJECT_ROOT
 
 # Based on pyTorch implementation
 ParamsT: TypeAlias = Union[
@@ -186,7 +184,7 @@ def optimizer_from_config(parameters: ParamsT, config: dict[str, Any]) -> Optimi
     return type(params=parameters, **args)
 
 
-def scheduler_from_config(optimizer: Optimizer, config: dict[str, Any]) -> LRScheduler:
+def scheduler_from_config(optimizer: Optimizer, config: dict[str, Any]) -> LRScheduler | None:
     """
     Initializes a learning rate scheduler based on the configuration provided.
 
@@ -218,8 +216,18 @@ def scheduler_from_config(optimizer: Optimizer, config: dict[str, Any]) -> LRSch
         }
         scheduler = init_scheduler(optimizer, config)
     """
+    if not bool(config['enabled']):
+        return None
     args = config['args']
     package, module = config['module'].rsplit('.', 1)
     package = importlib.import_module(package)
     type = getattr(package, module)
     return type(optimizer=optimizer, **args)
+
+
+def loss_from_config(config: dict[str, Any]) -> Module:
+    args = config['args']
+    package, module = config['module'].rsplit('.', 1)
+    package = importlib.import_module(package)
+    type = getattr(package, module)
+    return type(**args)

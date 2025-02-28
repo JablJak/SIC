@@ -23,6 +23,7 @@ optimizer:
     weight_decay: 0.0005
 
 scheduler:
+  enabled: false
   module: torch.optim.lr_scheduler.LinearLR
   args:
     start_factor: 0.5
