@@ -1,19 +1,22 @@
+import argparse
+import os
+
 import torch
 from clearml import Task, OutputModel
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import random_split
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
 from torchvision.models import Swin_V2_T_Weights
 from torchvision.transforms._presets import ImageClassification
 
 from src.train.experiment import Experiment
-from src.utils.const import PROJECT_ROOT, MODEL_CHECKPOINT_PATH, MODEL_CHECKPOINT_FILE, EXPERIMENTS_CONFIG_PATH, \
+from src.utils.const import MODEL_CHECKPOINT_PATH, MODEL_CHECKPOINT_FILE, EXPERIMENTS_CONFIG_PATH, \
     MODEL_OUTPUT_PATH
 from src.utils.initializers import read_config, dataloader_from_config
 from src.utils.postprocess import denormalize
 from src.viz.plotter import plot_reconstructions
 
 
-def _train(model, dataloader, criterion, optimizer, num_epochs, logger):
+def _train(model, dataloader, criterion, optimizer, num_epochs, logger, device):
     model.train()
 
     for epoch in range(num_epochs):
@@ -54,10 +57,35 @@ def _train(model, dataloader, criterion, optimizer, num_epochs, logger):
         logger.report_scalar(title="PSNR", series="train", value=avg_psnr, iteration=epoch)
         logger.report_scalar(title="SSIM", series="train", value=avg_ssim, iteration=epoch)
 
-        torch.save(model.state_dict(), f"{MODEL_CHECKPOINT_PATH}/{MODEL_CHECKPOINT_FILE}")
+        if epoch % 10 == 0:
+            torch.save(model.state_dict(), f"{MODEL_CHECKPOINT_PATH}/{MODEL_CHECKPOINT_FILE}")
     return model
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Train a model using ClearML.")
+    parser.add_argument(
+        "--config",
+        "-c",
+        type=str,
+        default=f"{EXPERIMENTS_CONFIG_PATH}/experiment_v0.2.0.yaml",
+        help="Path to the experiment configuration YAML file.",
+    )
+    parser.add_argument(
+        "--model_output_path",
+        type=str,
+        default=MODEL_OUTPUT_PATH,
+        help="Path for the output model"
+    )
+    parser.add_argument(
+        "--model_checkpoint_path",
+        type=str,
+        default=MODEL_CHECKPOINT_PATH,
+        help="Path for checkpoints",
+    )
+
+    args = parser.parse_args()
+    print("CMD line args:", args)
+
     experiment_config = read_config(f"{EXPERIMENTS_CONFIG_PATH}/experiment_v0.2.0.yaml")
     experiment = Experiment(experiment_config)
 
@@ -87,32 +115,37 @@ if __name__ == '__main__':
 
     optimizer = experiment.optimizer
 
-    _train(
+    trained_model = _train(
         model=model,
         dataloader=train_dataloader,
         criterion=loss,
         optimizer=optimizer,
         num_epochs=experiment.epochs,
-        logger=logger
+        logger=logger,
+        device=device
     )
 
     # TODO: TRAIN TIME
 
-    model.eval()
+    trained_model.eval()
     with torch.no_grad():
         x_batch, _ = next(iter(val_dataloader))
         x_batch = x_batch.to(device)
-        
-        x_recon = model(x_batch)
+        x_recon = trained_model(x_batch)
 
     x_batch = denormalize(x_batch, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
     x_recon = denormalize(x_recon, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
 
     plot_reconstructions(x_batch, x_recon)
 
-    output_model = OutputModel(task=task, name=experiment.model_name())
+    output_model_name = experiment.output_model_name()
+    output_model_file_path = os.path.join(args.model_output_path, f"{output_model_name}.pth")
+
+    torch.save(model.state_dict(), output_model_file_path)
+
+    output_model = OutputModel(task=task, name=experiment.output_model_name())
     output_model.set_upload_destination(f"{MODEL_OUTPUT_PATH}")
-    output_model.update_weights(f"{MODEL_OUTPUT_PATH}/{experiment.model_name()}.pth")
+    output_model.update_weights(output_model_file_path)
 
     model_id = output_model.id
     print(f"Saved ClearML model with ID: {model_id}")

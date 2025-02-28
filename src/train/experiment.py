@@ -24,5 +24,5 @@ class Experiment:
         self.task = self.config['task_name']
         self.comment = self.config['comment']
 
-    def model_name(self):
+    def output_model_name(self):
         return f"{self.config['output']['model']['name']}_{self.config['output']['model']['version']}"
