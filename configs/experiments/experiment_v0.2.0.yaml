@@ -28,7 +28,7 @@ loss:
   module: src.losses.mse_ssim.MSESSIM
   args: {}
 
-epochs: 5
+epochs: 300
 
 dataset_split_ratio: 0.7
 
