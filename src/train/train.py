@@ -16,15 +16,17 @@ from src.utils.postprocess import denormalize
 from src.viz.plotter import plot_reconstructions
 
 
-def _train(model, dataloader, criterion, optimizer, num_epochs, logger, device):
-    model.train()
+def _train(model, train_dataloader, val_dataloader,
+           criterion, optimizer, num_epochs, logger, device):
+    # Train
 
+    model.train()
     for epoch in range(num_epochs):
         epoch_loss = 0
         epoch_psnr = 0
         epoch_ssim = 0
 
-        for x, _ in dataloader:
+        for x, _ in train_dataloader:
             x = x.to(device)
             optimizer.zero_grad()
             output = model(x)
@@ -47,11 +49,11 @@ def _train(model, dataloader, criterion, optimizer, num_epochs, logger, device):
             optimizer.step()
             epoch_loss += loss.item()
 
-        avg_loss = epoch_loss / len(dataloader)
-        avg_psnr = epoch_psnr / len(dataloader)
-        avg_ssim = epoch_ssim / len(dataloader)
+        avg_loss = epoch_loss / len(train_dataloader)
+        avg_psnr = epoch_psnr / len(train_dataloader)
+        avg_ssim = epoch_ssim / len(train_dataloader)
 
-        print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {avg_loss:.4f}, PSNR: {avg_psnr:.4f}, SSIM: {avg_ssim:.4f}")
+        print(f"[TRAIN] Epoch {epoch + 1}/{num_epochs}, Loss: {avg_loss:.4f}, PSNR: {avg_psnr:.4f}, SSIM: {avg_ssim:.4f}")
 
         logger.report_scalar(title="Loss", series="train", value=avg_loss, iteration=epoch)
         logger.report_scalar(title="PSNR", series="train", value=avg_psnr, iteration=epoch)
@@ -59,6 +61,41 @@ def _train(model, dataloader, criterion, optimizer, num_epochs, logger, device):
 
         if epoch % 10 == 0:
             torch.save(model.state_dict(), f"{MODEL_CHECKPOINT_PATH}/{MODEL_CHECKPOINT_FILE}")
+
+        # Eval
+        model.eval()
+        eval_loss = 0
+        eval_psnr = 0
+        eval_ssim = 0
+
+        with torch.no_grad():
+            for x_val, _ in val_dataloader:
+                x_val = x_val.to(device)
+                output_val = model(x_val)
+
+                loss_val = criterion(output_val, x_val)
+                eval_loss += loss_val.item()
+
+                psnr_metric_val = PeakSignalNoiseRatio().to(device)
+                psnr_metric_val.update(output_val, x_val)
+                eval_psnr += psnr_metric_val.compute()
+
+                ssim_metric_val = StructuralSimilarityIndexMeasure().to(device)
+                ssim_metric_val.update(output_val, x_val)
+                eval_ssim += ssim_metric_val.compute()
+
+        avg_eval_loss = eval_loss / len(val_dataloader)
+        avg_eval_psnr = eval_psnr / len(val_dataloader)
+        avg_eval_ssim = eval_ssim / len(val_dataloader)
+
+        print(f"[VAL] Epoch {epoch + 1}/{num_epochs}, "
+              f"Loss: {avg_eval_loss:.4f}, PSNR: {avg_eval_psnr:.4f}, SSIM: {avg_eval_ssim:.4f}")
+
+        logger.report_scalar(title="Loss", series="eval", value=avg_eval_loss, iteration=epoch)
+        logger.report_scalar(title="PSNR", series="eval", value=avg_eval_psnr, iteration=epoch)
+        logger.report_scalar(title="SSIM", series="eval", value=avg_eval_ssim, iteration=epoch)
+
+        model.train()
     return model
 
 if __name__ == '__main__':
@@ -86,7 +123,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print("CMD line args:", args)
 
-    experiment_config = read_config(f"{EXPERIMENTS_CONFIG_PATH}/experiment_v0.2.0.yaml")
+    experiment_config = read_config(args.config)
     experiment = Experiment(experiment_config)
 
     task = Task.init(project_name=experiment.project, task_name=experiment.task)
@@ -117,7 +154,8 @@ if __name__ == '__main__':
 
     trained_model = _train(
         model=model,
-        dataloader=train_dataloader,
+        train_dataloader=train_dataloader,
+        val_dataloader=val_dataloader,
         criterion=loss,
         optimizer=optimizer,
         num_epochs=experiment.epochs,
@@ -144,7 +182,6 @@ if __name__ == '__main__':
     torch.save(model.state_dict(), output_model_file_path)
 
     output_model = OutputModel(task=task, name=experiment.output_model_name())
-    output_model.set_upload_destination(f"{MODEL_OUTPUT_PATH}")
     output_model.update_weights(output_model_file_path)
 
     model_id = output_model.id

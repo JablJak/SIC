@@ -1,0 +1,46 @@
+dataset:
+  module: src.data.imagenet_dataset.ImageNetDataset
+  args:
+    subset_classes: 20
+    subset_samples: 200
+
+model:
+  module: src.models.swin_autoencoder.SwinTransformerAutoencoder
+  weights: SWIN-T-IC_0.2.0
+  args:
+    pretrained_encoder: false
+
+dataloader:
+  args:
+    batch_size: 16
+    shuffle: true
+    num_workers: 8
+
+optimizer:
+  module: torch.optim.AdamW
+  args:
+    lr: 0.00005
+    weight_decay: 0.02
+
+scheduler:
+  enabled: false
+
+loss:
+  module: src.losses.mse_ssim.MSESSIM
+  args:
+    alpha: 0.3
+
+epochs: 200
+
+dataset_split_ratio: 0.7
+
+output:
+  model:
+    name: SWIN-T-IC
+    version: 0.2.1
+
+project_name: INZ
+task_name: SWIN Transformer Autoencoder based Image Compression v0.2.1
+comment: Continue training of 0.2.0 model with smaller lr and msssim alpha, add eval
+  
+  

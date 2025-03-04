@@ -1,4 +1,5 @@
 import importlib
+import os
 from typing import Any, TypeAlias, Union, Iterable
 
 import torch
@@ -9,6 +10,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 
+from src.utils.const import MODEL_OUTPUT_PATH
 
 # Based on pyTorch implementation
 ParamsT: TypeAlias = Union[
@@ -134,12 +136,22 @@ def model_from_config(config: dict[str, Any]) -> Module:
         model = init_model(config)
     """
     args = config['args']
+    weights = config['weights']
+
+    if weights is not None:
+        model_path = os.path.join(MODEL_OUTPUT_PATH, f'{weights}.pth')
+        state_dict = torch.load(model_path)
+
     model_package, model_module = config['module'].rsplit('.', 1)
     model_package = importlib.import_module(model_package)
     model_type = getattr(model_package, model_module)
     pretrained_encoder = bool(args.pop('pretrained_encoder'))
     if pretrained_encoder:
         return model_type(**args)
+    elif weights is not None:
+        model = model_type(**args)
+        model.load_state_dict(state_dict)
+        return model
     else:
         return model_type(encoder_weights=None, **args)
 
