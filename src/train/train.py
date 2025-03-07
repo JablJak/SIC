@@ -9,6 +9,8 @@ from torchvision.models import Swin_V2_T_Weights
 from torchvision.transforms._presets import ImageClassification
 
 from src.train.experiment import Experiment
+from src.utils import clearml_helpers
+from src.utils.clearml_helpers import save_model, start_experiment
 from src.utils.const import MODEL_CHECKPOINT_PATH, MODEL_CHECKPOINT_FILE, EXPERIMENTS_CONFIG_PATH, \
     MODEL_OUTPUT_PATH
 from src.utils.initializers import read_config, dataloader_from_config
@@ -17,7 +19,7 @@ from src.viz.plotter import plot_reconstructions
 
 
 def _train(model, train_dataloader, val_dataloader,
-           criterion, optimizer, num_epochs, logger, device):
+           criterion, optimizer, num_epochs, device, logger=None):
     # Train
 
     model.train()
@@ -55,9 +57,10 @@ def _train(model, train_dataloader, val_dataloader,
 
         print(f"[TRAIN] Epoch {epoch + 1}/{num_epochs}, Loss: {avg_loss:.4f}, PSNR: {avg_psnr:.4f}, SSIM: {avg_ssim:.4f}")
 
-        logger.report_scalar(title="Loss", series="train", value=avg_loss, iteration=epoch)
-        logger.report_scalar(title="PSNR", series="train", value=avg_psnr, iteration=epoch)
-        logger.report_scalar(title="SSIM", series="train", value=avg_ssim, iteration=epoch)
+        if logger is not None:
+            logger.report_scalar(title="Loss", series="train", value=avg_loss, iteration=epoch)
+            logger.report_scalar(title="PSNR", series="train", value=avg_psnr, iteration=epoch)
+            logger.report_scalar(title="SSIM", series="train", value=avg_ssim, iteration=epoch)
 
         if epoch % 10 == 0:
             torch.save(model.state_dict(), f"{MODEL_CHECKPOINT_PATH}/{MODEL_CHECKPOINT_FILE}")
@@ -91,9 +94,10 @@ def _train(model, train_dataloader, val_dataloader,
         print(f"[VAL] Epoch {epoch + 1}/{num_epochs}, "
               f"Loss: {avg_eval_loss:.4f}, PSNR: {avg_eval_psnr:.4f}, SSIM: {avg_eval_ssim:.4f}")
 
-        logger.report_scalar(title="Loss", series="eval", value=avg_eval_loss, iteration=epoch)
-        logger.report_scalar(title="PSNR", series="eval", value=avg_eval_psnr, iteration=epoch)
-        logger.report_scalar(title="SSIM", series="eval", value=avg_eval_ssim, iteration=epoch)
+        if logger is not None:
+            logger.report_scalar(title="Loss", series="eval", value=avg_eval_loss, iteration=epoch)
+            logger.report_scalar(title="PSNR", series="eval", value=avg_eval_psnr, iteration=epoch)
+            logger.report_scalar(title="SSIM", series="eval", value=avg_eval_ssim, iteration=epoch)
 
         model.train()
     return model
@@ -120,16 +124,22 @@ if __name__ == '__main__':
         help="Path for checkpoints",
     )
 
+    parser.add_argument(
+        "--offline",
+        action='store_true',
+        help="Whether or not to upload experiment data to ClearML",
+    )
+
     args = parser.parse_args()
     print("CMD line args:", args)
 
     experiment_config = read_config(args.config)
     experiment = Experiment(experiment_config)
 
-    task = Task.init(project_name=experiment.project, task_name=experiment.task)
-    task.connect(experiment_config)
-    task.set_comment(experiment.comment)
-    logger = task.get_logger()
+    if not args.offline:
+        task, logger = start_experiment(experiment)
+    else:
+        task, logger = None, None
 
     device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
     print("Device:", device)
@@ -181,8 +191,5 @@ if __name__ == '__main__':
 
     torch.save(model.state_dict(), output_model_file_path)
 
-    output_model = OutputModel(task=task, name=experiment.output_model_name())
-    output_model.update_weights(output_model_file_path)
-
-    model_id = output_model.id
-    print(f"Saved ClearML model with ID: {model_id}")
+    if not args.offline:
+        clearml_helpers.save_model(task, experiment, output_model_file_path)
