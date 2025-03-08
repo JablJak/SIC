@@ -2,7 +2,6 @@ import argparse
 import os
 
 import torch
-from clearml import Task, OutputModel
 from torch.utils.data import random_split
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
 from torchvision.models import Swin_V2_T_Weights
@@ -19,7 +18,7 @@ from src.viz.plotter import plot_reconstructions
 
 
 def _train(model, train_dataloader, val_dataloader,
-           criterion, optimizer, num_epochs, device, logger=None):
+           criterion, optimizer, num_epochs, device, scheduler, logger=None):
     # Train
 
     model.train()
@@ -100,6 +99,8 @@ def _train(model, train_dataloader, val_dataloader,
             logger.report_scalar(title="SSIM", series="eval", value=avg_eval_ssim, iteration=epoch)
 
         model.train()
+        if scheduler is not None:
+            scheduler.step()
     return model
 
 if __name__ == '__main__':
@@ -161,6 +162,7 @@ if __name__ == '__main__':
     loss.to(device)
 
     optimizer = experiment.optimizer
+    scheduler = experiment.scheduler
 
     trained_model = _train(
         model=model,
@@ -169,8 +171,9 @@ if __name__ == '__main__':
         criterion=loss,
         optimizer=optimizer,
         num_epochs=experiment.epochs,
-        logger=logger,
-        device=device
+        device=device,
+        scheduler=scheduler,
+        logger=logger
     )
 
     # TODO: TRAIN TIME
