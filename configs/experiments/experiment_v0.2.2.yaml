@@ -6,6 +6,7 @@ dataset:
 
 model:
   module: src.models.swin_autoencoder.SwinTransformerAutoencoder
+  weights: null
   args:
     pretrained_encoder: true
 
@@ -26,7 +27,8 @@ scheduler:
 
 loss:
   module: src.losses.mse_ssim.MSESSIM
-  args: {}
+  args:
+    alpha: 0.2
 
 epochs: 300
 
@@ -35,13 +37,11 @@ dataset_split_ratio: 0.7
 output:
   model:
     name: SWIN-T-IC
-    version: 0.2.0
+    version: 0.2.2
 
 project_name: INZ
-task_name: SWIN Transformer Autoencoder based Image Compression v0.2.0
+task_name: SWIN Transformer Autoencoder based Image Compression v0.2.2
 comment: |
-  Notable improvements:
-   - decoder windows are now indeed shifted compared do 0.1.0 with 0 shift size
-   - there are multiple block in each stage of decoder as it is in SWIN transformer encoder
+  Similar to v0.2.0 but with MSESSIM alpha set to 0.2
   
   
