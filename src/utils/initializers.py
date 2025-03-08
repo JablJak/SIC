@@ -136,7 +136,10 @@ def model_from_config(config: dict[str, Any]) -> Module:
         model = init_model(config)
     """
     args = config['args']
-    weights = config['weights']
+    try:
+        weights = config['weights']
+    except KeyError:
+        weights = None
 
     if weights is not None:
         model_path = os.path.join(MODEL_OUTPUT_PATH, f'{weights}.pth')
@@ -230,7 +233,11 @@ def scheduler_from_config(optimizer: Optimizer, config: dict[str, Any]) -> LRSch
         }
         scheduler = init_scheduler(optimizer, config)
     """
-    if not bool(config['enabled']):
+    try:
+        enabled = bool(config['enabled'])
+    except KeyError:
+        enabled = False
+    if not enabled:
         return None
     args = config['args']
     package, module = config['module'].rsplit('.', 1)
