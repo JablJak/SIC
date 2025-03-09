@@ -2,8 +2,9 @@ import torch
 from matplotlib import pyplot as plt
 
 
-def plot_reconstructions(x_batch: torch.Tensor, x_recon: torch.Tensor):
+def plot_reconstructions(x_batch: torch.Tensor, x_recon: torch.Tensor, save_path: str | None, show=True):
     """
+    TODO: Complete docstring
     Visualize the original and reconstructed images side by side for comparison.
 
     :param x_batch: A batch of original images. Shape: (batch_size, channels, height, width).
@@ -28,4 +29,7 @@ def plot_reconstructions(x_batch: torch.Tensor, x_recon: torch.Tensor):
             axes[row + 1, col].axis("off")
 
     plt.tight_layout()
-    plt.show()
+    if show:
+        plt.show()
+    if save_path is not None:
+        plt.savefig(save_path)

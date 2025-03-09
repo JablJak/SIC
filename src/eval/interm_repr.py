@@ -1,4 +1,5 @@
 class IntermediateRepresentation:
+    # TODO: Docstring
     def __init__(self):
         self.single_input_size = None
         self.input_size = None
