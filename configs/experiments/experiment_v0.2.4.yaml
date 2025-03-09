@@ -18,31 +18,32 @@ dataloader:
 optimizer:
   module: torch.optim.SGD
   args:
-    lr: 0.1
+    lr: 5
     weight_decay: 0.0004
 
 scheduler:
-  module: torch.optim.lr_scheduler.CosineAnnealingLR
+  module: torch.optim.lr_scheduler.CyclicLR
   enabled: true
   args:
-    T_max: 100
+    base_lr: 1
+    max_lr: 5
 
 loss:
   module: src.losses.mse_ssim.MSESSIM
   args: {}
 
-epochs: 300
+epochs: 200
 
 dataset_split_ratio: 0.7
 
 output:
   model:
     name: SWIN-T-IC
-    version: 0.2.3
+    version: 0.2.4
 
 project_name: INZ
-task_name: SWIN Transformer Autoencoder based Image Compression v0.2.3
+task_name: SWIN Transformer Autoencoder based Image Compression v0.2.4
 comment: |
-  Same as v0.2.0 but with SGD and CosineAnnealingLR
+  Same as v0.2.0 but with SGD and CyclicLR
   
   
