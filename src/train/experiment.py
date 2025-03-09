@@ -2,6 +2,7 @@ from src.utils import initializers
 
 
 class Experiment:
+    # TODO: Docstring
     def __init__(self, config):
         self.config = config
         self._init_objects_from_config()

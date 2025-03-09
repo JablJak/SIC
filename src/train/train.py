@@ -11,7 +11,7 @@ from src.train.experiment import Experiment
 from src.utils import clearml_helpers
 from src.utils.clearml_helpers import save_model, start_experiment
 from src.utils.const import MODEL_CHECKPOINT_PATH, MODEL_CHECKPOINT_FILE, EXPERIMENTS_CONFIG_PATH, \
-    MODEL_OUTPUT_PATH
+    MODEL_OUTPUT_PATH, ARTIFACTS_PATH
 from src.utils.initializers import read_config, dataloader_from_config
 from src.utils.postprocess import denormalize
 from src.viz.plotter import plot_reconstructions
@@ -187,10 +187,13 @@ if __name__ == '__main__':
     x_batch = denormalize(x_batch, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
     x_recon = denormalize(x_recon, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
 
-    plot_reconstructions(x_batch, x_recon)
-
     output_model_name = experiment.output_model_name()
     output_model_file_path = os.path.join(args.model_output_path, f"{output_model_name}.pth")
+
+    reconstructions_path = os.path.join(ARTIFACTS_PATH, f"{output_model_name}_post_train.png")
+    plot_reconstructions(x_batch, x_recon, reconstructions_path, show=False)
+    if not args.offline:
+        task.upload_artifact(name=f"{output_model_name} post train reconstruction", artifact_object=reconstructions_path)
 
     torch.save(model.state_dict(), output_model_file_path)
 

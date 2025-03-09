@@ -14,26 +14,6 @@ from src.utils.postprocess import denormalize
 from src.viz.plotter import plot_reconstructions
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Train a model using ClearML.")
-    parser.add_argument(
-        "--config",
-        "-c",
-        type=str,
-        default=f"{EXPERIMENTS_CONFIG_PATH}/experiment_v0.2.0.yaml",
-        help="Path to the experiment configuration YAML file.",
-    )
-
-    args = parser.parse_args()
-    print("CMD line args:", args)
-    #
-    # experiment_config = read_config(args.config)
-    # experiment = Experiment(experiment_config)
-    #
-    # task = Task.init(project_name=experiment.project, task_name=experiment.task)
-    # task.connect(experiment_config)
-    # task.set_comment(experiment.comment)
-    # logger = task.get_logger()
-
     device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
     print("Device:", device)
 
@@ -46,7 +26,7 @@ if __name__ == '__main__':
     model: SwinTransformerAutoencoder = typing.cast(SwinTransformerAutoencoder, model_from_config(
         {
             "module": "src.models.swin_autoencoder.SwinTransformerAutoencoder",
-            "weights": "SWIN-T-IC_0.2.1",
+            "weights": "SWIN-T-IC_0.2.9",
             "args": {
                 "pretrained_encoder": False
             }
@@ -65,6 +45,6 @@ if __name__ == '__main__':
     x_batch = denormalize(x_batch, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
     x_recon = denormalize(x_recon, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
 
-    plot_reconstructions(x_batch, x_recon)
+    plot_reconstructions(x_batch, x_recon, None)
 
     print(intermediate)
