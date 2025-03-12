@@ -1,4 +1,5 @@
 import torch
+from piqa import MS_SSIM
 from piqa.ssim import ms_ssim
 from piqa.utils.functional import gaussian_kernel
 
@@ -36,6 +37,5 @@ class MSESSIM(torch.nn.Module):
         pred = self.activation(pred)
         target = self.activation(target)
         kernel = gaussian_kernel(7).repeat(3, 1, 1).to(pred.device)
-        weights = torch.rand(5).to(pred.device)
-        ssim_loss = ms_ssim(pred, target, kernel, weights).mean()
+        ssim_loss = ms_ssim(pred, target, kernel, MS_SSIM.WEIGHTS.to(pred.device)).mean()
         return self.alpha * (1 - ssim_loss) + (1 - self.alpha) * self.l2(pred, target)
