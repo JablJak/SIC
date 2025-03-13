@@ -36,6 +36,6 @@ class MSESSIM(torch.nn.Module):
         """
         pred = self.activation(pred)
         target = self.activation(target)
-        kernel = gaussian_kernel(7).repeat(3, 1, 1).to(pred.device)
+        kernel = gaussian_kernel(5).repeat(3, 1, 1).to(pred.device)
         ssim_loss = ms_ssim(pred, target, kernel, MS_SSIM.WEIGHTS.to(pred.device)).mean()
         return self.alpha * (1 - ssim_loss) + (1 - self.alpha) * self.l2(pred, target)
