@@ -26,7 +26,7 @@ scheduler:
   args:
     base_lr: 0.0005
     max_lr: 0.001
-    mode: triangular
+    mode: triangular2
     step_size_up: 30
     step_size_down: 50
 
