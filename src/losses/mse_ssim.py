@@ -20,6 +20,7 @@ class MSESSIM(torch.nn.Module):
         """
         super(MSESSIM, self).__init__()
         self.l2 = torch.nn.MSELoss()
+        self.MS_SSIM = MS_SSIM()
         self.activation = torch.nn.Sigmoid()
         self.alpha = alpha
 
@@ -36,6 +37,5 @@ class MSESSIM(torch.nn.Module):
         """
         pred = self.activation(pred)
         target = self.activation(target)
-        kernel = gaussian_kernel(9).repeat(3, 1, 1).to(pred.device)
-        ssim_loss = ms_ssim(pred, target, kernel, MS_SSIM.WEIGHTS.to(pred.device)).mean()
-        return self.alpha * (1 - ssim_loss) + (1 - self.alpha) * self.l2(pred, target)
+        ms_ssim_loss = self.MS_SSIM(pred, target)
+        return self.alpha * (1 - ms_ssim_loss) + (1 - self.alpha) * self.l2(pred, target)
