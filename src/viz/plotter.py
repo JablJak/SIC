@@ -29,7 +29,7 @@ def plot_reconstructions(x_batch: torch.Tensor, x_recon: torch.Tensor, save_path
             axes[row + 1, col].axis("off")
 
     plt.tight_layout()
-    if show:
-        plt.show()
     if save_path is not None:
         plt.savefig(save_path)
+    if show:
+        plt.show()

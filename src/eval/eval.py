@@ -1,4 +1,5 @@
 import argparse
+import os
 import typing
 
 import torch
@@ -6,9 +7,10 @@ from torchvision.models import Swin_V2_T_Weights
 from torchvision.transforms._presets import ImageClassification
 
 from src.data.coco_dataset import CocoDataset
+from src.data.transforms import YCbCrToRGB, RGBToYCbCr
 from src.eval.interm_repr import IntermediateRepresentation
 from src.models.swin_autoencoder import SwinTransformerAutoencoder
-from src.utils.const import EXPERIMENTS_CONFIG_PATH
+from src.utils.const import EXPERIMENTS_CONFIG_PATH, ARTIFACTS_PATH
 from src.utils.initializers import model_from_config
 from src.utils.postprocess import denormalize
 from src.viz.plotter import plot_reconstructions
@@ -19,14 +21,14 @@ if __name__ == '__main__':
 
     transform = Swin_V2_T_Weights.DEFAULT.transforms()
 
-    dataset = CocoDataset(transform)
+    dataset = CocoDataset()
 
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=16, shuffle=True, num_workers=8)
 
     model: SwinTransformerAutoencoder = typing.cast(SwinTransformerAutoencoder, model_from_config(
         {
             "module": "src.models.swin_autoencoder.SwinTransformerAutoencoder",
-            "weights": "SWIN-T-IC_0.2.9",
+            "weights": "SWIN-T-IC_0.2.25",
             "args": {
                 "pretrained_encoder": False
             }
@@ -42,9 +44,13 @@ if __name__ == '__main__':
         x_batch = x_batch.to(device)
         x_recon = model(x_batch)
 
-    x_batch = denormalize(x_batch, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
-    x_recon = denormalize(x_recon, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
+    transform = YCbCrToRGB("0_1").to(x_batch.device)
+    # TODO: This can't be here I guess
 
-    plot_reconstructions(x_batch, x_recon, None)
+    x_batch = transform(denormalize(x_batch, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std)).cpu()
+    x_recon = transform(denormalize(x_recon, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std)).cpu()
+
+    reconstructions_path = os.path.join(ARTIFACTS_PATH, f"SWIN-T-IC_0.2.25_eval.png")
+    plot_reconstructions(x_batch, x_recon, reconstructions_path, show=True)
 
     print(intermediate)

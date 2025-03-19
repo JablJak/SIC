@@ -103,11 +103,20 @@ ENV/
 
 # input data, saved log, checkpoints
 data/
+!src/data
 input/
 saved/
 datasets/
+artifacts/
+citations/
+checkpoint/
+logs/
+models/
 
 # editor, os cache directory
 .vscode/
 .idea/
 __MACOSX/
+
+.rsyncignore
+environment.yml
