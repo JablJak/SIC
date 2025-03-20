@@ -1,7 +1,39 @@
+from typing import Tuple, Optional
+
 import torch
 import torch.nn as nn
 from torch import Tensor
+from torchvision.transforms import InterpolationMode, functional
 
+
+class YCbCrCompression(nn.Module):
+    def __init__(
+            self,
+            crop_size: int = 256,
+            resize_size: int = 260,
+            mean: Tuple[float, ...] = (0.4560, 0.5926, 1.0980),
+            std: Tuple[float, ...] = (0.2266, 0.1483, 0.2506),
+            interpolation: InterpolationMode = InterpolationMode.BICUBIC,
+            antialias: Optional[bool] = True,
+    ) -> None:
+        super().__init__()
+        self.crop_size = [crop_size]
+        self.resize_size = [resize_size]
+        self.mean = list(mean)
+        self.std = list(std)
+        self.interpolation = interpolation
+        self.antialias = antialias
+        self.ycbcr = RGBToYCbCr()
+
+    def forward(self, img: Tensor) -> Tensor:
+        img = functional.resize(img, self.resize_size, interpolation=self.interpolation, antialias=self.antialias)
+        img = functional.center_crop(img, self.crop_size)
+        if not isinstance(img, Tensor):
+            img = functional.pil_to_tensor(img)
+        img = functional.convert_image_dtype(img, torch.float)
+        img = self.ycbcr(img)
+        img = functional.normalize(img, mean=self.mean, std=self.std)
+        return img
 
 class RGBToYCbCr(nn.Module):
     """

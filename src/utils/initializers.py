@@ -4,6 +4,7 @@ from typing import Any, TypeAlias, Union, Iterable
 
 import torch
 import yaml
+from torchvision import transforms
 from torch.nn import Module
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
@@ -33,6 +34,13 @@ def read_config(config_file_path: str) -> dict[str, Any]:
     """
     data = yaml.safe_load(open(config_file_path))
     return data
+
+def transform_from_config(config: dict[str, Any]) -> Module:
+    args = config['args']
+    package, module = config['module'].rsplit('.', 1)
+    package = importlib.import_module(package)
+    type: Module = getattr(package, module)
+    return type(**args)
 
 def dataset_from_config(config: dict[str, Any]) -> Dataset:
     """
@@ -73,6 +81,9 @@ def dataset_from_config(config: dict[str, Any]) -> Dataset:
     package, module = config['module'].rsplit('.', 1)
     package = importlib.import_module(package)
     type = getattr(package, module)
+    if 'transform' in args:
+        tsfs = transforms.Compose([transform_from_config(tsf) for tsf in args['transform']])
+        args['transform'] = tsfs
     if 'subset_classes' in args and 'subset_samples' in args:
         num_classes = int(args.pop('subset_classes'))
         num_samples = int(args.pop('subset_samples'))
