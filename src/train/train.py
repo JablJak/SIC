@@ -26,6 +26,7 @@ def _train(model, train_dataloader, val_dataloader,
         epoch_loss = 0
         epoch_psnr = 0
         epoch_ssim = 0
+        epoch_lr = optimizer.param_groups[0]['lr']
 
         for x, _ in train_dataloader:
             x = x.to(device)
@@ -54,12 +55,13 @@ def _train(model, train_dataloader, val_dataloader,
         avg_psnr = epoch_psnr / len(train_dataloader)
         avg_ssim = epoch_ssim / len(train_dataloader)
 
-        print(f"[TRAIN] Epoch {epoch + 1}/{num_epochs}, Loss: {avg_loss:.4f}, PSNR: {avg_psnr:.4f}, SSIM: {avg_ssim:.4f}")
+        print(f"[TRAIN] Epoch {epoch + 1}/{num_epochs}, Loss: {avg_loss:.5f}, PSNR: {avg_psnr:.4f}, SSIM: {avg_ssim:.4f}, lr: {epoch_lr}")
 
         if logger is not None:
             logger.report_scalar(title="Loss", series="train", value=avg_loss, iteration=epoch)
             logger.report_scalar(title="PSNR", series="train", value=avg_psnr, iteration=epoch)
             logger.report_scalar(title="SSIM", series="train", value=avg_ssim, iteration=epoch)
+            logger.report_scalar(title="LR", series="train", value=epoch_lr, iteration=epoch)
 
         if epoch % 10 == 0:
             torch.save(model.state_dict(), f"{MODEL_CHECKPOINT_PATH}/{MODEL_CHECKPOINT_FILE}")
