@@ -81,8 +81,8 @@ def dataset_from_config(config: dict[str, Any]) -> Dataset:
     package, module = config['module'].rsplit('.', 1)
     package = importlib.import_module(package)
     type = getattr(package, module)
-    if 'transform' in args:
-        tsfs = transforms.Compose([transform_from_config(tsf) for tsf in args['transform']])
+    if 'transform' in config.keys():
+        tsfs = transforms.Compose([transform_from_config(tsf) for tsf in config['transform']])
         args['transform'] = tsfs
     if 'subset_classes' in args and 'subset_samples' in args:
         num_classes = int(args.pop('subset_classes'))
