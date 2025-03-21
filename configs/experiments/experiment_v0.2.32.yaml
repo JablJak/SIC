@@ -1,0 +1,48 @@
+dataset:
+  module: src.data.imagenet_dataset.ImageNetDataset
+  args:
+    transform:
+      - module: src.data.transforms.YCbCrCompression
+        args: {}
+    subset_classes: 20
+    subset_samples: 200
+
+model:
+  module: src.models.swin_autoencoder.SwinTransformerAutoencoder
+  args:
+    pretrained_encoder: false
+
+dataloader:
+  args:
+    batch_size: 16
+    shuffle: true
+    num_workers: 8
+
+optimizer:
+  module: torch.optim.AdamW
+  args:
+    lr: 0.00005
+
+scheduler:
+  enabled: false
+
+loss:
+  module: src.losses.mse_ssim.MSESSIM
+  args:
+    alpha: 0
+
+epochs: 400
+
+dataset_split_ratio: 0.7
+
+output:
+  model:
+    name: SWIN-T-IC
+    version: 0.2.32
+
+project_name: INZ
+task_name: SWIN Transformer Autoencoder based Image Compression v0.2.32
+comment: |
+  v0.2.25 with updated YCbCr transform and without pretrained weights and higher lr amplitude and without YCbCr offset
+  
+  
