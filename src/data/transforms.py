@@ -11,7 +11,7 @@ class YCbCrCompression(nn.Module):
             self,
             crop_size: int = 256,
             resize_size: int = 260,
-            mean: Tuple[float, ...] = (0.4560, 0.5926, 1.0980),
+            mean: Tuple[float, ...] = [0.4560, 0.0926, 0.5980],
             std: Tuple[float, ...] = (0.2266, 0.1483, 0.2506),
             interpolation: InterpolationMode = InterpolationMode.BICUBIC,
             antialias: Optional[bool] = True,
@@ -93,12 +93,12 @@ class RGBToYCbCr(nn.Module):
         ycbcr = torch.matmul(self.matrix, x_reshaped)  # (batch, 3, h*w)
         ycbcr = ycbcr.view(b, 3, h, w)
 
-        # Dodanie offsetu 128 dla kanałów Cb i Cr
-        if self.out_range == '0_1':
-            offset = self.offset / 255.0
-            ycbcr = ycbcr + offset
-        else:
-            ycbcr = ycbcr + self.offset
+        # # Dodanie offsetu 128 dla kanałów Cb i Cr
+        # if self.out_range == '0_1':
+        #     offset = self.offset / 255.0
+        #     ycbcr = ycbcr + offset
+        # else:
+        #     ycbcr = ycbcr + self.offset
 
         # Skalowanie wyjścia jeśli potrzebne
         if self.out_range == '0_255' and self.in_range == '0_1':
