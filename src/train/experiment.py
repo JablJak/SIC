@@ -12,7 +12,13 @@ class Experiment:
     def _init_objects_from_config(self):
         self.dataset = initializers.dataset_from_config(self.config['dataset'])
         self.model = initializers.model_from_config(self.config['model'])
-        self.loss = initializers.loss_from_config(self.config['loss'])
+        distortion_loss = initializers.loss_from_config(self.config['loss'])
+        self.loss = distortion_loss
+        try:
+            if bool(self.config['rd_loss']['enabled']):
+                self.loss = initializers.rd_loss_wrapper_from_config(distortion_loss, self.config['rd_loss'])
+        except KeyError:
+            pass
         self.optimizer = initializers.optimizer_from_config(self.model.parameters(), self.config['optimizer'])
         self.scheduler = initializers.scheduler_from_config(self.optimizer, self.config['scheduler'])
 

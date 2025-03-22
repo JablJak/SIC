@@ -44,11 +44,12 @@ if __name__ == '__main__':
         x_batch = x_batch.to(device)
         x_recon = model(x_batch)
 
-    transform = YCbCrToRGB("0_1").to(x_batch.device)
+    input_transform = YCbCrCompression().to(x_batch.device)
+    output_transform = YCbCrToRGB("0_1").to(x_batch.device)
     # TODO: This can't be here I guess
 
-    x_batch = transform(denormalize(x_batch, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std)).cpu()
-    x_recon = transform(denormalize(x_recon, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std)).cpu()
+    x_batch = output_transform(denormalize(x_batch, input_transform.mean, input_transform.std)).cpu()
+    x_recon = output_transform(denormalize(x_recon, input_transform.mean, input_transform.std)).cpu()
 
     reconstructions_path = os.path.join(ARTIFACTS_PATH, f"SWIN-T-IC_0.2.34_eval.png")
     plot_reconstructions(x_batch, x_recon, reconstructions_path, show=True)

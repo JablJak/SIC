@@ -1,3 +1,4 @@
+from compressai.entropy_models import EntropyBottleneck
 from timm.layers import DropPath
 from torch.nn import init
 from torchvision.models import swin_v2_t, swin_v2_s, swin_v2_b, Swin_V2_T_Weights
@@ -137,8 +138,8 @@ class SwinTransformerAutoencoder(nn.Module):
         super().__init__()
         self.encoder_weights = encoder_weights
         self.encoder = self._create_encoder(encoder_type, encoder_weights)
-
-        # TODO: Introduce intermediate linear layer to enhance compression
+        self.entropy_model = EntropyBottleneck(channels=768) # TODO: this can't be hardcoded
+        # TODO: Maybe introduce intermediate linear layer to enhance compression
 
         self.decoder = SwinTransformerDecoder(
             dim=decoder_dim,
@@ -155,6 +156,7 @@ class SwinTransformerAutoencoder(nn.Module):
         return self.ENCODER_MAP[encoder_name](weights=weights).features
 
     def forward(self, x):
-        encoder_features = self.encoder(x)
-        decoder_features = self.decoder(encoder_features, x.shape[-2:])
-        return decoder_features
+        y = self.encoder(x)
+        y_hat, y_likelihoods = self.entropy_model(y.permute(0, 3, 1, 2))
+        x_hat = self.decoder(y_hat.permute(0, 2, 3, 1), x.shape[-2:])
+        return x_hat, y_likelihoods

@@ -7,6 +7,8 @@ from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMe
 from torchvision.models import Swin_V2_T_Weights
 from torchvision.transforms._presets import ImageClassification
 
+from src.data.transforms import YCbCrCompression, YCbCrToRGB
+from src.losses.rdloss import RDLoss
 from src.train.experiment import Experiment
 from src.utils import clearml_helpers
 from src.utils.clearml_helpers import save_model, start_experiment
@@ -26,14 +28,19 @@ def _train(model, train_dataloader, val_dataloader,
         epoch_loss = 0
         epoch_psnr = 0
         epoch_ssim = 0
+        epoch_bpp = 0
         epoch_lr = optimizer.param_groups[0]['lr']
 
         for x, _ in train_dataloader:
             x = x.to(device)
             optimizer.zero_grad()
-            output = model(x)
+            output, y_likelihoods = model(x)
 
-            loss = criterion(output, x)
+            if isinstance(criterion, RDLoss):
+                loss, bpp = criterion(output, x, y_likelihoods)
+                epoch_bpp += bpp
+            else:
+                loss = criterion(output, x)
 
             psnr_metric = PeakSignalNoiseRatio()
             psnr_metric.to(device)
@@ -54,14 +61,18 @@ def _train(model, train_dataloader, val_dataloader,
         avg_loss = epoch_loss / len(train_dataloader)
         avg_psnr = epoch_psnr / len(train_dataloader)
         avg_ssim = epoch_ssim / len(train_dataloader)
+        avg_bpp = epoch_bpp / len(train_dataloader)
 
-        print(f"[TRAIN] Epoch {epoch + 1}/{num_epochs}, Loss: {avg_loss:.5f}, PSNR: {avg_psnr:.4f}, SSIM: {avg_ssim:.4f}, lr: {epoch_lr}")
+        print(f"[TRAIN] Epoch {epoch + 1}/{num_epochs}, Loss: {avg_loss:.5f}, PSNR: {avg_psnr:.4f},"
+              f" SSIM: {avg_ssim:.4f}, bpp: {avg_bpp:.4f} lr: {epoch_lr}")
 
         if logger is not None:
             logger.report_scalar(title="Loss", series="train", value=avg_loss, iteration=epoch)
             logger.report_scalar(title="PSNR", series="train", value=avg_psnr, iteration=epoch)
             logger.report_scalar(title="SSIM", series="train", value=avg_ssim, iteration=epoch)
             logger.report_scalar(title="LR", series="train", value=epoch_lr, iteration=epoch)
+            if avg_bpp != 0:
+                logger.report_scalar(title="bpp", series="train", value=avg_bpp, iteration=epoch)
 
         if epoch % 10 == 0:
             torch.save(model.state_dict(), f"{MODEL_CHECKPOINT_PATH}/{MODEL_CHECKPOINT_FILE}")
@@ -71,13 +82,17 @@ def _train(model, train_dataloader, val_dataloader,
         eval_loss = 0
         eval_psnr = 0
         eval_ssim = 0
+        eval_bpp = 0
 
         with torch.no_grad():
             for x_val, _ in val_dataloader:
                 x_val = x_val.to(device)
-                output_val = model(x_val)
-
-                loss_val = criterion(output_val, x_val)
+                output_val, y_likelihoods_val = model(x_val)
+                if isinstance(criterion, RDLoss):
+                    loss_val, bpp_val = criterion(output_val, x_val, y_likelihoods_val)
+                    eval_bpp += bpp_val
+                else:
+                    loss_val = criterion(output_val, x_val)
                 eval_loss += loss_val.item()
 
                 psnr_metric_val = PeakSignalNoiseRatio().to(device)
@@ -91,14 +106,18 @@ def _train(model, train_dataloader, val_dataloader,
         avg_eval_loss = eval_loss / len(val_dataloader)
         avg_eval_psnr = eval_psnr / len(val_dataloader)
         avg_eval_ssim = eval_ssim / len(val_dataloader)
+        avg_eval_bpp = eval_bpp / len(val_dataloader)
 
         print(f"[VAL] Epoch {epoch + 1}/{num_epochs}, "
-              f"Loss: {avg_eval_loss:.4f}, PSNR: {avg_eval_psnr:.4f}, SSIM: {avg_eval_ssim:.4f}")
+              f"Loss: {avg_eval_loss:.4f}, PSNR: {avg_eval_psnr:.4f}, SSIM: {avg_eval_ssim:.4f}, "
+              f"bpp: {avg_eval_bpp:.4f} lr: {epoch_lr}")
 
         if logger is not None:
             logger.report_scalar(title="Loss", series="eval", value=avg_eval_loss, iteration=epoch)
             logger.report_scalar(title="PSNR", series="eval", value=avg_eval_psnr, iteration=epoch)
             logger.report_scalar(title="SSIM", series="eval", value=avg_eval_ssim, iteration=epoch)
+            if avg_bpp != 0:
+                logger.report_scalar(title="bpp", series="train", value=avg_eval_bpp, iteration=epoch)
 
         model.train()
         if scheduler is not None:
@@ -186,8 +205,12 @@ if __name__ == '__main__':
         x_batch = x_batch.to(device)
         x_recon = trained_model(x_batch)
 
-    x_batch = denormalize(x_batch, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
-    x_recon = denormalize(x_recon, ImageClassification(crop_size=0).mean, ImageClassification(crop_size=0).std).cpu()
+    input_transform = YCbCrCompression().to(x_batch.device)
+    output_transform = YCbCrToRGB("0_1").to(x_batch.device)
+    # TODO: This can't be here I guess
+
+    x_batch = output_transform(denormalize(x_batch, input_transform.mean, input_transform.std)).cpu()
+    x_recon = output_transform(denormalize(x_recon, input_transform.mean, input_transform.std)).cpu()
 
     output_model_name = experiment.output_model_name()
     output_model_file_path = os.path.join(args.model_output_path, f"{output_model_name}.pth")

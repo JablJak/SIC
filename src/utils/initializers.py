@@ -11,6 +11,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 
+from src.losses.rdloss import RDLoss
 from src.utils.const import MODEL_OUTPUT_PATH
 
 # Based on pyTorch implementation
@@ -263,3 +264,7 @@ def loss_from_config(config: dict[str, Any]) -> Module:
     package = importlib.import_module(package)
     type = getattr(package, module)
     return type(**args)
+
+def rd_loss_wrapper_from_config(loss_function: Module, config: dict[str, Any]) -> Module:
+    l = config['lambda']
+    return RDLoss(distortion_loss=loss_function, l=l)
