@@ -42,7 +42,7 @@ if __name__ == '__main__':
     with torch.no_grad():
         x_batch, _ = next(iter(dataloader))
         x_batch = x_batch.to(device)
-        x_recon = model(x_batch)
+        x_recon, y_likelihoods = model(x_batch)
 
     input_transform = YCbCrCompression().to(x_batch.device)
     output_transform = YCbCrToRGB("0_1").to(x_batch.device)

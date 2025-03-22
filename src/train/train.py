@@ -116,8 +116,8 @@ def _train(model, train_dataloader, val_dataloader,
             logger.report_scalar(title="Loss", series="eval", value=avg_eval_loss, iteration=epoch)
             logger.report_scalar(title="PSNR", series="eval", value=avg_eval_psnr, iteration=epoch)
             logger.report_scalar(title="SSIM", series="eval", value=avg_eval_ssim, iteration=epoch)
-            if avg_bpp != 0:
-                logger.report_scalar(title="bpp", series="train", value=avg_eval_bpp, iteration=epoch)
+            if avg_eval_bpp != 0:
+                logger.report_scalar(title="bpp", series="eval", value=avg_eval_bpp, iteration=epoch)
 
         model.train()
         if scheduler is not None:
@@ -200,10 +200,23 @@ if __name__ == '__main__':
     # TODO: TRAIN TIME
 
     trained_model.eval()
+
+    output_model_name = experiment.output_model_name()
+    output_model_file_path = os.path.join(args.model_output_path, f"{output_model_name}.pth")
+
+    reconstructions_path = os.path.join(ARTIFACTS_PATH, f"{output_model_name}_post_train.png")
+    if not args.offline:
+        task.upload_artifact(name=f"{output_model_name} post train reconstruction", artifact_object=reconstructions_path)
+
+    torch.save(model.state_dict(), output_model_file_path)
+
+    if not args.offline:
+        clearml_helpers.save_model(task, experiment, output_model_file_path)
+
     with torch.no_grad():
         x_batch, _ = next(iter(val_dataloader))
         x_batch = x_batch.to(device)
-        x_recon = trained_model(x_batch)
+        x_recon, y_likelihoods = trained_model(x_batch)
 
     input_transform = YCbCrCompression().to(x_batch.device)
     output_transform = YCbCrToRGB("0_1").to(x_batch.device)
@@ -212,15 +225,5 @@ if __name__ == '__main__':
     x_batch = output_transform(denormalize(x_batch, input_transform.mean, input_transform.std)).cpu()
     x_recon = output_transform(denormalize(x_recon, input_transform.mean, input_transform.std)).cpu()
 
-    output_model_name = experiment.output_model_name()
-    output_model_file_path = os.path.join(args.model_output_path, f"{output_model_name}.pth")
-
-    reconstructions_path = os.path.join(ARTIFACTS_PATH, f"{output_model_name}_post_train.png")
     plot_reconstructions(x_batch, x_recon, reconstructions_path, show=False)
-    if not args.offline:
-        task.upload_artifact(name=f"{output_model_name} post train reconstruction", artifact_object=reconstructions_path)
 
-    torch.save(model.state_dict(), output_model_file_path)
-
-    if not args.offline:
-        clearml_helpers.save_model(task, experiment, output_model_file_path)

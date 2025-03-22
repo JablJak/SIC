@@ -16,6 +16,6 @@ class RDLoss(nn.Module):
         num_pixels = N * H * W
         bpp_loss = torch.log(y_likelihoods).sum() / (-math.log(2) * num_pixels)
 
-        loss = distortion + self.l * bpp_loss
+        loss = self.l * distortion + bpp_loss
 
         return loss, bpp_loss

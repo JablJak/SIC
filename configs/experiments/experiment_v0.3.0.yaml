@@ -3,7 +3,9 @@ dataset:
   transform:
     - module: src.data.transforms.YCbCrCompression
       args: {}
-  args: {}
+  args:
+    subset_classes: 20
+    subset_samples: 200
 
 model:
   module: src.models.swin_autoencoder.SwinTransformerAutoencoder
@@ -38,16 +40,16 @@ loss:
 
 rd_loss:
   enabled: true
-  lambda: 0.005
+  lambda: 1000
 
-epochs: 2
+epochs: 400
 
 dataset_split_ratio: 0.7
 
 output:
   model:
     name: SWIN-T-IC
-    version: 0.3.0-test
+    version: 0.3.0
 
 project_name: INZ
 task_name: SWIN Transformer Autoencoder based Image Compression v0.3.0
