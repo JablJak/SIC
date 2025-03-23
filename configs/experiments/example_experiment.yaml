@@ -3,7 +3,10 @@ dataset:
   transform:
     - module: src.data.transforms.YCbCrCompression
       args: {}
-  args: {}
+  args:
+    variant: null
+    subset_classes: 20
+    subset_samples: 200
 
 model:
   module: src.models.swin_autoencoder.SwinTransformerAutoencoder

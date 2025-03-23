@@ -1,6 +1,8 @@
 import argparse
 import os
+import random
 
+import numpy as np
 import torch
 from torch.utils.data import random_split
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
@@ -163,15 +165,23 @@ if __name__ == '__main__':
     else:
         task, logger = None, None
 
+    # ===== Disable randomness =====
+    seed = 42
+    torch.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
     device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
     print("Device:", device)
+    # ==============================
 
-    transform = Swin_V2_T_Weights.DEFAULT.transforms()
-
-    dataset = experiment.dataset
-    train_dataset, val_dataset = random_split(
-        dataset, [experiment.dataset_split_ratio, 1 - experiment.dataset_split_ratio]
-    )
+    train_dataset, val_dataset = experiment.train_dataset, experiment.val_dataset
 
     train_dataloader = dataloader_from_config(train_dataset, experiment_config['dataloader'])
     val_dataloader = dataloader_from_config(val_dataset, experiment_config['dataloader'])

@@ -11,6 +11,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 
+from src.data.base_dataset import BaseDataset
 from src.losses.rdloss import RDLoss
 from src.utils.const import MODEL_OUTPUT_PATH
 
@@ -43,7 +44,7 @@ def transform_from_config(config: dict[str, Any]) -> Module:
     type: Module = getattr(package, module)
     return type(**args)
 
-def dataset_from_config(config: dict[str, Any]) -> Dataset:
+def dataset_from_config(config: dict[str, Any]) -> BaseDataset:
     """
     Initializes a dataset based on the configuration provided.
 

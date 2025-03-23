@@ -10,7 +10,16 @@ class Experiment:
         self._set_experiment_metadata()
 
     def _init_objects_from_config(self):
-        self.dataset = initializers.dataset_from_config(self.config['dataset'])
+        dataset = initializers.dataset_from_config(self.config['dataset'])
+        try:
+            self.train_dataset = dataset
+            self.val_dataset = dataset.validation_set(self.train_dataset.transform)
+            if 'subset_classes' in self.config['dataset']['args'] and 'subset_samples' in self.config['dataset']['args']:
+                num_classes = int(self.config['dataset']['args'] .pop('subset_classes'))
+                num_samples = int(self.config['dataset']['args'] .pop('subset_samples'))
+                self.val_dataset = self.val_dataset.subset(num_classes, num_samples)
+        except AttributeError | NotImplementedError:
+            self.train_dataset, self.val_dataset = dataset.train_test_split(self.dataset_split_ratio)
         self.model = initializers.model_from_config(self.config['model'])
         distortion_loss = initializers.loss_from_config(self.config['loss'])
         self.loss = distortion_loss

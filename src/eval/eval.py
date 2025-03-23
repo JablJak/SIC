@@ -19,7 +19,7 @@ if __name__ == '__main__':
     device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
     print("Device:", device)
 
-    transform = YCbCrCompression(crop_size=1024, resize_size=1028)
+    transform = YCbCrCompression(crop_size=256, resize_size=260)
 
     dataset = CocoDataset(transform=transform)
 
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     model: SwinTransformerAutoencoder = typing.cast(SwinTransformerAutoencoder, model_from_config(
         {
             "module": "src.models.swin_autoencoder.SwinTransformerAutoencoder",
-            "weights": "SWIN-T-IC_0.2.34",
+            "weights": "SWIN-T-IC_0.3.4",
             "args": {
                 "pretrained_encoder": False
             }
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     x_batch = output_transform(denormalize(x_batch, input_transform.mean, input_transform.std)).cpu()
     x_recon = output_transform(denormalize(x_recon, input_transform.mean, input_transform.std)).cpu()
 
-    reconstructions_path = os.path.join(ARTIFACTS_PATH, f"SWIN-T-IC_0.2.34_eval.png")
+    reconstructions_path = os.path.join(ARTIFACTS_PATH, f"SWIN-T-IC_0.3.4_eval.png")
     plot_reconstructions(x_batch, x_recon, reconstructions_path, show=True)
 
     print(intermediate)
