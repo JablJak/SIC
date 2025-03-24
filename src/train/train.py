@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import os
 import random
 
@@ -21,7 +22,7 @@ from src.utils.postprocess import denormalize
 from src.viz.plotter import plot_reconstructions
 
 
-def _train(model, train_dataloader, val_dataloader,
+async def _train(model, train_dataloader, val_dataloader,
            criterion, optimizer, num_epochs, device, scheduler, logger=None):
     # Train
 
@@ -68,13 +69,20 @@ def _train(model, train_dataloader, val_dataloader,
         print(f"[TRAIN] Epoch {epoch + 1}/{num_epochs}, Loss: {avg_loss:.5f}, PSNR: {avg_psnr:.4f},"
               f" SSIM: {avg_ssim:.4f}, bpp: {avg_bpp:.4f} lr: {epoch_lr}")
 
-        if logger is not None:
-            logger.report_scalar(title="Loss", series="train", value=avg_loss, iteration=epoch)
-            logger.report_scalar(title="PSNR", series="train", value=avg_psnr, iteration=epoch)
-            logger.report_scalar(title="SSIM", series="train", value=avg_ssim, iteration=epoch)
-            logger.report_scalar(title="LR", series="train", value=epoch_lr, iteration=epoch)
-            if avg_bpp != 0:
-                logger.report_scalar(title="bpp", series="train", value=avg_bpp, iteration=epoch)
+        def log_train():
+            try:
+                if logger is not None:
+                    logger.report_scalar(title="Loss", series="train", value=avg_loss, iteration=epoch)
+                    logger.report_scalar(title="PSNR", series="train", value=avg_psnr, iteration=epoch)
+                    logger.report_scalar(title="SSIM", series="train", value=avg_ssim, iteration=epoch)
+                    logger.report_scalar(title="LR", series="train", value=epoch_lr, iteration=epoch)
+                    if avg_bpp != 0:
+                        logger.report_scalar(title="bpp", series="train", value=avg_bpp, iteration=epoch)
+            except Exception as e:
+                print(f"[Warning] Logging to ClearML failed: {e}")
+
+        loop = asyncio.get_running_loop()
+        loop.run_in_executor(None, log_train)
 
         if epoch % 10 == 0:
             torch.save(model.state_dict(), f"{MODEL_CHECKPOINT_PATH}/{MODEL_CHECKPOINT_FILE}")
@@ -114,12 +122,19 @@ def _train(model, train_dataloader, val_dataloader,
               f"Loss: {avg_eval_loss:.4f}, PSNR: {avg_eval_psnr:.4f}, SSIM: {avg_eval_ssim:.4f}, "
               f"bpp: {avg_eval_bpp:.4f} lr: {epoch_lr}")
 
-        if logger is not None:
-            logger.report_scalar(title="Loss", series="eval", value=avg_eval_loss, iteration=epoch)
-            logger.report_scalar(title="PSNR", series="eval", value=avg_eval_psnr, iteration=epoch)
-            logger.report_scalar(title="SSIM", series="eval", value=avg_eval_ssim, iteration=epoch)
-            if avg_eval_bpp != 0:
-                logger.report_scalar(title="bpp", series="eval", value=avg_eval_bpp, iteration=epoch)
+        def log_val():
+            try:
+                if logger is not None:
+                    logger.report_scalar(title="PSNR", series="eval", value=avg_eval_psnr, iteration=epoch)
+                    logger.report_scalar(title="SSIM", series="eval", value=avg_eval_ssim, iteration=epoch)
+                    logger.report_scalar(title="Loss", series="eval", value=avg_eval_loss, iteration=epoch)
+                    if avg_eval_bpp != 0:
+                        logger.report_scalar(title="bpp", series="eval", value=avg_eval_bpp, iteration=epoch)
+            except Exception as e:
+                print(f"[Warning] Logging to ClearML failed: {e}")
+
+        loop = asyncio.get_running_loop()
+        loop.run_in_executor(None, log_val)
 
         model.train()
         if scheduler is not None:
@@ -195,7 +210,7 @@ if __name__ == '__main__':
     optimizer = experiment.optimizer
     scheduler = experiment.scheduler
 
-    trained_model = _train(
+    trained_model = asyncio.run(_train(
         model=model,
         train_dataloader=train_dataloader,
         val_dataloader=val_dataloader,
@@ -205,7 +220,7 @@ if __name__ == '__main__':
         device=device,
         scheduler=scheduler,
         logger=logger
-    )
+    ))
 
     # TODO: TRAIN TIME
 

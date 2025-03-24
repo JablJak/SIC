@@ -1,5 +1,6 @@
 import importlib
 import os
+from copy import deepcopy
 from typing import Any, TypeAlias, Union, Iterable
 
 import torch
@@ -79,7 +80,7 @@ def dataset_from_config(config: dict[str, Any]) -> BaseDataset:
         }
         dataset = init_dataset(config)
     """
-    args = config['args']
+    args = deepcopy(config['args'])
     package, module = config['module'].rsplit('.', 1)
     package = importlib.import_module(package)
     type = getattr(package, module)
