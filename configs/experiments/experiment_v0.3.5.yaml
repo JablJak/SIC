@@ -1,0 +1,63 @@
+dataset:
+  module: src.data.imagenet_dataset.ImageNetDataset
+  transform:
+    - module: src.data.transforms.YCbCrCompression
+      args: {}
+  args:
+    variant: train.X1
+    subset_classes: 5
+    subset_samples: 200
+
+model:
+  module: src.models.swin_autoencoder.SwinTransformerAutoencoder
+  args:
+    pretrained_encoder: true
+
+dataloader:
+  args:
+    batch_size: 16
+    shuffle: true
+    num_workers: 8
+
+optimizer:
+  module: torch.optim.AdamW
+  args:
+    lr: 0.0005
+
+scheduler:
+  module: torch.optim.lr_scheduler.CyclicLR
+  enabled: true
+  args:
+    base_lr: 0.00025
+    max_lr: 0.0005
+    mode: triangular2
+    step_size_up: 30
+    step_size_down: 50
+
+loss:
+  module: src.losses.mse_ssim.MSESSIM
+  args:
+    alpha: 0
+
+rd_loss:
+  enabled: true
+  lambda: 1000
+
+epochs: 300
+
+dataset_split_ratio: 0.7
+
+output:
+  model:
+    name: SWIN-T-IC
+    version: 0.3.5
+
+project_name: INZ
+task_name: v0.3.5 SWIN Transformer Autoencoder based Image Compression
+comment: |
+  Upgraded version of SWIN Transformer Autoencoder model based on latest best performing v0.2.34 with:
+    - introduced compressai library
+    - introduced R-D loss
+    - entropy model added to model architecture
+  
+  
