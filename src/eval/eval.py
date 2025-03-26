@@ -3,14 +3,12 @@ import os
 import typing
 
 import torch
-from torchvision.models import Swin_V2_T_Weights
-from torchvision.transforms._presets import ImageClassification
 
 from src.data.coco_dataset import CocoDataset
-from src.data.transforms import YCbCrToRGB, RGBToYCbCr, YCbCrCompression
+from src.data.transforms import YCbCrToRGB, YCbCrCompression
 from src.eval.interm_repr import IntermediateRepresentation
 from src.models.swin_autoencoder import SwinTransformerAutoencoder
-from src.utils.const import EXPERIMENTS_CONFIG_PATH, ARTIFACTS_PATH
+from src.utils.const import ARTIFACTS_PATH
 from src.utils.initializers import model_from_config
 from src.utils.postprocess import denormalize
 from src.viz.plotter import plot_reconstructions
