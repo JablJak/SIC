@@ -15,6 +15,7 @@ class YCbCrCompression(nn.Module):
             std: Tuple[float, ...] = (0.2266, 0.1483, 0.2506),
             interpolation: InterpolationMode = InterpolationMode.BICUBIC,
             antialias: Optional[bool] = True,
+            noresize = False
     ) -> None:
         super().__init__()
         self.crop_size = [crop_size]
@@ -24,10 +25,12 @@ class YCbCrCompression(nn.Module):
         self.interpolation = interpolation
         self.antialias = antialias
         self.ycbcr = RGBToYCbCr()
+        self.noresize = noresize
 
     def forward(self, img: Tensor) -> Tensor:
-        img = functional.resize(img, self.resize_size, interpolation=self.interpolation, antialias=self.antialias)
-        img = functional.center_crop(img, self.crop_size)
+        if not self.noresize:
+            img = functional.resize(img, self.resize_size, interpolation=self.interpolation, antialias=self.antialias)
+            img = functional.center_crop(img, self.crop_size)
         if not isinstance(img, Tensor):
             img = functional.pil_to_tensor(img)
         img = functional.convert_image_dtype(img, torch.float)
