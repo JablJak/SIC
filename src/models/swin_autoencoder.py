@@ -21,24 +21,41 @@ class SwinTransformerDecoder(nn.Module):
     def __init__(
             self,
             dim,
-            patch_size,
+            patch_sizes,
             num_heads,
-            window_size,
-            mlp_ratio,
+            windows_sizes,
+            mlp_ratios,
             depths,
         ):
         super().__init__()
-        self.stage1 = SwinTransformerDecoderStage(dim * 8, num_heads[0], window_size[0], mlp_ratio[0], depths[0])
-        self.stage2 = SwinTransformerDecoderStage(dim * 4, num_heads[1], window_size[1], mlp_ratio[1], depths[1])
-        self.stage3 = SwinTransformerDecoderStage(dim * 2, num_heads[2], window_size[2], mlp_ratio[2], depths[2])
-        self.stage4 = SwinTransformerDecoderStage(dim, num_heads[3], window_size[3], mlp_ratio[3], depths[3], split=False)
-        self.reconstruction = PatchReconstruction(patch_size)
+        self.num_stages = n = len(num_heads)
+
+        stages = [
+                SwinTransformerDecoderStage(
+                    dim=dim * 2 ** (n - i - 1),
+                    num_heads=num_heads[i],
+                    window_size=windows_sizes[i],
+                    mlp_ratio=mlp_ratios[i],
+                    depth=depths[i]
+                )
+               for i in range(n - 1)
+        ]
+        stages.append(
+            SwinTransformerDecoderStage(
+                dim=dim,
+                num_heads=num_heads[n-1],
+                window_size=windows_sizes[n-1],
+                mlp_ratio=mlp_ratios[n-1],
+                depth=depths[n-1],
+                split=False
+            )
+        )
+        self.stages = nn.ModuleList(stages)
+        self.reconstruction = PatchReconstruction(patch_sizes)
 
     def forward(self, x, img_size: tuple[int, int]):
-        x = self.stage1(x)
-        x = self.stage2(x)
-        x = self.stage3(x)
-        x = self.stage4(x)
+        for stage in self.stages:
+            x = stage(x)
         H, W = img_size
         x = self.reconstruction(x)
         return x
@@ -137,22 +154,32 @@ class SwinTransformerAutoencoder(nn.Module):
     ):
         super().__init__()
         self.encoder_weights = encoder_weights
+        self.decoder_num_heads = decoder_num_heads
+        self.decoder_window_size = decoder_window_size
+        self.decoder_mlp_ratio = decoder_mlp_ratio
+        self.decoder_depths = decoder_depths
         self.encoder = self._create_encoder(encoder_type, encoder_weights)
         self.entropy_model = EntropyBottleneck(channels=768) # TODO: this can't be hardcoded
         # TODO: Maybe introduce intermediate linear layer to enhance compression
-
         self.decoder = SwinTransformerDecoder(
             dim=decoder_dim,
-            patch_size=decoder_patch_size,
+            patch_sizes=decoder_patch_size,
             num_heads=decoder_num_heads,
-            window_size=decoder_window_size,
-            mlp_ratio=decoder_mlp_ratio,
+            windows_sizes=decoder_window_size,
+            mlp_ratios=decoder_mlp_ratio,
             depths=decoder_depths,
         )
 
     def _create_encoder(self, encoder_name, weights):
         if encoder_name not in self.ENCODER_MAP:
             raise ValueError(f"Invalid encoder type: {encoder_name}")
+        if len({len(field) for field in [
+            self.decoder_num_heads,
+            self.decoder_window_size,
+            self.decoder_mlp_ratio,
+            self.decoder_depths
+        ]}) != 1:
+            raise ValueError(f"All decoder properties must equal number of decoder stages")
         return self.ENCODER_MAP[encoder_name](weights=weights).features
 
     def forward(self, x):

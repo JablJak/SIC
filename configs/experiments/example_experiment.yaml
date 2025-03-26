@@ -43,21 +43,17 @@ rd_loss:
   enabled: true
   lambda: 0.005
 
-epochs: 10
+epochs: 1
 
 dataset_split_ratio: 0.7
 
 output:
   model:
     name: SWIN-T-IC
-    version: 0.3.0-test
+    version: 0.4.0-test
 
 project_name: INZ
-task_name: TEST SWIN Transformer Autoencoder based Image Compression v0.3.0
+task_name: TEST SWIN Transformer Autoencoder based Image Compression v0.4.0
 comment: |
-  Upgraded version of SWIN Transformer Autoencoder model based on latest best performing v0.2.34 with:
-    - introduced compressai library
-    - introduced R-D loss
-    - entropy model added to model architecture
   
   

@@ -26,7 +26,7 @@ if __name__ == '__main__':
     model: SwinTransformerAutoencoder = typing.cast(SwinTransformerAutoencoder, model_from_config(
         {
             "module": "src.models.swin_autoencoder.SwinTransformerAutoencoder",
-            "weights": "SWIN-T-IC_0.3.4",
+            "weights": "SWIN-T-IC_0.3.13",
             "args": {
                 "pretrained_encoder": False
             }

@@ -167,7 +167,23 @@ def model_from_config(config: dict[str, Any]) -> Module:
         return model_type(**args)
     elif weights is not None:
         model = model_type(**args)
-        model.load_state_dict(state_dict)
+        try:
+            model.load_state_dict(state_dict)
+        except RuntimeError:
+            new_state_dict = {}
+            for k, v in state_dict.items():
+                if "decoder.stage1" in k:
+                    new_k = k.replace("stage1", "stages.0")
+                elif "decoder.stage2" in k:
+                    new_k = k.replace("stage2", "stages.1")
+                elif "decoder.stage3" in k:
+                    new_k = k.replace("stage3", "stages.2")
+                elif "decoder.stage4" in k:
+                    new_k = k.replace("stage4", "stages.3")
+                else:
+                    new_k = k
+                new_state_dict[new_k] = v
+            model.load_state_dict(new_state_dict)
         return model
     else:
         return model_type(encoder_weights=None, **args)
