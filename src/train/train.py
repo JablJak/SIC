@@ -1,5 +1,5 @@
 import argparse
-import asyncio
+import datetime
 import os
 import random
 
@@ -7,8 +7,10 @@ import numpy as np
 import torch
 from torch.optim import AdamW
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
+from contextlib import redirect_stdout
 
-from src.data.transforms import YCbCrCompression, YCbCrToRGB
+from src.data.transforms import YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD, \
+    RGB_IMAGENET_MEAN, RGB_IMAGENET_STD, ycbcr_to_rgb, YCbCrDecompression
 from src.losses.rdloss import RDLoss
 from src.train.experiment import Experiment
 from src.utils import clearml_helpers
@@ -20,8 +22,8 @@ from src.utils.postprocess import denormalize
 from src.viz.plotter import plot_reconstructions
 
 
-async def _train(model, train_dataloader, val_dataloader,
-           criterion, optimizer, aux_optimizer, num_epochs, device, scheduler, logger=None):
+def _train(model, train_dataloader, val_dataloader,
+           criterion, optimizer, aux_optimizer, num_epochs, device, scheduler, log_file, logger=None, ycbcr=True):
     # Train
 
     model.train()
@@ -37,6 +39,14 @@ async def _train(model, train_dataloader, val_dataloader,
             optimizer.zero_grad()
             output = model(x)
             x_hat, y_likelihoods = output['x_hat'], output['likelihoods']['y']
+            if ycbcr:
+                x = denormalize(x, YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD)
+                x_hat = denormalize(x_hat, YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD)
+                with redirect_stdout(log_file):
+                    x, x_hat = ycbcr_to_rgb(x), ycbcr_to_rgb(x_hat, recon=True)
+            else:
+                x = denormalize(x, RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
+                x_hat = denormalize(x_hat, RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
 
             if isinstance(criterion, RDLoss):
                 loss, bpp = criterion(x_hat, x, y_likelihoods)
@@ -85,9 +95,6 @@ async def _train(model, train_dataloader, val_dataloader,
             except Exception as e:
                 print(f"[Warning] Logging to ClearML failed: {e}")
 
-        loop = asyncio.get_running_loop()
-        loop.run_in_executor(None, log_train)
-
         if epoch % 10 == 0:
             torch.save(model.state_dict(), f"{MODEL_CHECKPOINT_PATH}/{MODEL_CHECKPOINT_FILE}")
 
@@ -103,6 +110,15 @@ async def _train(model, train_dataloader, val_dataloader,
                 x_val = x_val.to(device)
                 output = model(x_val)
                 x_hat_val, y_likelihoods_val = output['x_hat'], output['likelihoods']['y']
+                if ycbcr:
+                    x_val = denormalize(x_val, YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD)
+                    x_hat_val = denormalize(x_hat_val, YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD)
+                    with redirect_stdout(log_file):
+                        x_val, x_hat_val = ycbcr_to_rgb(x_val), ycbcr_to_rgb(x_hat_val, recon=True)
+                else:
+                    x_val = denormalize(x_val, RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
+                    x_hat_val = denormalize(x_hat_val, RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
+                
                 if isinstance(criterion, RDLoss):
                     loss_val, bpp_val = criterion(x_hat_val, x_val, y_likelihoods_val)
                     eval_bpp += bpp_val
@@ -137,9 +153,6 @@ async def _train(model, train_dataloader, val_dataloader,
                         logger.report_scalar(title="bpp", series="eval", value=avg_eval_bpp, iteration=epoch)
             except Exception as e:
                 print(f"[Warning] Logging to ClearML failed: {e}")
-
-        loop = asyncio.get_running_loop()
-        loop.run_in_executor(None, log_val)
 
         model.train()
         if scheduler is not None:
@@ -215,20 +228,23 @@ if __name__ == '__main__':
     optimizer = experiment.optimizer
     scheduler = experiment.scheduler
 
-    trained_model = asyncio.run(_train(
-        model=model,
-        train_dataloader=train_dataloader,
-        val_dataloader=val_dataloader,
-        criterion=loss,
-        optimizer=optimizer,
-        aux_optimizer=AdamW(model.latent_codec.parameters(), lr=0.0001),
-        num_epochs=experiment.epochs,
-        device=device,
-        scheduler=scheduler,
-        logger=logger
-    ))
+    with open(f"logs/{datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")}.log", "a") as log_file:
+        trained_model = _train(
+            model=model,
+            train_dataloader=train_dataloader,
+            val_dataloader=val_dataloader,
+            criterion=loss,
+            optimizer=optimizer,
+            aux_optimizer=AdamW(model.latent_codec.parameters(), lr=0.0001),
+            num_epochs=experiment.epochs,
+            device=device,
+            scheduler=scheduler,
+            logger=logger,
+            log_file=log_file
+        )
 
     # TODO: TRAIN TIME
+    model.update()
 
     trained_model.eval()
 
@@ -250,12 +266,10 @@ if __name__ == '__main__':
         model_output = trained_model(x_batch)
         x_recon, y_likelihoods = model_output['x_hat'], model_output['likelihoods']['y']
 
-    input_transform = YCbCrCompression().to(x_batch.device)
-    output_transform = YCbCrToRGB("0_1").to(x_batch.device)
-    # TODO: This can't be here I guess
+    output_transform = YCbCrDecompression().to(x_batch.device)
 
-    x_batch = output_transform(denormalize(x_batch, input_transform.mean, input_transform.std)).cpu()
-    x_recon = output_transform(denormalize(x_recon, input_transform.mean, input_transform.std)).cpu()
+    x_batch = output_transform(x_batch)
+    x_recon = output_transform(x_recon)
 
     plot_reconstructions(x_batch, x_recon, reconstructions_path, show=False)
 

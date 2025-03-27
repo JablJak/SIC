@@ -4,7 +4,6 @@ from torchvision.models import Swin_V2_T_Weights
 from torchvision.transforms import transforms
 
 from src.data.base_dataset import BaseDataset
-from src.data.transforms import RGBToYCbCr
 from src.utils.const import PROJECT_ROOT
 
 
@@ -13,7 +12,6 @@ class ImageNetDataset(BaseDataset):
         [
             transforms.PILToTensor(),
             transforms.ConvertImageDtype(torch.float),
-            RGBToYCbCr(),
             Swin_V2_T_Weights.DEFAULT.transforms()
         ]
     ),

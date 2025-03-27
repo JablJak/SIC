@@ -1,16 +1,14 @@
-import argparse
 import os
 import typing
 
 import torch
 
 from src.data.coco_dataset import CocoDataset
-from src.data.transforms import YCbCrToRGB, YCbCrCompression
+from src.data.transforms import YCbCrCompression, YCbCrDecompression
 from src.eval.interm_repr import IntermediateRepresentation
 from src.models.swin_autoencoder import SwinTransformerAutoencoder
 from src.utils.const import ARTIFACTS_PATH
 from src.utils.initializers import model_from_config
-from src.utils.postprocess import denormalize
 from src.viz.plotter import plot_reconstructions
 
 if __name__ == '__main__':
@@ -42,12 +40,10 @@ if __name__ == '__main__':
         x_batch = x_batch.to(device)
         x_recon, y_likelihoods = model(x_batch)
 
-    input_transform = YCbCrCompression().to(x_batch.device)
-    output_transform = YCbCrToRGB("0_1").to(x_batch.device)
-    # TODO: This can't be here I guess
+    output_transform = YCbCrDecompression().to(x_batch.device)
 
-    x_batch = output_transform(denormalize(x_batch, input_transform.mean, input_transform.std)).cpu()
-    x_recon = output_transform(denormalize(x_recon, input_transform.mean, input_transform.std)).cpu()
+    x_batch = output_transform(x_batch)
+    x_recon = output_transform(x_recon)
 
     reconstructions_path = os.path.join(ARTIFACTS_PATH, f"SWIN-T-IC_0.3.4_eval.png")
     plot_reconstructions(x_batch, x_recon, reconstructions_path, show=True)

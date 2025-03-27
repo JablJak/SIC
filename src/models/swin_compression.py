@@ -4,7 +4,6 @@ from torchvision.models import swin_v2_t, swin_v2_s, swin_v2_b, Swin_V2_T_Weight
 
 from src.models.swin_autoencoder import SwinTransformerDecoder
 
-
 class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
     ENCODER_MAP = {
         "swin_v2_t": swin_v2_t,
@@ -66,4 +65,19 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         return {
             "x_hat": x_hat,
             "likelihoods": y_out["likelihoods"],
+        }
+
+    def compress(self, x):
+        y = self.g_a(x)
+        y = y.permute(0, 3, 1, 2)
+        outputs = self.latent_codec.compress(y)
+        return outputs
+
+    def decompress(self, *args, **kwargs):
+        y_out = self.latent_codec.decompress(*args, **kwargs)
+        y_hat = y_out["y_hat"]
+        y_hat = y_hat.permute(0, 2, 3, 1)
+        x_hat = self.g_s(y_hat)
+        return {
+            "x_hat": x_hat,
         }

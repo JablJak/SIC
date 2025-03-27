@@ -10,7 +10,7 @@ dataset:
 
 model:
   module: src.models.swin_compression.SwinTransformerCompressionAutoencoder
-  weights: SWIN-T-IC_0.3.13
+  weights: SWIN-T-IC_0.4.1-test
   args:
     pretrained_encoder: false
 
@@ -23,13 +23,17 @@ dataloader:
 optimizer:
   module: torch.optim.AdamW
   args:
-    lr: 0.005
+    lr: 0.00025
 
 scheduler:
-  module: torch.optim.lr_scheduler.ExponentialLR
+  module: torch.optim.lr_scheduler.CyclicLR
   enabled: true
   args:
-    gamma: 0.7
+    base_lr: 0.00025
+    max_lr: 0.001
+    mode: triangular2
+    step_size_up: 10
+    step_size_down: 40
 
 loss:
   module: src.losses.mse_ssim.MSESSIM
@@ -38,19 +42,19 @@ loss:
 
 rd_loss:
   enabled: true
-  lambda: 0.005
+  lambda: 50000
 
-epochs: 100
+epochs: 5
 
 dataset_split_ratio: 0.7
 
 output:
   model:
     name: SWIN-T-IC
-    version: 0.4.0-test
+    version: 0.4.1-test
 
 project_name: INZ
-task_name: TEST SWIN Transformer Autoencoder based Image Compression v0.4.0
+task_name: TEST v0.4.1 SWIN Transformer Autoencoder based Image Compression
 comment: |
   
   

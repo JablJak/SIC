@@ -5,26 +5,39 @@ import torch.nn as nn
 from torch import Tensor
 from torchvision.transforms import InterpolationMode, functional
 
+RGB_IMAGENET_MEAN = (0.485, 0.456, 0.406)
+RGB_IMAGENET_STD = (0.229, 0.224, 0.225)
+YCBCR_IMAGENET_MEAN = (0.459, -0.030, 0.019)
+YCBCR_IMAGENET_STD = (0.150, 0.140, 0.149)
+RGB_TO_YCBCR_MAT = [
+    [0.299, 0.587, 0.114],
+    [-0.168736, -0.331264, 0.5],
+    [0.5, -0.418688, -0.081312]
+]
+YCBCR_TO_RGB_MAT = [
+    [1.0, 0.0, 1.402],
+    [1.0, -0.344136, -0.714136],
+    [1.0, 1.772, 0.0]
+]
 
-class YCbCrCompression(nn.Module):
+class RGBCompression(nn.Module):
     def __init__(
             self,
+            mean: Tuple[float, ...] = RGB_IMAGENET_MEAN,
+            std: Tuple[float, ...] = RGB_IMAGENET_STD,
+            interpolation: InterpolationMode = InterpolationMode.BICUBIC,
             crop_size: int = 256,
             resize_size: int = 260,
-            mean: Tuple[float, ...] = (0.4560, 0.5926, 1.0980),
-            std: Tuple[float, ...] = (0.2266, 0.1483, 0.2506),
-            interpolation: InterpolationMode = InterpolationMode.BICUBIC,
             antialias: Optional[bool] = True,
             noresize = False
     ) -> None:
         super().__init__()
+        self.mean = mean
+        self.std = std
+        self.interpolation = interpolation
         self.crop_size = [crop_size]
         self.resize_size = [resize_size]
-        self.mean = list(mean)
-        self.std = list(std)
-        self.interpolation = interpolation
         self.antialias = antialias
-        self.ycbcr = RGBToYCbCr()
         self.noresize = noresize
 
     def forward(self, img: Tensor) -> Tensor:
@@ -34,164 +47,150 @@ class YCbCrCompression(nn.Module):
         if not isinstance(img, Tensor):
             img = functional.pil_to_tensor(img)
         img = functional.convert_image_dtype(img, torch.float)
-        img = self.ycbcr(img)
-        img = functional.normalize(img, mean=self.mean, std=self.std)
+        img = functional.normalize(img, mean=list(self.mean), std=list(self.std))
         return img
 
-class RGBToYCbCr(nn.Module):
-    """
-    Warstwa PyTorch do konwersji tensora obrazu z przestrzeni RGB do YCbCr.
-    Obsługuje tensory w kształcie (3, height, width) lub (batch_size, 3, height, width).
 
-    Parametry:
-        in_range (str): Zakres wartości wejściowych - '0_1' dla [0, 1] lub '0_255' dla [0, 255]
-        out_range (str): Zakres wartości wyjściowych - '0_1' dla [0, 1] lub '0_255' dla [0, 255]
-    """
+class RGBDecompression(nn.Module):
+    def __init__(
+            self,
+            mean: Tuple[float, ...] = RGB_IMAGENET_MEAN,
+            std: Tuple[float, ...] = RGB_IMAGENET_STD,
+    ) -> None:
+        super().__init__()
+        self.mean = mean
+        self.std = std
 
-    def __init__(self, in_range='0_1', out_range='0_1'):
-        super(RGBToYCbCr, self).__init__()
+    def forward(self, img: Tensor) -> Tensor:
+        img = denormalize(img, self.mean, self.std)
+        img = functional.to_pil_image(img)
+        return img
 
-        self.in_range = in_range
-        self.out_range = out_range
 
-        # Definiujemy współczynniki transformacji zgodnie ze standardem ITU-R BT.601
-        self.register_buffer('matrix', torch.tensor([
-            [0.299, 0.587, 0.114],  # Y
-            [-0.168736, -0.331264, 0.5],  # Cb
-            [0.5, -0.418688, -0.081312]  # Cr
-        ]).float())
+class YCbCrCompression(nn.Module):
+    def __init__(
+            self,
+            mean: Tuple[float, ...] = YCBCR_IMAGENET_MEAN,
+            std: Tuple[float, ...] = YCBCR_IMAGENET_STD,
+            interpolation: InterpolationMode = InterpolationMode.BICUBIC,
+            crop_size: int = 256,
+            resize_size: int = 260,
+            antialias: Optional[bool] = True,
+            noresize=False
+    ) -> None:
+        super().__init__()
+        self.mean = mean
+        self.std = std
+        self.interpolation = interpolation
+        self.crop_size = [crop_size]
+        self.resize_size = [resize_size]
+        self.antialias = antialias
+        self.noresize = noresize
 
-        # Offset dla Cb i Cr
-        self.register_buffer('offset', torch.tensor([0, 128, 128]).view(1, 3, 1, 1).float())
 
-    def forward(self, x):
-        """
-        Forward pass.
+    def forward(self, img: Tensor) -> Tensor:
+        if not self.noresize:
+            img = functional.resize(img, self.resize_size, interpolation=self.interpolation, antialias=self.antialias)
+            img = functional.center_crop(img, self.crop_size)
+        if not isinstance(img, Tensor):
+            img = functional.pil_to_tensor(img)
+        img = functional.convert_image_dtype(img, torch.float)
+        img = rgb_to_ycbcr(img)
+        img = functional.normalize(img, mean=list(self.mean), std=list(self.std))
+        return img
 
-        Args:
-            x: Tensor RGB w kształcie (3, height, width) lub (batch_size, 3, height, width)
 
-        Returns:
-            Tensor YCbCr w tym samym kształcie
-        """
-        # Sprawdź czy wejście to pojedynczy obraz czy batch
-        is_single_image = False
-        if x.dim() == 3:  # Pojedynczy obraz (3, H, W)
-            if x.size(0) != 3:
-                raise ValueError("Pojedynczy obraz musi mieć kształt (3, height, width)")
-            is_single_image = True
-            x = x.unsqueeze(0)  # Dodaj wymiar batch -> (1, 3, H, W)
-        elif x.dim() != 4 or x.size(1) != 3:
-            raise ValueError("Wejściowy tensor musi mieć kształt (3, height, width) lub (batch_size, 3, height, width)")
+class YCbCrDecompression(nn.Module):
+    def __init__(
+            self,
+            mean: Tuple[float, ...] = YCBCR_IMAGENET_MEAN,
+            std: Tuple[float, ...] = YCBCR_IMAGENET_STD,
+            interpolation: InterpolationMode = InterpolationMode.BICUBIC,
+    ) -> None:
+        super().__init__()
+        self.mean = mean
+        self.std = std
+        self.interpolation = interpolation
 
-        # Normalizacja wejścia do zakresu [0, 1]
-        if self.in_range == '0_255':
-            x = x / 255.0
+    def forward(self, img: Tensor) -> list:
+        img = denormalize(img, self.mean, self.std)
+        img = ycbcr_to_rgb(img)
+        single_img = img.dim() == 3
 
-        # Przekształcenie kształtu dla mnożenia macierzowego
-        b, c, h, w = x.shape
-        x_reshaped = x.view(b, 3, -1)  # (batch, 3, h*w)
+        pil_images = []
+        for i in range(img.shape[0]):
+            single_img_tensor = img[i].cpu()
+            pil_img = functional.to_pil_image(single_img_tensor)
+            pil_images.append(pil_img)
 
-        # Transformacja macierzowa
-        ycbcr = torch.matmul(self.matrix, x_reshaped)  # (batch, 3, h*w)
-        ycbcr = ycbcr.view(b, 3, h, w)
-
-        # # Dodanie offsetu 128 dla kanałów Cb i Cr
-        if self.out_range == '0_1':
-            offset = self.offset / 255.0
-            ycbcr = ycbcr + offset
+        if single_img:
+            return pil_images[0]
         else:
-            ycbcr = ycbcr + self.offset
-
-        # Skalowanie wyjścia jeśli potrzebne
-        if self.out_range == '0_255' and self.in_range == '0_1':
-            ycbcr = ycbcr * 255.0
-
-        # Jeśli wejście było pojedynczym obrazem, usuń wymiar batch
-        if is_single_image:
-            ycbcr = ycbcr.squeeze(0)
-
-        return ycbcr
+            return pil_images
 
 
-class YCbCrToRGB(nn.Module):
-    """
-    Warstwa PyTorch do konwersji tensora obrazu z przestrzeni YCbCr do RGB.
-    Obsługuje tensory w kształcie (3, height, width) lub (batch_size, 3, height, width).
+def denormalize(img: Tensor, mean: Tuple[float, ...], std: Tuple[float, ...]) -> Tensor:
+    if img.ndim == 3:
+        img = img.unsqueeze(0)
 
-    Parametry:
-        in_range (str): Zakres wartości wejściowych - '0_1' dla [0, 1] lub '0_255' dla [0, 255]
-        out_range (str): Zakres wartości wyjściowych - '0_1' dla [0, 1] lub '0_255' dla [0, 255]
-    """
+    mean = torch.tensor(mean, device=img.device).view(1, -1, 1, 1)
+    std = torch.tensor(std, device=img.device).view(1, -1, 1, 1)
 
-    def __init__(self, in_range='0_1', out_range='0_1'):
-        super(YCbCrToRGB, self).__init__()
+    return img * std + mean
 
-        self.in_range = in_range
-        self.out_range = out_range
+def rgb_to_ycbcr(img: Tensor) -> Tensor:
+    single_img = False
+    if img.dim() == 3:
+        single_img = True
+        img = img.unsqueeze(0)
+    transform_mat = torch.tensor(RGB_TO_YCBCR_MAT).float().to(img.device)
 
-        # Definiujemy macierz odwrotną do transformacji zgodnie ze standardem ITU-R BT.601
-        self.register_buffer('matrix', torch.tensor([
-            [1.0, 0.0, 1.402],  # R
-            [1.0, -0.344136, -0.714136],  # G
-            [1.0, 1.772, 0.0]  # B
-        ]).float())
+    b, c, h, w = img.shape
+    x_reshaped = img.view(b, 3, -1)
 
-        # Offset dla Cb i Cr
-        self.register_buffer('offset', torch.tensor([0, 128, 128]).view(1, 3, 1, 1).float())
+    ycbcr = torch.matmul(transform_mat, x_reshaped)
+    ycbcr = ycbcr.view(b, 3, h, w)
 
-    def forward(self, x: Tensor) -> Tensor:
-        """
-        Forward pass.
+    y_channel = ycbcr[:, 0, :, :]
 
-        Args:
-            x: Tensor YCbCr w kształcie (3, height, width) lub (batch_size, 3, height, width)
+    if torch.any(y_channel > 1):
+        print(f"[WARNING] Y channel max > 1 after transformation: {y_channel.max().item():.4f}")
 
-        Returns:
-            Tensor RGB w tym samym kształcie
-        """
-        # Sprawdź czy wejście to pojedynczy obraz czy batch
-        is_single_image = False
-        if x.dim() == 3:  # Pojedynczy obraz (3, H, W)
-            if x.size(0) != 3:
-                raise ValueError("Pojedynczy obraz musi mieć kształt (3, height, width)")
-            is_single_image = True
-            x = x.unsqueeze(0)  # Dodaj wymiar batch -> (1, 3, H, W)
-        elif x.dim() != 4 or x.size(1) != 3:
-            raise ValueError("Wejściowy tensor musi mieć kształt (3, height, width) lub (batch_size, 3, height, width)")
+    if torch.any(y_channel < 0):
+        print(f"[WARNING] Y channel min < 0 after transformation: {y_channel.min().item():.4f}")
 
-        # Normalizacja wejścia do zakresu [0, 1] jeśli potrzebne
-        ycbcr = x.clone()
-        if self.in_range == '0_255':
-            ycbcr = ycbcr / 255.0
+    ycbcr[:, 0, :, :] = torch.clamp(ycbcr[:, 0, :, :], 0.0, 1.0)
 
-        # Odejmowanie offsetu od kanałów Cb i Cr
-        if self.in_range == '0_1':
-            offset = self.offset / 255.0
-            ycbcr = ycbcr - offset
-        else:
-            ycbcr = ycbcr - self.offset
+    if single_img:
+        ycbcr = ycbcr.squeeze()
+    return ycbcr
 
-        # Przekształcenie kształtu dla mnożenia macierzowego
-        b, c, h, w = ycbcr.shape
-        ycbcr_reshaped = ycbcr.view(b, 3, -1)  # (batch, 3, h*w)
 
-        # Transformacja macierzowa
-        rgb = torch.matmul(self.matrix, ycbcr_reshaped)  # (batch, 3, h*w)
-        rgb = rgb.view(b, 3, h, w)
+def ycbcr_to_rgb(img: Tensor, recon = False) -> Tensor:
+    single_img = False
+    if img.dim() == 3:
+        single_img = True
+        img = img.unsqueeze(0)
+    transform_mat = torch.tensor(YCBCR_TO_RGB_MAT).float().to(img.device)
 
-        # Skalowanie wyjścia jeśli potrzebne
-        if self.out_range == '0_255' and self.in_range == '0_1':
-            rgb = rgb * 255.0
+    b, c, h, w = img.shape
+    x_reshaped = img.view(b, 3, -1)
 
-        # Upewnij się, że wartości są w odpowiednim zakresie
-        if self.out_range == '0_1':
-            rgb = torch.clamp(rgb, 0.0, 1.0)
-        else:
-            rgb = torch.clamp(rgb, 0.0, 255.0)
+    rgb = torch.matmul(transform_mat, x_reshaped)
+    rgb = rgb.view(b, 3, h, w)
 
-        # Jeśli wejście było pojedynczym obrazem, usuń wymiar batch
-        if is_single_image:
-            rgb = rgb.squeeze(0)
+    # TODO: It's known that it constantly happens so I turn it off temporarily
 
-        return rgb
+
+    if rgb.max() > 1.00001:
+        print(f"[WARNING] RGB max > 1 after transformation: {rgb.max().item():.4f}, recon: {recon}")
+
+    if rgb.min() < -0.00001:
+        print(f"[WARNING] RGB min < 0 after transformation: {rgb.min().item():.4f}, recon: {recon}")
+
+    rgb = torch.clamp(rgb, 0.0, 1.0)
+
+    if single_img:
+        rgb = rgb.squeeze()
+
+    return rgb
