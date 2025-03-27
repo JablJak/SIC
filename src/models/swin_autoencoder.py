@@ -53,10 +53,9 @@ class SwinTransformerDecoder(nn.Module):
         self.stages = nn.ModuleList(stages)
         self.reconstruction = PatchReconstruction(patch_sizes)
 
-    def forward(self, x, img_size: tuple[int, int]):
+    def forward(self, x):
         for stage in self.stages:
             x = stage(x)
-        H, W = img_size
         x = self.reconstruction(x)
         return x
 

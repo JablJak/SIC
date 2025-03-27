@@ -9,9 +9,10 @@ dataset:
     subset_samples: 100
 
 model:
-  module: src.models.swin_autoencoder.SwinTransformerAutoencoder
+  module: src.models.swin_compression.SwinTransformerCompressionAutoencoder
+  weights: SWIN-T-IC_0.3.13
   args:
-    pretrained_encoder: true
+    pretrained_encoder: false
 
 dataloader:
   args:
@@ -22,17 +23,13 @@ dataloader:
 optimizer:
   module: torch.optim.AdamW
   args:
-    lr: 0.0005
+    lr: 0.005
 
 scheduler:
-  module: torch.optim.lr_scheduler.CyclicLR
+  module: torch.optim.lr_scheduler.ExponentialLR
   enabled: true
   args:
-    base_lr: 0.00025
-    max_lr: 0.0005
-    mode: triangular2
-    step_size_up: 30
-    step_size_down: 50
+    gamma: 0.7
 
 loss:
   module: src.losses.mse_ssim.MSESSIM
@@ -43,7 +40,7 @@ rd_loss:
   enabled: true
   lambda: 0.005
 
-epochs: 1
+epochs: 100
 
 dataset_split_ratio: 0.7
 

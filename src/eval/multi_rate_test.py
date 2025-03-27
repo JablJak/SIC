@@ -61,7 +61,6 @@ if __name__ == '__main__':
             input_transform = transform
             output_transform = transforms.Compose([
                 YCbCrToRGB("0_1").to(device),
-                # transforms.ConvertImageDtype(torch.int).to(x_batch.device),
                 transforms.ToPILImage()
             ])
             # TODO: This can't be here I guess

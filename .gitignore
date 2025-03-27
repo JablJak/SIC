@@ -111,7 +111,7 @@ artifacts/
 citations/
 checkpoint/
 logs/
-models/
+/models/
 
 # editor, os cache directory
 .vscode/

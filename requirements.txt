@@ -7,3 +7,6 @@ torch==2.7.0.dev20250221+cu126
 
 torchmetrics~=1.6.1
 pyyaml~=6.0.2
+pillow==11.0.0
+numpy==2.2.3
+compressai==1.2.6

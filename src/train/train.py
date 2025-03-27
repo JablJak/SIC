@@ -5,16 +5,14 @@ import random
 
 import numpy as np
 import torch
-from torch.utils.data import random_split
+from torch.optim import AdamW
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
-from torchvision.models import Swin_V2_T_Weights
-from torchvision.transforms._presets import ImageClassification
 
 from src.data.transforms import YCbCrCompression, YCbCrToRGB
 from src.losses.rdloss import RDLoss
 from src.train.experiment import Experiment
 from src.utils import clearml_helpers
-from src.utils.clearml_helpers import save_model, start_experiment
+from src.utils.clearml_helpers import  start_experiment
 from src.utils.const import MODEL_CHECKPOINT_PATH, MODEL_CHECKPOINT_FILE, EXPERIMENTS_CONFIG_PATH, \
     MODEL_OUTPUT_PATH, ARTIFACTS_PATH
 from src.utils.initializers import read_config, dataloader_from_config
@@ -23,7 +21,7 @@ from src.viz.plotter import plot_reconstructions
 
 
 async def _train(model, train_dataloader, val_dataloader,
-           criterion, optimizer, num_epochs, device, scheduler, logger=None):
+           criterion, optimizer, aux_optimizer, num_epochs, device, scheduler, logger=None):
     # Train
 
     model.train()
@@ -37,28 +35,34 @@ async def _train(model, train_dataloader, val_dataloader,
         for x, _ in train_dataloader:
             x = x.to(device)
             optimizer.zero_grad()
-            output, y_likelihoods = model(x)
+            output = model(x)
+            x_hat, y_likelihoods = output['x_hat'], output['likelihoods']['y']
 
             if isinstance(criterion, RDLoss):
-                loss, bpp = criterion(output, x, y_likelihoods)
+                loss, bpp = criterion(x_hat, x, y_likelihoods)
                 epoch_bpp += bpp
             else:
-                loss = criterion(output, x)
+                loss = criterion(x_hat, x)
 
             psnr_metric = PeakSignalNoiseRatio()
             psnr_metric.to(device)
-            psnr_metric.update(output, x)
+            psnr_metric.update(x_hat, x)
             psnr = psnr_metric.compute()
             epoch_psnr += psnr
 
             ssim_metric = StructuralSimilarityIndexMeasure()
             ssim_metric.to(device)
-            ssim_metric.update(output, x)
+            ssim_metric.update(x_hat, x)
             ssim = ssim_metric.compute()
             epoch_ssim += ssim
 
             loss.backward()
             optimizer.step()
+
+            aux_loss = model.aux_loss()
+            aux_loss.backward()
+            aux_optimizer.step()
+
             epoch_loss += loss.item()
 
         avg_loss = epoch_loss / len(train_dataloader)
@@ -97,20 +101,21 @@ async def _train(model, train_dataloader, val_dataloader,
         with torch.no_grad():
             for x_val, _ in val_dataloader:
                 x_val = x_val.to(device)
-                output_val, y_likelihoods_val = model(x_val)
+                output = model(x_val)
+                x_hat_val, y_likelihoods_val = output['x_hat'], output['likelihoods']['y']
                 if isinstance(criterion, RDLoss):
-                    loss_val, bpp_val = criterion(output_val, x_val, y_likelihoods_val)
+                    loss_val, bpp_val = criterion(x_hat_val, x_val, y_likelihoods_val)
                     eval_bpp += bpp_val
                 else:
-                    loss_val = criterion(output_val, x_val)
+                    loss_val = criterion(x_hat_val, x_val)
                 eval_loss += loss_val.item()
 
                 psnr_metric_val = PeakSignalNoiseRatio().to(device)
-                psnr_metric_val.update(output_val, x_val)
+                psnr_metric_val.update(x_hat_val, x_val)
                 eval_psnr += psnr_metric_val.compute()
 
                 ssim_metric_val = StructuralSimilarityIndexMeasure().to(device)
-                ssim_metric_val.update(output_val, x_val)
+                ssim_metric_val.update(x_hat_val, x_val)
                 eval_ssim += ssim_metric_val.compute()
 
         avg_eval_loss = eval_loss / len(val_dataloader)
@@ -216,6 +221,7 @@ if __name__ == '__main__':
         val_dataloader=val_dataloader,
         criterion=loss,
         optimizer=optimizer,
+        aux_optimizer=AdamW(model.latent_codec.parameters(), lr=0.0001),
         num_epochs=experiment.epochs,
         device=device,
         scheduler=scheduler,
@@ -241,7 +247,8 @@ if __name__ == '__main__':
     with torch.no_grad():
         x_batch, _ = next(iter(val_dataloader))
         x_batch = x_batch.to(device)
-        x_recon, y_likelihoods = trained_model(x_batch)
+        model_output = trained_model(x_batch)
+        x_recon, y_likelihoods = model_output['x_hat'], model_output['likelihoods']['y']
 
     input_transform = YCbCrCompression().to(x_batch.device)
     output_transform = YCbCrToRGB("0_1").to(x_batch.device)
