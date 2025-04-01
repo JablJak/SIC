@@ -1,26 +1,37 @@
 import os
 import typing
 
+import PIL.Image
 import torch
+from compressai.latent_codecs import EntropyBottleneckLatentCodec
+from skimage.metrics import peak_signal_noise_ratio
+from skimage.io import imread
+from torchvision.transforms.v2.functional import to_pil_image
+
 from src.data.coco_dataset import CocoDataset
-from src.data.transforms import  YCbCrCompression, YCbCrDecompression
+from src.data.imagenet_dataset import ImageNetDataset
+from src.data.transforms import YCbCrCompression, YCbCrDecompression, RGBDecompression, RGBCompression
 from src.models.swin_compression import SwinTransformerCompressionAutoencoder
 from src.utils.const import ARTIFACTS_PATH
 from src.utils.initializers import model_from_config
+
 if __name__ == '__main__':
     device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
     print("Device:", device)
 
     models = [
-        "SWIN-T-IC_0.4.1-test"
+        "SWIN-T-IC_0.9.6-220of400"
     ]
 
-    transform = YCbCrCompression(noresize=True)
+    transform = RGBCompression(crop_size=512, resize_size=516)
 
     dataset = CocoDataset(transform=transform)
 
+    psnr_sum = 0
+    bpp_sum = 0
+
     dataloader_iter = iter(torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=8))
-    for iteration in range(1):
+    for iteration in range(10):
         x_batch, _ = next(dataloader_iter)
         x_batch = x_batch.to(device)
         for m in models:
@@ -29,10 +40,14 @@ if __name__ == '__main__':
                     "module": "src.models.swin_compression.SwinTransformerCompressionAutoencoder",
                     "weights": m,
                     "args": {
-                        "pretrained_encoder": False
+                        "pretrained_encoder": False,
+                        "decoder_patch_size": 2
                     }
                 }))
             model.to(device)
+            params = model.a_s_parameters()
+            model.update()
+
             model.eval()
 
             with torch.no_grad():
@@ -40,11 +55,28 @@ if __name__ == '__main__':
                 b_repr, shape = compress_output['strings'], compress_output['shape']
                 x_recon = model.decompress(b_repr, shape)['x_hat']
 
-            output_transform = YCbCrDecompression().to(x_batch.device)
+            output_transform = RGBDecompression(denorm=True).to(x_batch.device)
 
-            in_img = output_transform(x_batch)[0] # TODO: Examine
-            out_img = output_transform(x_recon)[0]
+            in_img: PIL.Image.Image = output_transform(x_batch)[0] # TODO: Examine
+            out_img: PIL.Image.Image = to_pil_image(x_recon[0])
+            out_img = out_img.crop((0, 0, in_img.size[0], in_img.size[1]))
 
             os.makedirs(os.path.join(ARTIFACTS_PATH, m), exist_ok=True)
-            in_img.save(os.path.join(ARTIFACTS_PATH, m, f"{iteration}_original.png"))
-            out_img.save(os.path.join(ARTIFACTS_PATH, m, f"{iteration}_compressed.png"))
+            im_img_path = os.path.join(ARTIFACTS_PATH, m, f"{iteration}_original.png")
+            out_img_path = os.path.join(ARTIFACTS_PATH, m, f"{iteration}_compressed.png")
+            in_img.save(im_img_path)
+            out_img.save(out_img_path)
+
+            image1 = imread(im_img_path)
+            image2 = imread(out_img_path)
+
+            psnr_value = peak_signal_noise_ratio(image1, image2)
+            print(f"PSNR: {psnr_value}")
+            psnr_sum += psnr_value
+            bits = len(b_repr[0][0]) * 8
+            bpp = bits / (in_img.size[0] * in_img.size[1])
+            print(f"bpp: {bpp}")
+            bpp_sum += bpp
+
+    print(f"Avg PSNR: {(psnr_sum / 10):.4f}")
+    print(f"Avg bpp: {(bpp_sum / 10):.4f}")

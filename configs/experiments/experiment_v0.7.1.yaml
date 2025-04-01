@@ -35,7 +35,7 @@ scheduler:
     step_size_down: 490
 
 loss:
-  module: src.losses.l1_ssim.L1SSIM
+  module: src.losses.mse_ssim.MSESSIM
   args:
     alpha: 0
 
@@ -43,16 +43,16 @@ rd_loss:
   enabled: true
   lambda: 25000
 
-epochs: 500
+epochs: 250
 
 dataset_split_ratio: 0.7
 
 output:
   model:
     name: SWIN-T-IC
-    version: 0.6.1-test
+    version: 0.7.1
 
 project_name: INZ
-task_name: v0.6.1-test SWIN Transformer Autoencoder based Image Compression
+task_name: v0.7.1 SWIN Transformer Autoencoder based Image Compression
 comment: |
-  No comment
+  0.6.2 with upgraded upsampling

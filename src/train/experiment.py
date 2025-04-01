@@ -28,7 +28,10 @@ class Experiment:
                 self.loss = initializers.rd_loss_wrapper_from_config(distortion_loss, self.config['rd_loss'])
         except KeyError:
             pass
-        self.optimizer = initializers.optimizer_from_config(self.model.parameters(), self.config['optimizer'])
+        try:
+            self.optimizer = initializers.optimizer_from_config(self.model.a_s_parameters(), self.config['optimizer'])
+        except KeyError:
+            self.optimizer = initializers.optimizer_from_config(self.model.parameters(), self.config['optimizer'])
         self.scheduler = initializers.scheduler_from_config(self.optimizer, self.config['scheduler'])
 
     def _set_training_data(self):

@@ -54,17 +54,30 @@ class RGBCompression(nn.Module):
 class RGBDecompression(nn.Module):
     def __init__(
             self,
+            denorm: bool,
             mean: Tuple[float, ...] = RGB_IMAGENET_MEAN,
             std: Tuple[float, ...] = RGB_IMAGENET_STD,
     ) -> None:
         super().__init__()
         self.mean = mean
         self.std = std
+        self.denorm = denorm
 
     def forward(self, img: Tensor) -> Tensor:
-        img = denormalize(img, self.mean, self.std)
-        img = functional.to_pil_image(img)
-        return img
+        if self.denorm:
+            img = denormalize(img, self.mean, self.std)
+        single_img = img.dim() == 3
+
+        pil_images = []
+        for i in range(img.shape[0]):
+            single_img_tensor = img[i]
+            pil_img = functional.to_pil_image(single_img_tensor)
+            pil_images.append(pil_img)
+
+        if single_img:
+            return pil_images[0]
+        else:
+            return pil_images
 
 
 class YCbCrCompression(nn.Module):
@@ -103,23 +116,24 @@ class YCbCrCompression(nn.Module):
 class YCbCrDecompression(nn.Module):
     def __init__(
             self,
+            denorm: bool,
             mean: Tuple[float, ...] = YCBCR_IMAGENET_MEAN,
             std: Tuple[float, ...] = YCBCR_IMAGENET_STD,
-            interpolation: InterpolationMode = InterpolationMode.BICUBIC,
     ) -> None:
         super().__init__()
         self.mean = mean
         self.std = std
-        self.interpolation = interpolation
+        self.denorm = denorm
 
     def forward(self, img: Tensor) -> list:
-        img = denormalize(img, self.mean, self.std)
+        if self.denorm:
+            img = denormalize(img, self.mean, self.std)
         img = ycbcr_to_rgb(img)
         single_img = img.dim() == 3
 
         pil_images = []
         for i in range(img.shape[0]):
-            single_img_tensor = img[i].cpu()
+            single_img_tensor = img[i]
             pil_img = functional.to_pil_image(single_img_tensor)
             pil_images.append(pil_img)
 
@@ -178,9 +192,6 @@ def ycbcr_to_rgb(img: Tensor, recon = False) -> Tensor:
 
     rgb = torch.matmul(transform_mat, x_reshaped)
     rgb = rgb.view(b, 3, h, w)
-
-    # TODO: It's known that it constantly happens so I turn it off temporarily
-
 
     if rgb.max() > 1.00001:
         print(f"[WARNING] RGB max > 1 after transformation: {rgb.max().item():.4f}, recon: {recon}")

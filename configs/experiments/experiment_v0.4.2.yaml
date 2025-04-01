@@ -1,12 +1,12 @@
 dataset:
   module: src.data.imagenet_dataset.ImageNetDataset
   transform:
-    - module: src.data.transforms.YCbCrCompression
+    - module: src.data.transforms.RGBCompression
       args: {}
   args:
     variant: train.X1
-    subset_classes: 20
-    subset_samples: 50
+    subset_classes: 5
+    subset_samples: 200
 
 model:
   module: src.models.swin_compression.SwinTransformerCompressionAutoencoder
@@ -22,26 +22,26 @@ dataloader:
 optimizer:
   module: torch.optim.AdamW
   args:
-    lr: 0.0002
+    lr: 0.0001
 
 scheduler:
   module: torch.optim.lr_scheduler.CyclicLR
   enabled: true
   args:
-    base_lr: 0.00001
-    max_lr: 0.0002
+    base_lr: 0.0001
+    max_lr: 0.001
     mode: triangular2
     step_size_up: 10
-    step_size_down: 490
+    step_size_down: 40
 
 loss:
-  module: src.losses.l1_ssim.L1SSIM
+  module: src.losses.mse_ssim.MSESSIM
   args:
     alpha: 0
 
 rd_loss:
   enabled: true
-  lambda: 25000
+  lambda: 50000
 
 epochs: 500
 
@@ -50,9 +50,9 @@ dataset_split_ratio: 0.7
 output:
   model:
     name: SWIN-T-IC
-    version: 0.6.1-test
+    version: 0.4.2
 
 project_name: INZ
-task_name: v0.6.1-test SWIN Transformer Autoencoder based Image Compression
+task_name: v0.4.2 SWIN Transformer Autoencoder based Image Compression
 comment: |
-  No comment
+  0.4.0 on RGB

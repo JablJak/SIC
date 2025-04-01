@@ -1,5 +1,9 @@
-from compressai.latent_codecs import EntropyBottleneckLatentCodec
+from compressai.entropy_models import EntropyBottleneck
+from compressai.latent_codecs import EntropyBottleneckLatentCodec, HyperpriorLatentCodec, HyperLatentCodec, \
+    GaussianConditionalLatentCodec
+from compressai.layers import conv3x3, subpel_conv3x3
 from compressai.models import SimpleVAECompressionModel
+from torch import nn
 from torchvision.models import swin_v2_t, swin_v2_s, swin_v2_b, Swin_V2_T_Weights
 
 from src.models.swin_autoencoder import SwinTransformerDecoder
@@ -18,7 +22,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             decoder_dim = 96,
             decoder_patch_size = 4,
             decoder_num_heads = (24, 12, 6, 3),
-            decoder_window_size = ((7, 7), (7, 7), (7, 7), (7, 7)),
+            decoder_window_size = ((8, 8), (8, 8), (8, 8), (8, 8)),
             decoder_mlp_ratio = (4, 4, 4, 4),
             decoder_depths = (2, 6, 2, 2),
     ):
@@ -33,13 +37,46 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         self.encoder = self.g_a = self._create_encoder(encoder_type, encoder_weights)
         self.decoder = self.g_s = SwinTransformerDecoder(
             dim=decoder_dim,
-            patch_sizes=decoder_patch_size,
             num_heads=decoder_num_heads,
             windows_sizes=decoder_window_size,
             mlp_ratios=decoder_mlp_ratio,
             depths=decoder_depths,
         )
-        self.latent_codec = EntropyBottleneckLatentCodec(channels=768)
+        N = 768
+        h_a = nn.Sequential(
+            conv3x3(N, N),
+            nn.LeakyReLU(inplace=True),
+            conv3x3(N, N),
+            nn.LeakyReLU(inplace=True),
+            conv3x3(N, N, stride=2),
+            nn.LeakyReLU(inplace=True),
+            conv3x3(N, N),
+            nn.LeakyReLU(inplace=True),
+            conv3x3(N, N, stride=2),
+        )
+
+        h_s = nn.Sequential(
+            conv3x3(N, N),
+            nn.LeakyReLU(inplace=True),
+            subpel_conv3x3(N, N, 2),
+            nn.LeakyReLU(inplace=True),
+            conv3x3(N, N * 3 // 2),
+            nn.LeakyReLU(inplace=True),
+            subpel_conv3x3(N * 3 // 2, N * 3 // 2, 2),
+            nn.LeakyReLU(inplace=True),
+            conv3x3(N * 3 // 2, N * 2),
+        )
+        self.latent_codec = HyperpriorLatentCodec(
+            latent_codec={
+                "y":GaussianConditionalLatentCodec(quantizer="ste"),
+                "hyper": HyperLatentCodec(
+                    entropy_bottleneck=EntropyBottleneck(N),
+                    h_a=h_a,
+                    h_s=h_s,
+                    quantizer="ste",
+                )
+            }
+        )
 
     def _create_encoder(self, encoder_name, weights):
         return self.ENCODER_MAP[encoder_name](weights=weights).features
@@ -81,3 +118,9 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         return {
             "x_hat": x_hat,
         }
+
+    def a_s_parameters(self):
+        aux_params_list = list(self.latent_codec.parameters())
+        aux_params_ids = {id(p) for p in aux_params_list}
+        main_params = [p for p in self.parameters() if id(p) not in aux_params_ids]
+        return main_params

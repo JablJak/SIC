@@ -7,13 +7,15 @@ from torchvision.models.swin_transformer import ShiftedWindowAttentionV2
 
 
 class PatchReconstruction(nn.Module):
-    def __init__(self, patch_size):
+    def __init__(self):
         super().__init__()
-        self.conv_trans = nn.ConvTranspose2d(96, 3, kernel_size=patch_size, stride=patch_size, padding=0)
+        self.conv_trans = nn.ConvTranspose2d(48, 3, kernel_size=4, stride=2, padding=1)
+        self.activation = nn.Sigmoid()
 
     def forward(self, x):
         x = x.permute(0, 3, 1, 2)
         x = self.conv_trans(x)
+        x = self.activation(x)
         return x
 
 
@@ -21,7 +23,6 @@ class SwinTransformerDecoder(nn.Module):
     def __init__(
             self,
             dim,
-            patch_sizes,
             num_heads,
             windows_sizes,
             mlp_ratios,
@@ -38,20 +39,10 @@ class SwinTransformerDecoder(nn.Module):
                     mlp_ratio=mlp_ratios[i],
                     depth=depths[i]
                 )
-               for i in range(n - 1)
+               for i in range(n)
         ]
-        stages.append(
-            SwinTransformerDecoderStage(
-                dim=dim,
-                num_heads=num_heads[n-1],
-                window_size=windows_sizes[n-1],
-                mlp_ratio=mlp_ratios[n-1],
-                depth=depths[n-1],
-                split=False
-            )
-        )
         self.stages = nn.ModuleList(stages)
-        self.reconstruction = PatchReconstruction(patch_sizes)
+        self.reconstruction = PatchReconstruction()
 
     def forward(self, x):
         for stage in self.stages:
@@ -68,12 +59,9 @@ class SwinTransformerDecoderStage(nn.Module):
         window_size,
         mlp_ratio,
         depth,
-        split = True
     ):
         super().__init__()
         self.depth = depth
-        self.split = split
-        self.upsample = nn.PixelShuffle(2)
         self.split_norm = nn.LayerNorm(dim)
         self.linear = nn.Linear(dim, dim * 2)
         self.blocks = nn.ModuleList(
@@ -83,19 +71,18 @@ class SwinTransformerDecoderStage(nn.Module):
                 window_size=window_size,
                 shift_size=[0 if i_block % 2 == 0 else w // 2 for w in window_size],
                 mlp_ratio=mlp_ratio,
-            ) for i_block in (range(depth) if split else range(depth - 1))]
+            ) for i_block in range(depth)]
         )
-        self.norms = nn.ModuleList([nn.LayerNorm(dim) for _ in (range(depth) if split else range(depth - 1))])
+        self.norms = nn.ModuleList([nn.LayerNorm(dim) for _ in range(depth)])
         self.pixel_shuffle = nn.PixelShuffle(upscale_factor=2)
 
     def forward(self, x):
-        for i in (range(self.depth) if self.split else range(self.depth - 1)):
+        for i in range(self.depth):
             x = x + self.blocks[i](self.norms[i](x))
-        if self.split:
-            x = self.linear(self.split_norm(x))
-            x = x.permute(0, 3, 1, 2)
-            x = self.pixel_shuffle(x)
-            x = x.permute(0, 2, 3, 1)
+        x = self.linear(self.split_norm(x))
+        x = x.permute(0, 3, 1, 2)
+        x = self.pixel_shuffle(x)
+        x = x.permute(0, 2, 3, 1)
 
         return x
 
@@ -145,7 +132,6 @@ class SwinTransformerAutoencoder(nn.Module):
             encoder_type = "swin_v2_t",
             encoder_weights = Swin_V2_T_Weights.DEFAULT,
             decoder_dim = 96,
-            decoder_patch_size = 4,
             decoder_num_heads = (24, 12, 6, 3),
             decoder_window_size = ((7, 7), (7, 7), (7, 7), (7, 7)),
             decoder_mlp_ratio = (4, 4, 4, 4),
@@ -162,7 +148,6 @@ class SwinTransformerAutoencoder(nn.Module):
         # TODO: Maybe introduce intermediate linear layer to enhance compression
         self.decoder = SwinTransformerDecoder(
             dim=decoder_dim,
-            patch_sizes=decoder_patch_size,
             num_heads=decoder_num_heads,
             windows_sizes=decoder_window_size,
             mlp_ratios=decoder_mlp_ratio,

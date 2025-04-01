@@ -1,7 +1,7 @@
 dataset:
   module: src.data.imagenet_dataset.ImageNetDataset
   transform:
-    - module: src.data.transforms.YCbCrCompression
+    - module: src.data.transforms.RGBCompression
       args: {}
   args:
     variant: train.X1
@@ -11,6 +11,7 @@ dataset:
 model:
   module: src.models.swin_compression.SwinTransformerCompressionAutoencoder
   args:
+    decoder_patch_size: 2
     pretrained_encoder: true
 
 dataloader:
@@ -22,20 +23,20 @@ dataloader:
 optimizer:
   module: torch.optim.AdamW
   args:
-    lr: 0.0002
+    lr: 0.0003
 
 scheduler:
   module: torch.optim.lr_scheduler.CyclicLR
   enabled: true
   args:
-    base_lr: 0.00001
-    max_lr: 0.0002
+    base_lr: 0.0001
+    max_lr: 0.0003
     mode: triangular2
     step_size_up: 10
-    step_size_down: 490
+    step_size_down: 390
 
 loss:
-  module: src.losses.l1_ssim.L1SSIM
+  module: src.losses.mse_ssim.MSESSIM
   args:
     alpha: 0
 
@@ -43,16 +44,19 @@ rd_loss:
   enabled: true
   lambda: 25000
 
-epochs: 500
+epochs: 400
 
 dataset_split_ratio: 0.7
 
 output:
   model:
     name: SWIN-T-IC
-    version: 0.6.1-test
+    version: 0.8.0
 
 project_name: INZ
-task_name: v0.6.1-test SWIN Transformer Autoencoder based Image Compression
+task_name: v0.8.0 SWIN Transformer Autoencoder based Image Compression
 comment: |
-  No comment
+  - No denormalization in training loop
+  - No denormalization at all - output is transformed to [0-1] by sigmoid
+  - Freeze most layers of encoder
+  - Gradient clipping more

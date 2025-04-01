@@ -1,7 +1,7 @@
 dataset:
   module: src.data.imagenet_dataset.ImageNetDataset
   transform:
-    - module: src.data.transforms.YCbCrCompression
+    - module: src.data.transforms.RGBCompression
       args: {}
   args:
     variant: train.X1
@@ -10,8 +10,9 @@ dataset:
 
 model:
   module: src.models.swin_compression.SwinTransformerCompressionAutoencoder
+  weights: SWIN-T-IC_0.6.0-230of500
   args:
-    pretrained_encoder: true
+    pretrained_encoder: false
 
 dataloader:
   args:
@@ -35,13 +36,13 @@ scheduler:
     step_size_down: 490
 
 loss:
-  module: src.losses.l1_ssim.L1SSIM
+  module: src.losses.mse_ssim.MSESSIM
   args:
     alpha: 0
 
 rd_loss:
   enabled: true
-  lambda: 25000
+  lambda: 10000
 
 epochs: 500
 
@@ -50,9 +51,9 @@ dataset_split_ratio: 0.7
 output:
   model:
     name: SWIN-T-IC
-    version: 0.6.1-test
+    version: 0.6.0.1
 
 project_name: INZ
-task_name: v0.6.1-test SWIN Transformer Autoencoder based Image Compression
+task_name: v0.6.0.1 SWIN Transformer Autoencoder based Image Compression
 comment: |
   No comment
