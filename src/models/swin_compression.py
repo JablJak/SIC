@@ -1,7 +1,7 @@
 from compressai.entropy_models import EntropyBottleneck
 from compressai.latent_codecs import EntropyBottleneckLatentCodec, HyperpriorLatentCodec, HyperLatentCodec, \
-    GaussianConditionalLatentCodec
-from compressai.layers import conv3x3, subpel_conv3x3
+    GaussianConditionalLatentCodec, CheckerboardLatentCodec
+from compressai.layers import conv3x3, subpel_conv3x3, CheckerboardMaskedConv2d
 from compressai.models import SimpleVAECompressionModel
 from torch import nn
 from torchvision.models import swin_v2_t, swin_v2_s, swin_v2_b, Swin_V2_T_Weights
@@ -68,13 +68,27 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         )
         self.latent_codec = HyperpriorLatentCodec(
             latent_codec={
-                "y":GaussianConditionalLatentCodec(quantizer="ste"),
+                "y": CheckerboardLatentCodec(
+                    latent_codec={
+                        "y": GaussianConditionalLatentCodec(quantizer="ste"),
+                    },
+                    entropy_parameters=nn.Sequential(
+                        nn.Conv2d(N * 12 // 3, N * 10 // 3, 1),
+                        nn.LeakyReLU(inplace=True),
+                        nn.Conv2d(N * 10 // 3, N * 8 // 3, 1),
+                        nn.LeakyReLU(inplace=True),
+                        nn.Conv2d(N * 8 // 3, N * 6 // 3, 1),
+                    ),
+                    context_prediction=CheckerboardMaskedConv2d(
+                        N, 2 * N, kernel_size=5, stride=1, padding=2
+                    ),
+                ),
                 "hyper": HyperLatentCodec(
                     entropy_bottleneck=EntropyBottleneck(N),
                     h_a=h_a,
                     h_s=h_s,
                     quantizer="ste",
-                )
+                ),
             }
         )
 
