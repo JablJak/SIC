@@ -1,4 +1,5 @@
 import torch
+from fontTools.misc.bezierTools import epsilon
 from piqa import MS_SSIM
 from piqa.ssim import ms_ssim
 from piqa.utils.functional import gaussian_kernel
@@ -19,7 +20,7 @@ class MSESSIM(torch.nn.Module):
             alpha (float): Weighting factor between MSE (1 - alpha) and SSIM (alpha). Defaults to 0.75.
         """
         super(MSESSIM, self).__init__()
-        self.l2 = torch.nn.MSELoss()
+        self.mse = torch.nn.MSELoss()
         self.MS_SSIM = MS_SSIM()
         self.activation = torch.nn.Sigmoid()
         self.alpha = alpha
@@ -35,7 +36,12 @@ class MSESSIM(torch.nn.Module):
         Returns:
             torch.Tensor: The calculated loss value.
         """
-        pred = self.activation(pred)
-        target = self.activation(target)
+        epsilon = 0.001
+        mse_scale = 255 ** 2
+        if pred.min() < (0 + epsilon) or pred.max() > (1 +  epsilon):
+            pred = self.activation(pred)
+        if target.min() < (0 + epsilon) or target.max() > (1 + epsilon):
+            target = self.activation(target)
+        mse_loss = self.mse(pred, target) * mse_scale
         ms_ssim_loss = self.MS_SSIM(pred, target)
-        return self.alpha * (1 - ms_ssim_loss) + (1 - self.alpha) * self.l2(pred, target)
+        return self.alpha * (1 - ms_ssim_loss) + (1 - self.alpha) * mse_loss
