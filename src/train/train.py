@@ -157,8 +157,8 @@ def _train(model, train_dataloader, val_dataloader,
             aux_scheduler.step()
 
         # TODO: Configurable
-        if epoch <= 50:
-            criterion.l *= 0.99
+        # if epoch <= 50:
+        #     criterion.l *= 0.99
         model.update()
 
     return model
