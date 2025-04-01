@@ -5,6 +5,7 @@ import random
 
 import numpy as np
 import torch
+from torch import autocast, GradScaler
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
@@ -24,7 +25,7 @@ from src.utils.postprocess import denormalize
 from src.viz.plotter import plot_reconstructions
 
 
-def _train(model, train_dataloader, val_dataloader,
+def _train(model, train_dataloader, val_dataloader, scaler,
            criterion, optimizer, aux_optimizer, aux_scheduler, num_epochs, device, scheduler, logger=None, ycbcr=False):
     # Train
 
@@ -40,17 +41,33 @@ def _train(model, train_dataloader, val_dataloader,
             x = x.to(device)
             optimizer.zero_grad()
             aux_optimizer.zero_grad()
-            output = model(x)
-            x_hat, y_likelihoods = output['x_hat'], output['likelihoods']['y']
-            if ycbcr:
-                x = denormalize(x, YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD)
-            else:
-                x = denormalize(x, RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
-            if isinstance(criterion, RDLoss):
-                loss, bpp = criterion(x_hat, x, y_likelihoods)
-                epoch_bpp += bpp
-            else:
-                loss = criterion(x_hat, x)
+            with autocast(device_type="cuda"):
+                output = model(x)
+                x_hat, y_likelihoods = output['x_hat'], output['likelihoods']['y']
+                if ycbcr:
+                    x = denormalize(x, YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD)
+                else:
+                    x = denormalize(x, RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
+                if isinstance(criterion, RDLoss):
+                    loss, bpp = criterion(x_hat, x, y_likelihoods)
+                    epoch_bpp += bpp
+                else:
+                    loss = criterion(x_hat, x)
+
+                aux_loss = model.aux_loss()
+
+            scaler.scale(loss).backward()
+            max_norm_value = 1.0
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_norm_value)
+            scaler.step(optimizer)
+
+            aux_optimizer.zero_grad()
+            scaler.scale(aux_loss).backward()
+            scaler.step(aux_optimizer)
+
+            scaler.update()
+
+            epoch_loss += loss.item()
 
             psnr_metric = PeakSignalNoiseRatio()
             psnr_metric.to(device)
@@ -64,19 +81,6 @@ def _train(model, train_dataloader, val_dataloader,
             ssim = ssim_metric.compute()
             epoch_ssim += ssim
 
-            loss.backward()
-
-            max_norm_value = 1.0
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_norm_value)
-
-            optimizer.step()
-
-            aux_loss = model.aux_loss()
-            aux_optimizer.zero_grad()
-            aux_loss.backward()
-            aux_optimizer.step()
-
-            epoch_loss += loss.item()
 
         avg_loss = epoch_loss / len(train_dataloader)
         avg_psnr = epoch_psnr / len(train_dataloader)
@@ -110,17 +114,18 @@ def _train(model, train_dataloader, val_dataloader,
         with torch.no_grad():
             for x_val, _ in val_dataloader:
                 x_val = x_val.to(device)
-                output = model(x_val)
-                x_hat_val, y_likelihoods_val = output['x_hat'], output['likelihoods']['y']
-                if ycbcr:
-                    x_val = denormalize(x_val, YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD)
-                else:
-                    x_val = denormalize(x_val, RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
-                if isinstance(criterion, RDLoss):
-                    loss_val, bpp_val = criterion(x_hat_val, x_val, y_likelihoods_val)
-                    eval_bpp += bpp_val
-                else:
-                    loss_val = criterion(x_hat_val, x_val)
+                with autocast(device_type="cuda"):
+                    output = model(x_val)
+                    x_hat_val, y_likelihoods_val = output['x_hat'], output['likelihoods']['y']
+                    if ycbcr:
+                        x_val = denormalize(x_val, YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD)
+                    else:
+                        x_val = denormalize(x_val, RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
+                    if isinstance(criterion, RDLoss):
+                        loss_val, bpp_val = criterion(x_hat_val, x_val, y_likelihoods_val)
+                        eval_bpp += bpp_val
+                    else:
+                        loss_val = criterion(x_hat_val, x_val)
                 eval_loss += loss_val.item()
 
                 psnr_metric_val = PeakSignalNoiseRatio().to(device)
@@ -221,6 +226,7 @@ if __name__ == '__main__':
     val_dataloader = dataloader_from_config(val_dataset, experiment_config['dataloader'])
 
     model = experiment.model
+    # model = torch.compile(model)
     model.to(device)
 
     ycbcr = experiment.config["dataset"]["transform"][0]["module"] == "src.data.transforms.YCbCrCompression"
@@ -245,7 +251,7 @@ if __name__ == '__main__':
         T_max=experiment.epochs,
         eta_min=1e-5
     )
-
+    scaler = GradScaler()
     with open(f"logs/{datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")}.log", "a") as log_file:
         trained_model = _train(
             model=model,
@@ -258,7 +264,8 @@ if __name__ == '__main__':
             num_epochs=experiment.epochs,
             device=device,
             scheduler=scheduler,
-            logger=logger
+            logger=logger,
+            scaler=scaler
         )
 
     # TODO: TRAIN TIME

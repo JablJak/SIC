@@ -181,7 +181,7 @@ def model_from_config(config: dict[str, Any]) -> Module:
 
             model.load_state_dict(mapped, strict=False)
         else:
-            model.load_state_dict(state_dict)
+            model.load_state_dict(state_dict, strict=False)
         return model
     else:
         return model_type(encoder_weights=None, **args)

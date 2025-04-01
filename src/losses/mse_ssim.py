@@ -36,6 +36,8 @@ class MSESSIM(torch.nn.Module):
         Returns:
             torch.Tensor: The calculated loss value.
         """
+        self.mse.to(pred.device)
+        self.mse.to(pred.device)
         epsilon = 0.001
         mse_scale = 255 ** 2
         if pred.min() < (0 - epsilon) or pred.max() > (1 +  epsilon):

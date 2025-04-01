@@ -10,7 +10,8 @@ from torchvision.transforms.v2.functional import to_pil_image
 
 from src.data.coco_dataset import CocoDataset
 from src.data.imagenet_dataset import ImageNetDataset
-from src.data.transforms import YCbCrCompression, YCbCrDecompression, RGBDecompression, RGBCompression
+from src.data.transforms import YCbCrCompression, YCbCrDecompression, RGBDecompression, RGBCompression, denormalize, \
+    RGB_IMAGENET_MEAN, RGB_IMAGENET_STD
 from src.models.swin_compression import SwinTransformerCompressionAutoencoder
 from src.utils.const import ARTIFACTS_PATH
 from src.utils.initializers import model_from_config
@@ -20,10 +21,11 @@ if __name__ == '__main__':
     print("Device:", device)
 
     models = [
-        "SWIN-T-IC_0.9.6-220of400"
+        "SWIN-T-IC_0.12.0-150of400",
+        # "SWIN-T-IC_0.9.4-210of400"
     ]
 
-    transform = RGBCompression(crop_size=512, resize_size=516)
+    transform = RGBCompression(crop_size=512, resize_size=512)
 
     dataset = CocoDataset(transform=transform)
 
@@ -41,7 +43,6 @@ if __name__ == '__main__':
                     "weights": m,
                     "args": {
                         "pretrained_encoder": False,
-                        "decoder_patch_size": 2
                     }
                 }))
             model.to(device)
@@ -67,10 +68,10 @@ if __name__ == '__main__':
             in_img.save(im_img_path)
             out_img.save(out_img_path)
 
-            image1 = imread(im_img_path)
-            image2 = imread(out_img_path)
+            x_orig_np = denormalize(x_batch, RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)[0].cpu().numpy()
+            x_recon_np = x_recon[0].cpu().numpy()
 
-            psnr_value = peak_signal_noise_ratio(image1, image2)
+            psnr_value = peak_signal_noise_ratio(x_orig_np, x_recon_np)
             print(f"PSNR: {psnr_value}")
             psnr_sum += psnr_value
             bits = len(b_repr[0][0]) * 8

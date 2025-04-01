@@ -1,3 +1,4 @@
+import torch
 from compressai.entropy_models import EntropyBottleneck
 from compressai.latent_codecs import EntropyBottleneckLatentCodec, HyperpriorLatentCodec, HyperLatentCodec, \
     GaussianConditionalLatentCodec, CheckerboardLatentCodec
@@ -20,7 +21,6 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             encoder_type = "swin_v2_t",
             encoder_weights = Swin_V2_T_Weights.DEFAULT,
             decoder_dim = 96,
-            decoder_patch_size = 4,
             decoder_num_heads = (24, 12, 6, 3),
             decoder_window_size = ((8, 8), (8, 8), (8, 8), (8, 8)),
             decoder_mlp_ratio = (4, 4, 4, 4),
@@ -109,7 +109,8 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
     def forward(self, x):
         y = self.g_a(x)
         y = y.permute(0, 3, 1, 2)
-        y_out = self.latent_codec(y)
+        with torch.cuda.amp.autocast(enabled=False):
+            y_out = self.latent_codec(y)
         y_hat = y_out["y_hat"]
         y_hat = y_hat.permute(0, 2, 3, 1)
         x_hat = self.g_s(y_hat)
