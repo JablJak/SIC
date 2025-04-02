@@ -246,11 +246,9 @@ if __name__ == '__main__':
     scheduler = experiment.scheduler
     ycbcr = experiment.config["dataset"]["transform"][0]["module"] == "src.data.transforms.YCbCrCompression"
 
-    aux_scheduler = CosineAnnealingLR(
-        optimizer,
-        T_max=experiment.epochs,
-        eta_min=1e-5
-    )
+    aux_optimizer = experiment.aux_optimizer
+    aux_scheduler = experiment.aux_scheduler
+
     scaler = GradScaler()
     with open(f"logs/{datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")}.log", "a") as log_file:
         trained_model = _train(
@@ -259,7 +257,7 @@ if __name__ == '__main__':
             val_dataloader=val_dataloader,
             criterion=loss,
             optimizer=optimizer,
-            aux_optimizer=AdamW(model.latent_codec.parameters(), lr=1e-3),
+            aux_optimizer=aux_optimizer,
             aux_scheduler=aux_scheduler,
             num_epochs=experiment.epochs,
             device=device,
