@@ -4,6 +4,7 @@ from torch.nn import init
 from torchvision.models import swin_v2_t, swin_v2_s, swin_v2_b, Swin_V2_T_Weights
 from torch import nn, Tensor
 from torchvision.models.swin_transformer import ShiftedWindowAttentionV2
+from torchvision.ops import StochasticDepth
 
 
 class PatchReconstruction(nn.Module):
@@ -27,17 +28,22 @@ class SwinTransformerDecoder(nn.Module):
             windows_sizes,
             mlp_ratios,
             depths,
+            sd_factor
         ):
         super().__init__()
         self.num_stages = n = len(num_heads)
-
+        blocks_total = sum(depths)
+        blocks_remaining = [blocks_total - sum(depths[:i]) for i in range(len(depths))]
         stages = [
                 SwinTransformerDecoderStage(
                     dim=dim * 2 ** (n - i - 1),
                     num_heads=num_heads[i],
                     window_size=windows_sizes[i],
                     mlp_ratio=mlp_ratios[i],
-                    depth=depths[i]
+                    depth=depths[i],
+                    sd_factor=sd_factor,
+                    blocks_remaining=blocks_remaining[i],
+                    blocks_total=blocks_total,
                 )
                for i in range(n)
         ]
@@ -59,6 +65,9 @@ class SwinTransformerDecoderStage(nn.Module):
         window_size,
         mlp_ratio,
         depth,
+        sd_factor,
+        blocks_remaining,
+        blocks_total
     ):
         super().__init__()
         self.depth = depth
@@ -71,6 +80,7 @@ class SwinTransformerDecoderStage(nn.Module):
                 window_size=window_size,
                 shift_size=[0 if i_block % 2 == 0 else w // 2 for w in window_size],
                 mlp_ratio=mlp_ratio,
+                sd_factor=sd_factor * ((blocks_remaining - i_block) / blocks_total),
             ) for i_block in range(depth)]
         )
         self.norms = nn.ModuleList([nn.LayerNorm(dim) for _ in range(depth)])
@@ -94,6 +104,7 @@ class SwinTransformerDecoderBlock(nn.Module):
         num_heads,
         window_size,
         shift_size,
+        sd_factor,
         mlp_ratio=4,
     ):
         super().__init__()
@@ -105,7 +116,7 @@ class SwinTransformerDecoderBlock(nn.Module):
             nn.GELU(),
             nn.Linear(int(dim * mlp_ratio), dim),
         )
-        self.drop_path = DropPath(0.1)
+        self.stochastic_depth = StochasticDepth(sd_factor, "row")
 
         # TODO: Initialize rest of the layers
 
@@ -116,8 +127,8 @@ class SwinTransformerDecoderBlock(nn.Module):
                     init.zeros_(m.bias)
 
     def forward(self, x: Tensor):
-        x = x + self.drop_path(self.attn(self.norm1(x)))
-        x = x + self.drop_path(self.mlp(self.norm2(x)))
+        x = x + self.stochastic_depth(self.attn(self.norm1(x)))
+        x = x + self.stochastic_depth(self.mlp(self.norm2(x)))
         return x
 
 class SwinTransformerAutoencoder(nn.Module):
@@ -136,6 +147,7 @@ class SwinTransformerAutoencoder(nn.Module):
             decoder_window_size = ((7, 7), (7, 7), (7, 7), (7, 7)),
             decoder_mlp_ratio = (4, 4, 4, 4),
             decoder_depths = (2, 6, 2, 2),
+            decoder_sd_factor = 0.1
     ):
         super().__init__()
         self.encoder_weights = encoder_weights
@@ -152,6 +164,7 @@ class SwinTransformerAutoencoder(nn.Module):
             windows_sizes=decoder_window_size,
             mlp_ratios=decoder_mlp_ratio,
             depths=decoder_depths,
+            sd_factor=decoder_sd_factor
         )
 
     def _create_encoder(self, encoder_name, weights):

@@ -25,6 +25,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             decoder_window_size = ((8, 8), (8, 8), (8, 8), (8, 8)),
             decoder_mlp_ratio = (4, 4, 4, 4),
             decoder_depths = (2, 6, 2, 2),
+            decoder_sd_factor=0.1
     ):
         super().__init__()
         self.encoder_type = encoder_type
@@ -41,6 +42,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             windows_sizes=decoder_window_size,
             mlp_ratios=decoder_mlp_ratio,
             depths=decoder_depths,
+            sd_factor=decoder_sd_factor,
         )
         N = 768
         h_a = nn.Sequential(
