@@ -1,0 +1,71 @@
+dataset:
+  module: src.data.imagenet_dataset.ImageNetDataset
+  transform:
+    - module: src.data.transforms.RGBCompression
+      args: {}
+  args:
+    variant: train.X2
+    subset_classes: 25
+    subset_samples: 40
+
+model:
+  module: src.models.swin_compression.SwinTransformerCompressionAutoencoder
+  args:
+    pretrained_encoder: true
+
+dataloader:
+  args:
+    batch_size: 16
+    shuffle: true
+    num_workers: 8
+    pin_memory: true
+
+optimizer:
+  module: torch.optim.AdamW
+  args:
+    lr: 0.00002
+
+scheduler:
+  module: torch.optim.lr_scheduler.CyclicLR
+  enabled: true
+  args:
+    base_lr: 0.00002
+    max_lr: 0.0001
+    mode: triangular2
+    step_size_up: 30
+    step_size_down: 270
+
+aux_optimizer:
+  module: torch.optim.AdamW
+  args:
+    lr: 0.00003
+
+aux_scheduler:
+  module: torch.optim.lr_scheduler.CosineAnnealingLR
+  enabled: true
+  args:
+    eta_min: 0.0001
+    T_max: 300
+
+loss:
+  module: src.losses.mse_ssim.MSESSIM
+  args:
+    alpha: 0
+
+rd_loss:
+  enabled: true
+  lambda: 0.001
+
+epochs: 300
+
+dataset_split_ratio: 0.7
+
+output:
+  model:
+    name: SWIN-T-IC
+    version: 0.14.7
+
+project_name: INZ
+task_name: v0.14.7 SWIN Transformer Autoencoder based Image Compression
+comment: |
+  Configurable aux optimizer
