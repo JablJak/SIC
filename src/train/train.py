@@ -25,9 +25,11 @@ from src.utils.postprocess import denormalize
 from src.viz.plotter import plot_reconstructions
 
 
-def _train(model, train_dataloader, val_dataloader, scaler,
+def _train(model, train_dataloader, val_dataloader, scaler, aux_optimizer_delay,
            criterion, optimizer, aux_optimizer, aux_scheduler, num_epochs, device, scheduler, logger=None, ycbcr=False):
     # Train
+
+    optimize_bpp = False
 
     model.train()
     for epoch in range(num_epochs):
@@ -36,6 +38,9 @@ def _train(model, train_dataloader, val_dataloader, scaler,
         epoch_ssim = 0
         epoch_bpp = 0
         epoch_lr = optimizer.param_groups[0]['lr']
+
+        if epoch > aux_optimizer_delay:
+            optimize_bpp = True
 
         for x, _ in train_dataloader:
             x = x.to(device)
@@ -49,7 +54,7 @@ def _train(model, train_dataloader, val_dataloader, scaler,
                 else:
                     x = denormalize(x, RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
                 if isinstance(criterion, RDLoss):
-                    loss, bpp = criterion(x_hat, x, y_likelihoods)
+                    loss, bpp = criterion(x_hat, x, y_likelihoods, optimize_bpp)
                     epoch_bpp += bpp
                 else:
                     loss = criterion(x_hat, x)
@@ -61,9 +66,10 @@ def _train(model, train_dataloader, val_dataloader, scaler,
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_norm_value)
             scaler.step(optimizer)
 
-            aux_optimizer.zero_grad()
-            scaler.scale(aux_loss).backward()
-            scaler.step(aux_optimizer)
+            if epoch > aux_optimizer_delay:
+                aux_optimizer.zero_grad()
+                scaler.scale(aux_loss).backward()
+                scaler.step(aux_optimizer)
 
             scaler.update()
 
@@ -158,13 +164,14 @@ def _train(model, train_dataloader, val_dataloader, scaler,
         model.train()
         if scheduler is not None:
             scheduler.step()
-        if aux_scheduler is not None:
+        if aux_scheduler is not None and epoch > aux_optimizer_delay:
             aux_scheduler.step()
 
         # TODO: Configurable
         # if epoch <= 50:
         #     criterion.l *= 0.99
-        model.update()
+        if epoch > aux_optimizer_delay and epoch % 10 == 0:
+            model.update()
 
     return model
 
@@ -263,7 +270,8 @@ if __name__ == '__main__':
             device=device,
             scheduler=scheduler,
             logger=logger,
-            scaler=scaler
+            scaler=scaler,
+            aux_optimizer_delay=experiment.aux_optimizer_delay
         )
 
     # TODO: TRAIN TIME

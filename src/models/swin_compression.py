@@ -139,5 +139,6 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
     def a_s_parameters(self):
         aux_params_list = list(self.latent_codec.parameters())
         aux_params_ids = {id(p) for p in aux_params_list}
+
         main_params = [p for p in self.parameters() if id(p) not in aux_params_ids]
         return main_params

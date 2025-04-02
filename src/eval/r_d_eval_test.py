@@ -21,11 +21,13 @@ if __name__ == '__main__':
     print("Device:", device)
 
     models = [
-        "SWIN-T-IC_0.12.0-150of400",
+        "SWIN-T-IC_0.14.5"
+        # "SWIN-T-IC_0.12.0-150of400",
         # "SWIN-T-IC_0.9.4-210of400"
     ]
 
     transform = RGBCompression(crop_size=512, resize_size=512)
+    # transform = RGBCompression(noresize=True)
 
     dataset = CocoDataset(transform=transform)
 

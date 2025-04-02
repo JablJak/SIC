@@ -39,6 +39,7 @@ class Experiment:
     def _set_training_data(self):
         self.epochs = self.config['epochs']
         self.dataset_split_ratio = self.config['dataset_split_ratio']
+        self.aux_optimizer_delay = self.config['aux_optimizer_delay']
 
     def _set_experiment_metadata(self):
         self.project = self.config['project_name']
