@@ -47,25 +47,25 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         N = 768
         h_a = nn.Sequential(
             conv3x3(N, N),
-            nn.LeakyReLU(inplace=True),
+            nn.GELU(),
             conv3x3(N, N),
-            nn.LeakyReLU(inplace=True),
+            nn.GELU(),
             conv3x3(N, N, stride=2),
-            nn.LeakyReLU(inplace=True),
+            nn.GELU(),
             conv3x3(N, N),
-            nn.LeakyReLU(inplace=True),
+            nn.GELU(),
             conv3x3(N, N, stride=2),
         )
 
         h_s = nn.Sequential(
             conv3x3(N, N),
-            nn.LeakyReLU(inplace=True),
+            nn.GELU(),
             subpel_conv3x3(N, N, 2),
-            nn.LeakyReLU(inplace=True),
+            nn.GELU(),
             conv3x3(N, N * 3 // 2),
-            nn.LeakyReLU(inplace=True),
+            nn.GELU(),
             subpel_conv3x3(N * 3 // 2, N * 3 // 2, 2),
-            nn.LeakyReLU(inplace=True),
+            nn.GELU(),
             conv3x3(N * 3 // 2, N * 2),
         )
         self.latent_codec = HyperpriorLatentCodec(
@@ -76,9 +76,9 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
                     },
                     entropy_parameters=nn.Sequential(
                         nn.Conv2d(N * 12 // 3, N * 10 // 3, 1),
-                        nn.LeakyReLU(inplace=True),
+                        nn.GELU(),
                         nn.Conv2d(N * 10 // 3, N * 8 // 3, 1),
-                        nn.LeakyReLU(inplace=True),
+                        nn.GELU(),
                         nn.Conv2d(N * 8 // 3, N * 6 // 3, 1),
                     ),
                     context_prediction=CheckerboardMaskedConv2d(
