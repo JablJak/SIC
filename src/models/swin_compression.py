@@ -5,7 +5,7 @@ from compressai.latent_codecs import EntropyBottleneckLatentCodec, HyperpriorLat
 from compressai.layers import conv3x3, subpel_conv3x3, CheckerboardMaskedConv2d
 from compressai.models import SimpleVAECompressionModel
 from torch import nn
-from torchvision.models import swin_v2_t, swin_v2_s, swin_v2_b, Swin_V2_T_Weights
+from torchvision.models import swin_v2_t, swin_v2_s, swin_v2_b, Swin_V2_T_Weights, Swin_V2_S_Weights, Swin_V2_B_Weights
 
 from src.models.swin_autoencoder import SwinTransformerDecoder
 
@@ -19,7 +19,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
     def __init__(
             self,
             encoder_type = "swin_v2_t",
-            encoder_weights = Swin_V2_T_Weights.DEFAULT,
+            encoder_pretrained = True,
             decoder_dim = 96,
             decoder_num_heads = (24, 12, 6, 3),
             decoder_window_size = ((8, 8), (8, 8), (8, 8), (8, 8)),
@@ -29,13 +29,13 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
     ):
         super().__init__()
         self.encoder_type = encoder_type
-        self.encoder_weights = encoder_weights
+        self.encoder_pretrained = encoder_pretrained
         # TODO: Maybe introduce intermediate linear layer to enhance compression
         self.decoder_num_heads = decoder_num_heads
         self.decoder_window_size = decoder_window_size
         self.decoder_mlp_ratio = decoder_mlp_ratio
         self.decoder_depths = decoder_depths
-        self.encoder = self.g_a = self._create_encoder(encoder_type, encoder_weights)
+        self.encoder = self.g_a = self._create_encoder(encoder_type, encoder_pretrained)
         self.decoder = self.g_s = SwinTransformerDecoder(
             dim=decoder_dim,
             num_heads=decoder_num_heads,
@@ -94,8 +94,17 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             }
         )
 
-    def _create_encoder(self, encoder_name, weights):
-        return self.ENCODER_MAP[encoder_name](weights=weights).features
+    def _create_encoder(self, encoder_name, pretrained):
+        match encoder_name:
+            case "swin_v2_t":
+                weights = Swin_V2_T_Weights.DEFAULT
+            case "swin_v2_s":
+                weights = Swin_V2_S_Weights.DEFAULT
+            case "swin_v2_b":
+                weights = Swin_V2_B_Weights.DEFAULT
+            case _:
+                weights = None
+        return self.ENCODER_MAP[encoder_name](weights=(weights if pretrained else None)).features
 
     def _validate_args(self):
         if self.encoder_type not in self.ENCODER_MAP:

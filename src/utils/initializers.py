@@ -184,7 +184,7 @@ def model_from_config(config: dict[str, Any]) -> Module:
             model.load_state_dict(state_dict, strict=False)
         return model
     else:
-        return model_type(encoder_weights=None, **args)
+        return model_type(encoder_pretrained=False, **args)
 
 
 def optimizer_from_config(parameters: ParamsT, config: dict[str, Any]) -> Optimizer:
