@@ -38,6 +38,8 @@ def _train(model, train_dataloader, val_dataloader, scaler, aux_optimizer_delay,
         epoch_ssim = 0
         epoch_bpp = 0
         epoch_lr = optimizer.param_groups[0]['lr']
+        psnr_metric = PeakSignalNoiseRatio().to(device)
+        ssim_metric = StructuralSimilarityIndexMeasure().to(device)
 
         if epoch > aux_optimizer_delay:
             optimize_bpp = True
@@ -50,12 +52,12 @@ def _train(model, train_dataloader, val_dataloader, scaler, aux_optimizer_delay,
                 output = model(x)
                 x_hat, y_likelihoods = output['x_hat'], output['likelihoods']['y']
                 if ycbcr:
-                    x = denormalize(x, YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD)
+                    x = denormalize(x.detach(), YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD)
                 else:
-                    x = denormalize(x, RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
+                    x = denormalize(x.detach(), RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
                 if isinstance(criterion, RDLoss):
                     loss, bpp = criterion(x_hat, x, y_likelihoods, optimize_bpp)
-                    epoch_bpp += bpp
+                    epoch_bpp += bpp.item()
                 else:
                     loss = criterion(x_hat, x)
 
@@ -75,17 +77,13 @@ def _train(model, train_dataloader, val_dataloader, scaler, aux_optimizer_delay,
 
             epoch_loss += loss.item()
 
-            psnr_metric = PeakSignalNoiseRatio()
-            psnr_metric.to(device)
             psnr_metric.update(x_hat, x)
             psnr = psnr_metric.compute()
-            epoch_psnr += psnr
+            epoch_psnr += psnr.item()
 
-            ssim_metric = StructuralSimilarityIndexMeasure()
-            ssim_metric.to(device)
             ssim_metric.update(x_hat, x)
             ssim = ssim_metric.compute()
-            epoch_ssim += ssim
+            epoch_ssim += ssim.item()
 
 
         avg_loss = epoch_loss / len(train_dataloader)
@@ -119,28 +117,29 @@ def _train(model, train_dataloader, val_dataloader, scaler, aux_optimizer_delay,
 
         with torch.no_grad():
             for x_val, _ in val_dataloader:
-                x_val = x_val.to(device)
+                x_val = x_val.to(device).detach()
                 with autocast(device_type="cuda"):
                     output = model(x_val)
                     x_hat_val, y_likelihoods_val = output['x_hat'], output['likelihoods']['y']
+                    x_hat_val = x_hat_val.detach()
                     if ycbcr:
                         x_val = denormalize(x_val, YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD)
                     else:
                         x_val = denormalize(x_val, RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
                     if isinstance(criterion, RDLoss):
                         loss_val, bpp_val = criterion(x_hat_val, x_val, y_likelihoods_val)
-                        eval_bpp += bpp_val
+                        eval_bpp += bpp_val.item()
                     else:
                         loss_val = criterion(x_hat_val, x_val)
                 eval_loss += loss_val.item()
 
                 psnr_metric_val = PeakSignalNoiseRatio().to(device)
                 psnr_metric_val.update(x_hat_val, x_val)
-                eval_psnr += psnr_metric_val.compute()
+                eval_psnr += psnr_metric_val.compute().item()
 
                 ssim_metric_val = StructuralSimilarityIndexMeasure().to(device)
                 ssim_metric_val.update(x_hat_val, x_val)
-                eval_ssim += ssim_metric_val.compute()
+                eval_ssim += ssim_metric_val.compute().item()
 
         avg_eval_loss = eval_loss / len(val_dataloader)
         avg_eval_psnr = eval_psnr / len(val_dataloader)
