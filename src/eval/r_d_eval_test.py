@@ -21,7 +21,8 @@ if __name__ == '__main__':
     print("Device:", device)
 
     models = [
-        "SWIN-T-IC_0.14.5"
+        "SWIN-S-IC_0.3.1_70",
+        "SWIN-S-IC_0.3.1_100"
         # "SWIN-T-IC_0.12.0-150of400",
         # "SWIN-T-IC_0.9.4-210of400"
     ]
@@ -31,27 +32,31 @@ if __name__ == '__main__':
 
     dataset = CocoDataset(transform=transform)
 
-    psnr_sum = 0
-    bpp_sum = 0
 
-    dataloader_iter = iter(torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=8))
-    for iteration in range(10):
-        x_batch, _ = next(dataloader_iter)
-        x_batch = x_batch.to(device)
-        for m in models:
-            model: SwinTransformerCompressionAutoencoder = typing.cast(SwinTransformerCompressionAutoencoder, model_from_config(
-                {
-                    "module": "src.models.swin_compression.SwinTransformerCompressionAutoencoder",
-                    "weights": m,
-                    "args": {
-                        "pretrained_encoder": False,
-                    }
-                }))
-            model.to(device)
-            params = model.a_s_parameters()
-            model.update()
+    pic_num = 20
 
-            model.eval()
+    for m in models:
+        psnr_sum = 0
+        bpp_sum = 0
+        dataloader_iter = iter(torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=8))
+        model: SwinTransformerCompressionAutoencoder = typing.cast(SwinTransformerCompressionAutoencoder, model_from_config(
+            {
+                "module": "src.models.swin_compression.SwinTransformerCompressionAutoencoder",
+                "weights": m,
+                "args": {
+                    "pretrained_encoder": False,
+                    "encoder_type": "swin_v2_s",
+                    "decoder_depths": [2, 18, 2, 2]
+                }
+            }))
+        model.to(device)
+        params = model.a_s_parameters()
+        model.update()
+
+        model.eval()
+        for iteration in range(pic_num):
+            x_batch, _ = next(dataloader_iter)
+            x_batch = x_batch.to(device)
 
             with torch.no_grad():
                 compress_output = model.compress(x_batch)
@@ -81,5 +86,5 @@ if __name__ == '__main__':
             print(f"bpp: {bpp}")
             bpp_sum += bpp
 
-    print(f"Avg PSNR: {(psnr_sum / 10):.4f}")
-    print(f"Avg bpp: {(bpp_sum / 10):.4f}")
+        print(f"Avg PSNR: {(psnr_sum / pic_num):.4f}")
+        print(f"Avg bpp: {(bpp_sum / pic_num):.4f}")
