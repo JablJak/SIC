@@ -7,6 +7,8 @@ from torch import nn, Tensor
 from torchvision.models.swin_transformer import ShiftedWindowAttentionV2
 from torchvision.ops import StochasticDepth
 
+from src.models.gdn_swin_transformer import permute_and_gdn
+
 
 class PatchReconstruction(nn.Module):
     def __init__(self):
@@ -116,7 +118,7 @@ class SwinTransformerDecoderBlock(nn.Module):
         self.attn = ShiftedWindowAttentionV2(dim=dim, window_size=window_size, num_heads=num_heads, shift_size=shift_size)
         self.mlp = nn.Sequential(
             nn.Linear(dim, int(dim * mlp_ratio)),
-            nn.GELU(),
+            permute_and_gdn(int(dim * mlp_ratio), inverse=True),
             nn.Linear(int(dim * mlp_ratio), dim),
         )
         self.stochastic_depth = StochasticDepth(sd_factor, "row")
