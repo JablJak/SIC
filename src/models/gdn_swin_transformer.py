@@ -46,7 +46,6 @@ class GDNSwinTransformer(nn.Module):
         stage_block_id = 0
         for i_stage in range(len(depths)):
             stage: list[nn.Module] = []
-            last_stage = i_stage == (len(depths) - 1)
             dim = embed_dim * 2**i_stage
             for i_layer in range(depths[i_stage]):
                 sd_prob = stochastic_depth_prob * float(stage_block_id) / (total_stage_blocks - 1)
@@ -73,9 +72,6 @@ class GDNSwinTransformer(nn.Module):
             layers.append(nn.Sequential(*stage))
             if i_stage < (len(depths) - 1):
                 layers.append(downsample_layer(dim, norm_layer))
-            layers.append(Permute([0, 3, 1, 2]))
-            layers.append(GDN(dim * 2 if i_stage < (len(depths) - 1) else dim))
-            layers.append(Permute([0, 2, 3, 1]))
         self.features = nn.Sequential(*layers)
 
         num_features = embed_dim * 2 ** (len(depths) - 1)

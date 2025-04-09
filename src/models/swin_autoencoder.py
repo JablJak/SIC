@@ -88,7 +88,6 @@ class SwinTransformerDecoderStage(nn.Module):
         )
         self.norms = nn.ModuleList([nn.LayerNorm(dim) for _ in range(depth)])
         self.pixel_shuffle = nn.PixelShuffle(upscale_factor=2)
-        self.igdn = GDN(dim // 2, inverse=True)
 
     def forward(self, x):
         for i in range(self.depth):
@@ -96,7 +95,6 @@ class SwinTransformerDecoderStage(nn.Module):
         x = self.linear(self.split_norm(x))
         x = x.permute(0, 3, 1, 2)
         x = self.pixel_shuffle(x)
-        x = self.igdn(x)
         x = x.permute(0, 2, 3, 1)
 
         return x
