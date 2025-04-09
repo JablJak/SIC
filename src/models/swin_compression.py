@@ -4,9 +4,10 @@ from compressai.latent_codecs import EntropyBottleneckLatentCodec, HyperpriorLat
     GaussianConditionalLatentCodec, CheckerboardLatentCodec
 from compressai.layers import conv3x3, subpel_conv3x3, CheckerboardMaskedConv2d
 from compressai.models import SimpleVAECompressionModel
-from torch import nn
+from torch import nn, autocast, Tensor
 from torchvision.models import swin_v2_t, swin_v2_s, swin_v2_b, Swin_V2_T_Weights, Swin_V2_S_Weights, Swin_V2_B_Weights
 
+from src.models.gdn_swin_transformer import gdn_swin_v2_s
 from src.models.swin_autoencoder import SwinTransformerDecoder
 
 class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
@@ -14,6 +15,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         "swin_v2_t": swin_v2_t,
         "swin_v2_s": swin_v2_s,
         "swin_v2_b": swin_v2_b,
+        "gdn_swin_v2_s": gdn_swin_v2_s,
     }
 
     def __init__(
@@ -117,10 +119,10 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         ]}) != 1:
             raise ValueError(f"All decoder properties must equal number of decoder stages")
 
-    def forward(self, x):
+    def forward(self, x: Tensor):
         y = self.g_a(x)
         y = y.permute(0, 3, 1, 2)
-        with torch.cuda.amp.autocast(enabled=False):
+        with autocast(device_type=x.device.type, enabled=False):
             y_out = self.latent_codec(y)
         y_hat = y_out["y_hat"]
         y_hat = y_hat.permute(0, 2, 3, 1)
