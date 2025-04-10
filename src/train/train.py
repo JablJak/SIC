@@ -17,6 +17,7 @@ from src.data.transforms import YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD, \
 from src.losses.rdloss import RDLoss
 from src.train.experiment import Experiment
 from src.utils import clearml_helpers
+from src.utils.checkpoint_helpers import save_training_state_with_clearml, load_training_state_with_clearml_from_file
 from src.utils.clearml_helpers import  start_experiment
 from src.utils.const import MODEL_CHECKPOINT_PATH, MODEL_CHECKPOINT_FILE, EXPERIMENTS_CONFIG_PATH, \
     MODEL_OUTPUT_PATH, ARTIFACTS_PATH
@@ -26,13 +27,14 @@ from src.viz.plotter import plot_reconstructions
 
 
 def _train(model, train_dataloader, val_dataloader, scaler, aux_optimizer_delay,
-           criterion, optimizer, aux_optimizer, aux_scheduler, num_epochs, device, scheduler, logger=None, ycbcr=False):
+           criterion, optimizer, aux_optimizer, aux_scheduler, num_epochs, device, scheduler, logger=None, ycbcr=False,
+           task=None, start_epoch=1):
     # Train
 
     optimize_bpp = False
 
     model.train()
-    for epoch in range(num_epochs):
+    for epoch in range(start_epoch, num_epochs):
         epoch_loss = 0
         epoch_psnr = 0
         epoch_ssim = 0
@@ -105,8 +107,19 @@ def _train(model, train_dataloader, val_dataloader, scaler, aux_optimizer_delay,
         except Exception as e:
             print(f"[Warning] Logging to ClearML failed: {e}")
 
-        if epoch % 10 == 0:
-            torch.save(model.state_dict(), f"{MODEL_CHECKPOINT_PATH}/{MODEL_CHECKPOINT_FILE}")
+        if epoch % 10 == 0 and epoch > 0:
+            save_training_state_with_clearml(
+                task=task,
+                model=model,
+                optimizer=optimizer,
+                aux_optimizer=aux_optimizer,
+                scheduler=scheduler,
+                aux_scheduler=aux_scheduler,
+                scaler=scaler,
+                current_epoch=epoch,
+                save_path=f"{MODEL_CHECKPOINT_PATH}/checkpoint_{epoch}.pth"
+            )
+            # torch.save(model.state_dict(), f"{MODEL_CHECKPOINT_PATH}/checkpoint_{epoch}.pth")
 
         # Eval
         model.eval()
@@ -202,16 +215,23 @@ if __name__ == '__main__':
         help="Whether or not to upload experiment data to ClearML",
     )
 
+    parser.add_argument(
+        "--resume-checkpoint",
+        type=str,
+        default=None,
+        help="Path to the training checkpoint to resume from (includes ClearML task id)"
+    )
+
     args = parser.parse_args()
     print("CMD line args:", args)
 
     experiment_config = read_config(args.config)
     experiment = Experiment(experiment_config)
 
-    if not args.offline:
-        task, logger = start_experiment(experiment)
+    if not args.offline and not args.resume_checkpoint:
+        task = start_experiment(experiment)
     else:
-        task, logger = None, None
+        task = None
 
     # ===== Disable randomness =====
     seed = 42
@@ -232,7 +252,6 @@ if __name__ == '__main__':
     val_dataloader = dataloader_from_config(val_dataset, experiment_config['dataloader'])
 
     model = experiment.model
-    # model = torch.compile(model)
     model.to(device)
 
     ycbcr = experiment.config["dataset"]["transform"][0]["module"] == "src.data.transforms.YCbCrCompression"
@@ -256,6 +275,23 @@ if __name__ == '__main__':
     aux_scheduler = experiment.aux_scheduler
 
     scaler = GradScaler()
+
+    start_epoch = 1
+    if args.resume_checkpoint:
+        print(f"[INFO] Resuming training from checkpoint: {args.resume_checkpoint}")
+        task, start_epoch = load_training_state_with_clearml_from_file(
+            args.resume_checkpoint,
+            model,
+            optimizer,
+            aux_optimizer,
+            scheduler,
+            aux_scheduler,
+            scaler,
+            device
+        )
+
+    logger = task.get_logger() if task is not None else None
+
     with open(f"logs/{datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")}.log", "a") as log_file:
         trained_model = _train(
             model=model,
@@ -269,8 +305,10 @@ if __name__ == '__main__':
             device=device,
             scheduler=scheduler,
             logger=logger,
+            task=task,
             scaler=scaler,
-            aux_optimizer_delay=experiment.aux_optimizer_delay
+            aux_optimizer_delay=experiment.aux_optimizer_delay,
+            start_epoch=start_epoch,
         )
 
     # TODO: TRAIN TIME
@@ -302,4 +340,3 @@ if __name__ == '__main__':
     x_recon = to_pil_image(x_recon)
 
     plot_reconstructions(x_batch, x_recon, reconstructions_path, show=False)
-

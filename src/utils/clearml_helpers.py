@@ -11,9 +11,8 @@ def save_model(task: TaskInstance, experiment: Experiment, weights_file_path: st
     model_id = output_model.id
     print(f"Saved ClearML model with ID: {model_id}")
 
-def start_experiment(experiment: Experiment) -> tuple[TaskInstance, Logger]:
+def start_experiment(experiment: Experiment) -> TaskInstance:
     task = Task.init(project_name=experiment.project, task_name=experiment.task)
     task.connect(experiment.config)
     task.set_comment(experiment.comment)
-    logger = task.get_logger()
-    return task, logger
+    return task
