@@ -6,7 +6,6 @@ import random
 import numpy as np
 import torch
 from torch import autocast, GradScaler
-from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
 
 from torchvision.transforms.v2.functional import to_pil_image
@@ -18,19 +17,34 @@ from src.train.experiment import Experiment
 from src.utils import clearml_helpers
 from src.utils.checkpoint_helpers import save_training_state_with_clearml, load_training_state_with_clearml_from_file
 from src.utils.clearml_helpers import  start_experiment
-from src.utils.const import MODEL_CHECKPOINT_PATH, MODEL_CHECKPOINT_FILE, EXPERIMENTS_CONFIG_PATH, \
+from src.utils.const import MODEL_CHECKPOINT_PATH, EXPERIMENTS_CONFIG_PATH, \
     MODEL_OUTPUT_PATH, ARTIFACTS_PATH
 from src.utils.initializers import read_config, dataloader_from_config
 from src.utils.postprocess import denormalize
 from src.viz.plotter import plot_reconstructions
 
 
-def _train(model, train_dataloader, val_dataloader, scaler, aux_optimizer_delay,
+def _scaled_lambda(current_iter, start_iter, num_iters, start_lambda, end_lambda,
+                   current_lambda, mode='log'):
+    if mode == 'log':
+        if current_iter < start_iter:
+            return current_lambda
+        if current_iter > start_iter + num_iters:
+            return end_lambda
+        else:
+            lambda_exp = np.exp(np.log(end_lambda / start_lambda) / num_iters)
+            return start_lambda * lambda_exp ** (current_iter - start_iter)
+
+
+def _train(model, train_dataloader, val_dataloader, scaler, aux_optimizer_delay, target_lambda,
            criterion, optimizer, aux_optimizer, aux_scheduler, num_epochs, device, scheduler, logger=None, ycbcr=False,
            task=None, start_epoch=1):
     # Train
 
     optimize_bpp = False
+    start_lambda = 0.1
+    lambda_scale_iters = 30
+    scale_start_epoch = aux_optimizer_delay
 
     model.train()
     for epoch in range(start_epoch, num_epochs):
@@ -41,6 +55,9 @@ def _train(model, train_dataloader, val_dataloader, scaler, aux_optimizer_delay,
         epoch_lr = optimizer.param_groups[0]['lr']
         psnr_metric = PeakSignalNoiseRatio().to(device)
         ssim_metric = StructuralSimilarityIndexMeasure().to(device)
+
+        # criterion.l = _scaled_lambda(epoch, start_iter=scale_start_epoch, num_iters=lambda_scale_iters,
+        #                              start_lambda=start_lambda, end_lambda=target_lambda, current_lambda=criterion.l)
 
         if epoch > aux_optimizer_delay:
             optimize_bpp = True
@@ -285,27 +302,6 @@ if __name__ == '__main__':
             device
         )
 
-    # warmup_epochs = 10
-    # warmup_scheduler = LinearLR(
-    #     optimizer,
-    #     start_factor=1.0,  # Zaczynamy od pełnego initial_lr (0.000065)
-    #     end_factor=0.00005 / 0.0000675,
-    #     total_iters=warmup_epochs
-    # )
-    #
-    scheduler = CosineAnnealingLR(
-        optimizer,
-        T_max=30,
-        eta_min=0.0000075
-    )
-    #
-    # scheduler = SequentialLR(
-    #     optimizer,
-    #     schedulers=[warmup_scheduler, cosine_scheduler],
-    #     milestones=[warmup_epochs] # Przełącz po 5 epokach
-    # )
-
-
     logger = task.get_logger() if task is not None else None
 
     with open(f"logs/{datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")}.log", "a") as log_file:
@@ -325,6 +321,7 @@ if __name__ == '__main__':
             scaler=scaler,
             aux_optimizer_delay=experiment.aux_optimizer_delay,
             start_epoch=start_epoch,
+            target_lambda=loss.l
         )
 
     # TODO: TRAIN TIME
