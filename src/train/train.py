@@ -6,6 +6,7 @@ import random
 import numpy as np
 import torch
 from torch import autocast, GradScaler
+from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
 
 from torchvision.transforms.v2.functional import to_pil_image
@@ -278,11 +279,32 @@ if __name__ == '__main__':
             model,
             optimizer,
             aux_optimizer,
-            scheduler,
+            None,
             aux_scheduler,
             scaler,
             device
         )
+
+    # warmup_epochs = 10
+    # warmup_scheduler = LinearLR(
+    #     optimizer,
+    #     start_factor=1.0,  # Zaczynamy od pełnego initial_lr (0.000065)
+    #     end_factor=0.00005 / 0.0000675,
+    #     total_iters=warmup_epochs
+    # )
+    #
+    scheduler = CosineAnnealingLR(
+        optimizer,
+        T_max=30,
+        eta_min=0.0000075
+    )
+    #
+    # scheduler = SequentialLR(
+    #     optimizer,
+    #     schedulers=[warmup_scheduler, cosine_scheduler],
+    #     milestones=[warmup_epochs] # Przełącz po 5 epokach
+    # )
+
 
     logger = task.get_logger() if task is not None else None
 

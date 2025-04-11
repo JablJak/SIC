@@ -21,8 +21,8 @@ if __name__ == '__main__':
     print("Device:", device)
 
     models = [
-        "SWIN-S-IC_0.3.1_70",
-        "SWIN-S-IC_0.3.1_100"
+        ("SWIN-S-IC_0.11.1", "gdn_swin_v2_s"),
+        ("SWIN-S-IC_0.3.1_100", "swin_v2_s")
         # "SWIN-T-IC_0.12.0-150of400",
         # "SWIN-T-IC_0.9.4-210of400"
     ]
@@ -42,10 +42,10 @@ if __name__ == '__main__':
         model: SwinTransformerCompressionAutoencoder = typing.cast(SwinTransformerCompressionAutoencoder, model_from_config(
             {
                 "module": "src.models.swin_compression.SwinTransformerCompressionAutoencoder",
-                "weights": m,
+                "weights": m[0],
                 "args": {
                     "pretrained_encoder": False,
-                    "encoder_type": "swin_v2_s",
+                    "encoder_type": m[1],
                     "decoder_depths": [2, 18, 2, 2]
                 }
             }))
@@ -69,9 +69,9 @@ if __name__ == '__main__':
             out_img: PIL.Image.Image = to_pil_image(x_recon[0])
             out_img = out_img.crop((0, 0, in_img.size[0], in_img.size[1]))
 
-            os.makedirs(os.path.join(ARTIFACTS_PATH, m), exist_ok=True)
-            im_img_path = os.path.join(ARTIFACTS_PATH, m, f"{iteration}_original.png")
-            out_img_path = os.path.join(ARTIFACTS_PATH, m, f"{iteration}_compressed.png")
+            os.makedirs(os.path.join(ARTIFACTS_PATH, m[0]), exist_ok=True)
+            im_img_path = os.path.join(ARTIFACTS_PATH, m[0], f"{iteration}_original.png")
+            out_img_path = os.path.join(ARTIFACTS_PATH, m[0], f"{iteration}_compressed.png")
             in_img.save(im_img_path)
             out_img.save(out_img_path)
 
