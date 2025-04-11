@@ -1,3 +1,5 @@
+from functools import partial
+
 from compressai.entropy_models import EntropyBottleneck
 from compressai.layers import GDN
 from timm.layers import DropPath
@@ -5,7 +7,7 @@ from torch.nn import init
 from torchvision.models import swin_v2_t, swin_v2_s, swin_v2_b, Swin_V2_T_Weights
 from torch import nn, Tensor
 from torchvision.models.swin_transformer import ShiftedWindowAttentionV2
-from torchvision.ops import StochasticDepth
+from torchvision.ops import StochasticDepth, MLP
 
 from src.models.gdn_swin_transformer import permute_and_gdn
 
@@ -108,17 +110,16 @@ class SwinTransformerDecoderBlock(nn.Module):
         window_size,
         shift_size,
         sd_factor,
-        mlp_ratio=4,
+        dropout: float = 0.0,
+        mlp_ratio=2.0,
     ):
         super().__init__()
         self.norm1 = nn.LayerNorm(dim)
         self.norm2 = nn.LayerNorm(dim)
         self.attn = ShiftedWindowAttentionV2(dim=dim, window_size=window_size, num_heads=num_heads, shift_size=shift_size)
-        self.mlp = nn.Sequential(
-            nn.Linear(dim, int(dim * mlp_ratio)),
-            permute_and_gdn(int(dim * mlp_ratio), inverse=True),
-            nn.Linear(int(dim * mlp_ratio), dim),
-        )
+        self.mlp = MLP(dim, [int(dim * mlp_ratio), dim],
+                       activation_layer=partial(permute_and_gdn, dim=(dim * int(mlp_ratio)), inverse=True),
+                       inplace=None, dropout=dropout)
         self.stochastic_depth = StochasticDepth(sd_factor, "row")
 
         # TODO: Initialize rest of the layers
@@ -130,8 +131,8 @@ class SwinTransformerDecoderBlock(nn.Module):
                     init.zeros_(m.bias)
 
     def forward(self, x: Tensor):
-        x = x + self.stochastic_depth(self.attn(self.norm1(x)))
-        x = x + self.stochastic_depth(self.mlp(self.norm2(x)))
+        x = x + self.stochastic_depth(self.norm1(self.attn(x)))
+        x = x + self.stochastic_depth(self.norm2(self.mlp(x)))
         return x
 
 class SwinTransformerAutoencoder(nn.Module):

@@ -17,7 +17,7 @@ class GDNSwinTransformer(nn.Module):
         depths: list[int],
         num_heads: list[int],
         window_size: list[int],
-        mlp_ratio: float = 4.0,
+        mlp_ratio: float = 2.0,
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.1,

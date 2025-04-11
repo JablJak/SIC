@@ -6,8 +6,6 @@ import random
 import numpy as np
 import torch
 from torch import autocast, GradScaler
-from torch.optim import AdamW
-from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
 
 from torchvision.transforms.v2.functional import to_pil_image
@@ -119,7 +117,6 @@ def _train(model, train_dataloader, val_dataloader, scaler, aux_optimizer_delay,
                 current_epoch=epoch,
                 save_path=f"{MODEL_CHECKPOINT_PATH}/checkpoint_{epoch}.pth"
             )
-            # torch.save(model.state_dict(), f"{MODEL_CHECKPOINT_PATH}/checkpoint_{epoch}.pth")
 
         # Eval
         model.eval()
@@ -179,9 +176,6 @@ def _train(model, train_dataloader, val_dataloader, scaler, aux_optimizer_delay,
         if aux_scheduler is not None and epoch > aux_optimizer_delay:
             aux_scheduler.step()
 
-        # TODO: Configurable
-        # if epoch <= 50:
-        #     criterion.l *= 0.99
         if epoch > aux_optimizer_delay and epoch % 10 == 0:
             model.update()
 
