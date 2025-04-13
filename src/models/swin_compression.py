@@ -22,6 +22,13 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             self,
             encoder_type = "swin_v2_t",
             encoder_pretrained = False,
+            encoder_embed_dim = 96,
+            encoder_dims=(96, 192, 288, 384),
+            encoder_depths=(2, 2, 18, 2),
+            encoder_num_heads=(3, 6, 12, 24),
+            encoder_window_size=(8, 8),
+            encoder_sd_factor=0.3,
+            encoder_mlp_ratio=4,
             decoder_dims = (384, 288, 192, 96, 48),
             decoder_num_heads = (24, 12, 6, 3),
             decoder_window_size = ((8, 8), (8, 8), (8, 8), (8, 8)),
@@ -37,7 +44,17 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         self.decoder_window_size = decoder_window_size
         self.decoder_mlp_ratio = decoder_mlp_ratio
         self.decoder_depths = decoder_depths
-        self.encoder = self.g_a = self._create_encoder(encoder_type, encoder_pretrained)
+        self.encoder = self.g_a = self._create_encoder(
+            encoder_name=encoder_type,
+            pretrained=encoder_pretrained,
+            embed_dim=encoder_embed_dim,
+            stage_dims=encoder_dims,
+            depths=encoder_depths,
+            num_heads=encoder_num_heads,
+            window_size=encoder_window_size,
+            stochastic_depth_prob=encoder_sd_factor,
+            mlp_ratio=encoder_mlp_ratio,
+        )
         self.decoder = self.g_s = SwinTransformerDecoder(
             stage_dims=decoder_dims,
             num_heads=decoder_num_heads,
@@ -96,7 +113,17 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             }
         )
 
-    def _create_encoder(self, encoder_name, pretrained):
+    def _create_encoder(self,
+        encoder_name, 
+        pretrained,
+        embed_dim,
+        stage_dims,
+        depths,
+        num_heads,
+        window_size,
+        stochastic_depth_prob,
+        mlp_ratio
+    ):
         match encoder_name:
             case "swin_v2_t":
                 weights = Swin_V2_T_Weights.DEFAULT
@@ -106,7 +133,16 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
                 weights = Swin_V2_B_Weights.DEFAULT
             case _:
                 weights = None
-        return self.ENCODER_MAP[encoder_name](weights=(weights if pretrained else None)).features
+        return self.ENCODER_MAP[encoder_name](
+            weights=(weights if pretrained else None),
+            embed_dim=embed_dim,
+            stage_dims=stage_dims,
+            depths=depths,
+            num_heads=num_heads,
+            window_size=window_size,
+            stochastic_depth_prob=stochastic_depth_prob,
+            mlp_ratio=mlp_ratio
+        ).features
 
     def _validate_args(self):
         if self.encoder_type not in self.ENCODER_MAP:

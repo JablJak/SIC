@@ -12,9 +12,9 @@ from torchvision.ops import StochasticDepth, MLP
 from src.models.gdn_swin_transformer import permute_and_gdn
 
 class PatchReconstruction(nn.Module):
-    def __init__(self):
+    def __init__(self, dim):
         super().__init__()
-        self.conv_trans = nn.ConvTranspose2d(48, 3, kernel_size=4, stride=2, padding=1)
+        self.conv_trans = nn.ConvTranspose2d(dim, 3, kernel_size=4, stride=2, padding=1)
         self.norm = nn.BatchNorm2d(3)
         self.activation = nn.Sigmoid()
 
@@ -55,7 +55,7 @@ class SwinTransformerDecoder(nn.Module):
                for i in range(n)
         ]
         self.stages = nn.ModuleList(stages)
-        self.reconstruction = PatchReconstruction()
+        self.reconstruction = PatchReconstruction(stage_dims[-1])
 
     def forward(self, x):
         for stage in self.stages:

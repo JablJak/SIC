@@ -124,17 +124,28 @@ class GDNSwinTransformer(nn.Module):
 
 @register_model()
 @handle_legacy_interface(weights=("pretrained", Swin_S_Weights.IMAGENET1K_V1))
-def gdn_swin_v2_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, **kwargs: Any) -> GDNSwinTransformer:
-    weights = Swin_S_Weights.verify(weights)
-
-    return _gdn_swin_transformer(
-        patch_size=[4, 4],
+def gdn_swin_v2_s(
+        *,
+        weights: Optional[Swin_S_Weights] = None,
         embed_dim=96,
         stage_dims=[96, 192, 288, 384],
         depths=[2, 2, 18, 2],
         num_heads=[3, 6, 12, 24],
         window_size=[8, 8],
         stochastic_depth_prob=0.3,
+        mlp_ratio=4.0,
+        progress: bool = True, **kwargs: Any) -> GDNSwinTransformer:
+    weights = Swin_S_Weights.verify(weights)
+
+    return _gdn_swin_transformer(
+        patch_size=[4, 4],
+        embed_dim=embed_dim,
+        stage_dims=stage_dims,
+        depths=depths,
+        num_heads=num_heads,
+        window_size=window_size,
+        stochastic_depth_prob=stochastic_depth_prob,
+        mlp_ratio=mlp_ratio,
         weights=weights,
         progress=progress,
         block=SwinTransformerBlockV2,
@@ -150,6 +161,7 @@ def _gdn_swin_transformer(
     num_heads: list[int],
     window_size: list[int],
     stochastic_depth_prob: float,
+    mlp_ratio: float,
     weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
@@ -165,6 +177,7 @@ def _gdn_swin_transformer(
         window_size=window_size,
         stochastic_depth_prob=stochastic_depth_prob,
         stage_dims=stage_dims,
+        mlp_ratio=mlp_ratio,
         **kwargs,
     )
 

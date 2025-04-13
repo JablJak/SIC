@@ -17,7 +17,7 @@ def save_training_state_with_clearml(task, model, optimizer, aux_optimizer,
         'aux_scheduler': aux_scheduler.state_dict() if aux_scheduler else None,
         'scaler': scaler.state_dict(),
         'epoch': current_epoch,
-        'clearml_task_id': task.id
+        'clearml_task_id': task.id if task is not None else None,
     }
 
     os.makedirs(os.path.dirname(save_path), exist_ok=True)

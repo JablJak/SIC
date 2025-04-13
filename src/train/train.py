@@ -8,6 +8,7 @@ import torch
 from torch import autocast, GradScaler
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import SequentialLR, LinearLR, CosineAnnealingLR
+from torchmetrics.functional.image import peak_signal_noise_ratio
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
 
 from torchvision.transforms.v2.functional import to_pil_image
@@ -38,7 +39,7 @@ def _scaled_lambda(current_iter, start_iter, num_iters, start_lambda, end_lambda
             return start_lambda * lambda_exp ** (current_iter - start_iter)
 
 
-def _train(model, train_dataloader, val_dataloader, scaler, aux_optimizer_delay, target_lambda,
+def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux_optimizer_delay, target_lambda,
            criterion, optimizer, aux_optimizer, aux_scheduler, num_epochs, device, scheduler, logger=None, ycbcr=False,
            task=None, start_epoch=1):
     # Train
@@ -190,15 +191,40 @@ def _train(model, train_dataloader, val_dataloader, scaler, aux_optimizer_delay,
         except Exception as e:
             print(f"[Warning] Logging to ClearML failed: {e}")
 
-        model.train()
         if scheduler is not None:
             scheduler.step()
         if aux_scheduler is not None and epoch > aux_optimizer_delay:
             aux_scheduler.step()
 
         if epoch > aux_optimizer_delay and epoch % 10 == 0:
+            avg_test_psnr = 0
+            avg_test_bpp = 0
             model.update()
+            with torch.no_grad():
+                for x_test, _ in test_dataloader:
+                    x_test = x_test.to(device).detach()
+                    with autocast(device_type="cuda"):
+                        compress_output = model.compress(x_test)
+                        b_repr, shape = compress_output['strings'], compress_output['shape']
+                        x_hat_test = model.decompress(b_repr, shape)['x_hat']
 
+                        x_test = denormalize(x_test, RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
+
+                        psnr = peak_signal_noise_ratio(x_test, x_hat_test).item()
+                        avg_test_psnr += psnr
+
+                        bits = sum([sum([len(b) for b in b_repr_item]) * 8 / len(b_repr_item) for b_repr_item in b_repr])
+                        _, _, H, W = x_hat_test.shape
+                        bpp = bits / (H * W)
+                        avg_test_bpp += bpp
+
+            avg_test_bpp /= len(test_dataloader)
+            avg_test_psnr /= len(test_dataloader)
+            print(f"[TEST] Epoch {epoch}/{num_epochs}, PSNR: {avg_test_psnr:.4f}, bpp: {avg_test_bpp:.4f}")
+            if logger is not None:
+                logger.report_scalar(title="PSNR", series="test", value=avg_test_psnr, iteration=epoch)
+                logger.report_scalar(title="bpp", series="test", value=avg_test_bpp, iteration=epoch)
+        model.train()
     return model
 
 if __name__ == '__main__':
@@ -260,30 +286,30 @@ if __name__ == '__main__':
     device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
     print("Device:", device)
 
-    train_dataset, val_dataset = experiment.train_dataset, experiment.val_dataset
+    train_dataset, val_dataset, test_dataset = experiment.train_dataset, experiment.val_dataset, experiment.test_dataset
 
     train_dataloader = dataloader_from_config(train_dataset, experiment_config['dataloader'])
     val_dataloader = dataloader_from_config(val_dataset, experiment_config['dataloader'])
+    test_dataloader = dataloader_from_config(test_dataset, experiment_config['dataloader'])
 
     model = experiment.model
     model.to(device)
 
-    ycbcr = experiment.config["dataset"]["transform"][0]["module"] == "src.data.transforms.YCbCrCompression"
+    ycbcr = experiment.config["train_dataset"]["transform"][0]["module"] == "src.data.transforms.YCbCrCompression"
 
-    if not ycbcr:
-        for param in model.g_a.parameters():
-            param.requires_grad = False
-        for param_name, param_weights in model.g_a.named_parameters("6."):
-             param_weights.requires_grad = True
-        for param_name, param_weights in model.g_a.named_parameters("7."):
-             param_weights.requires_grad = True
+    # if not ycbcr:
+    #     for param in model.g_a.parameters():
+    #         param.requires_grad = False
+    #     for param_name, param_weights in model.g_a.named_parameters("6."):
+    #          param_weights.requires_grad = True
+    #     for param_name, param_weights in model.g_a.named_parameters("7."):
+    #          param_weights.requires_grad = True
 
     loss = experiment.loss
     loss.to(device)
 
     optimizer = experiment.optimizer
     scheduler = experiment.scheduler
-    ycbcr = experiment.config["dataset"]["transform"][0]["module"] == "src.data.transforms.YCbCrCompression"
 
     aux_optimizer = experiment.aux_optimizer
     aux_scheduler = experiment.aux_scheduler
@@ -311,6 +337,7 @@ if __name__ == '__main__':
             model=model,
             train_dataloader=train_dataloader,
             val_dataloader=val_dataloader,
+            test_dataloader=test_dataloader,
             criterion=loss,
             optimizer=optimizer,
             aux_optimizer=aux_optimizer,
