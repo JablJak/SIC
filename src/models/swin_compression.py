@@ -22,7 +22,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             self,
             encoder_type = "swin_v2_t",
             encoder_pretrained = True,
-            decoder_dims = (240, 192, 144, 96, 48),
+            decoder_dims = (384, 288, 192, 96, 48),
             decoder_num_heads = (24, 12, 6, 3),
             decoder_window_size = ((8, 8), (8, 8), (8, 8), (8, 8)),
             decoder_mlp_ratio = (4, 4, 4, 4),

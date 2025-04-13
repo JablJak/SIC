@@ -41,7 +41,7 @@ class GDNSwinTransformer(nn.Module):
         depths: list[int],
         num_heads: list[int],
         window_size: list[int],
-        mlp_ratio: float = 2.0,
+        mlp_ratio: float = 4.0,
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.1,
@@ -130,7 +130,7 @@ def gdn_swin_v2_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = 
     return _gdn_swin_transformer(
         patch_size=[4, 4],
         embed_dim=96,
-        stage_dims=[96, 144, 192, 240],
+        stage_dims=[96, 192, 288, 384],
         depths=[2, 2, 18, 2],
         num_heads=[3, 6, 12, 24],
         window_size=[8, 8],

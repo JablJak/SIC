@@ -6,6 +6,8 @@ import random
 import numpy as np
 import torch
 from torch import autocast, GradScaler
+from torch.optim import AdamW
+from torch.optim.lr_scheduler import SequentialLR, LinearLR, CosineAnnealingLR
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
 
 from torchvision.transforms.v2.functional import to_pil_image
@@ -296,7 +298,7 @@ if __name__ == '__main__':
             model,
             optimizer,
             aux_optimizer,
-            None,
+            scheduler,
             aux_scheduler,
             scaler,
             device
