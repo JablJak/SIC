@@ -100,7 +100,7 @@ class SwinTransformerDecoderStage(nn.Module):
             x = self.blocks[i](x)
         x = self.norm(x)
         x = self.linear(x)
-        x = self.activation(x)
+        # x = self.activation(x)
         x = x.permute(0, 3, 1, 2)
         x = self.pixel_shuffle(x)
         x = x.permute(0, 2, 3, 1)
@@ -139,57 +139,3 @@ class SwinTransformerDecoderBlock(nn.Module):
         x = x + self.stochastic_depth(self.norm1(self.attn(x)))
         x = x + self.stochastic_depth(self.norm2(self.mlp(x)))
         return x
-
-class SwinTransformerAutoencoder(nn.Module):
-    ENCODER_MAP = {
-        "swin_v2_t": swin_v2_t,
-        "swin_v2_s": swin_v2_s,
-        "swin_v2_b": swin_v2_b,
-    }
-
-    def __init__(
-            self,
-            encoder_type = "swin_v2_t",
-            encoder_weights = Swin_V2_T_Weights.DEFAULT,
-            decoder_dims = (240, 192, 144, 96, 48),
-            decoder_num_heads = (24, 12, 6, 3),
-            decoder_window_size = ((7, 7), (7, 7), (7, 7), (7, 7)),
-            decoder_mlp_ratio = (4, 4, 4, 4),
-            decoder_depths = (2, 6, 2, 2),
-            decoder_sd_factor = 0.1
-    ):
-        super().__init__()
-        self.encoder_weights = encoder_weights
-        self.decoder_num_heads = decoder_num_heads
-        self.decoder_window_size = decoder_window_size
-        self.decoder_mlp_ratio = decoder_mlp_ratio
-        self.decoder_depths = decoder_depths
-        self.encoder = self._create_encoder(encoder_type, encoder_weights)
-        self.entropy_model = EntropyBottleneck(channels=768) # TODO: this can't be hardcoded
-        # TODO: Maybe introduce intermediate linear layer to enhance compression
-        self.decoder = SwinTransformerDecoder(
-            stage_dims=decoder_dims,
-            num_heads=decoder_num_heads,
-            windows_sizes=decoder_window_size,
-            mlp_ratios=decoder_mlp_ratio,
-            depths=decoder_depths,
-            sd_factor=decoder_sd_factor
-        )
-
-    def _create_encoder(self, encoder_name, weights):
-        if encoder_name not in self.ENCODER_MAP:
-            raise ValueError(f"Invalid encoder type: {encoder_name}")
-        if len({len(field) for field in [
-            self.decoder_num_heads,
-            self.decoder_window_size,
-            self.decoder_mlp_ratio,
-            self.decoder_depths
-        ]}) != 1:
-            raise ValueError(f"All decoder properties must equal number of decoder stages")
-        return self.ENCODER_MAP[encoder_name](weights=weights).features
-
-    def forward(self, x):
-        y = self.encoder(x)
-        y_hat, y_likelihoods = self.entropy_model(y.permute(0, 3, 1, 2))
-        x_hat = self.decoder(y_hat.permute(0, 2, 3, 1), x.shape[-2:])
-        return x_hat, y_likelihoods
