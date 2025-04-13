@@ -109,7 +109,7 @@ def _train(model, train_dataloader, val_dataloader, scaler, aux_optimizer_delay,
         avg_ssim = epoch_ssim / len(train_dataloader)
         avg_bpp = epoch_bpp / len(train_dataloader)
 
-        print(f"[TRAIN] Epoch {epoch + 1}/{num_epochs}, Loss: {avg_loss:.5f}, PSNR: {avg_psnr:.4f},"
+        print(f"[TRAIN] Epoch {epoch}/{num_epochs}, Loss: {avg_loss:.5f}, PSNR: {avg_psnr:.4f},"
               f" SSIM: {avg_ssim:.4f}, bpp: {avg_bpp:.4f} lr: {epoch_lr}")
 
         try:
@@ -174,7 +174,7 @@ def _train(model, train_dataloader, val_dataloader, scaler, aux_optimizer_delay,
         avg_eval_ssim = eval_ssim / len(val_dataloader)
         avg_eval_bpp = eval_bpp / len(val_dataloader)
 
-        print(f"[VAL] Epoch {epoch + 1}/{num_epochs}, "
+        print(f"[VAL] Epoch {epoch}/{num_epochs}, "
               f"Loss: {avg_eval_loss:.4f}, PSNR: {avg_eval_psnr:.4f}, SSIM: {avg_eval_ssim:.4f}, "
               f"bpp: {avg_eval_bpp:.4f} lr: {epoch_lr}")
 

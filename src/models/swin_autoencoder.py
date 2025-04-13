@@ -11,16 +11,17 @@ from torchvision.ops import StochasticDepth, MLP
 
 from src.models.gdn_swin_transformer import permute_and_gdn
 
-
 class PatchReconstruction(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv_trans = nn.ConvTranspose2d(48, 3, kernel_size=4, stride=2, padding=1)
+        self.norm = nn.BatchNorm2d(3)
         self.activation = nn.Sigmoid()
 
     def forward(self, x):
         x = x.permute(0, 3, 1, 2)
         x = self.conv_trans(x)
+        x = self.norm(x)
         x = self.activation(x)
         return x
 
@@ -28,7 +29,7 @@ class PatchReconstruction(nn.Module):
 class SwinTransformerDecoder(nn.Module):
     def __init__(
             self,
-            dim,
+            stage_dims,
             num_heads,
             windows_sizes,
             mlp_ratios,
@@ -41,7 +42,8 @@ class SwinTransformerDecoder(nn.Module):
         blocks_remaining = [blocks_total - sum(depths[:i]) for i in range(len(depths))]
         stages = [
                 SwinTransformerDecoderStage(
-                    dim=dim * 2 ** (n - i - 1),
+                    in_dim=stage_dims[i],
+                    out_dim=stage_dims[i + 1],
                     num_heads=num_heads[i],
                     window_size=windows_sizes[i],
                     mlp_ratio=mlp_ratios[i],
@@ -65,7 +67,8 @@ class SwinTransformerDecoder(nn.Module):
 class SwinTransformerDecoderStage(nn.Module):
     def __init__(
         self,
-        dim,
+        in_dim,
+        out_dim,
         num_heads,
         window_size,
         mlp_ratio,
@@ -76,11 +79,11 @@ class SwinTransformerDecoderStage(nn.Module):
     ):
         super().__init__()
         self.depth = depth
-        self.split_norm = nn.LayerNorm(dim)
-        self.linear = nn.Linear(dim, dim * 2)
+
+        self.linear = nn.Linear(in_dim, out_dim * 4)
         self.blocks = nn.ModuleList(
             [SwinTransformerDecoderBlock(
-                dim=dim,
+                dim=in_dim,
                 num_heads=num_heads,
                 window_size=window_size,
                 shift_size=[0 if i_block % 2 == 0 else w // 2 for w in window_size],
@@ -88,17 +91,19 @@ class SwinTransformerDecoderStage(nn.Module):
                 sd_factor=sd_factor * ((blocks_remaining - i_block) / blocks_total),
             ) for i_block in range(depth)]
         )
-        self.norms = nn.ModuleList([nn.LayerNorm(dim) for _ in range(depth)])
+        self.norm = nn.LayerNorm(in_dim)
         self.pixel_shuffle = nn.PixelShuffle(upscale_factor=2)
+        self.activation = nn.GELU()
 
     def forward(self, x):
         for i in range(self.depth):
-            x = x + self.blocks[i](self.norms[i](x))
-        x = self.linear(self.split_norm(x))
+            x = self.blocks[i](x)
+        x = self.norm(x)
+        x = self.linear(x)
+        x = self.activation(x)
         x = x.permute(0, 3, 1, 2)
         x = self.pixel_shuffle(x)
         x = x.permute(0, 2, 3, 1)
-
         return x
 
 
@@ -146,7 +151,7 @@ class SwinTransformerAutoencoder(nn.Module):
             self,
             encoder_type = "swin_v2_t",
             encoder_weights = Swin_V2_T_Weights.DEFAULT,
-            decoder_dim = 96,
+            decoder_dims = (240, 192, 144, 96, 48),
             decoder_num_heads = (24, 12, 6, 3),
             decoder_window_size = ((7, 7), (7, 7), (7, 7), (7, 7)),
             decoder_mlp_ratio = (4, 4, 4, 4),
@@ -163,7 +168,7 @@ class SwinTransformerAutoencoder(nn.Module):
         self.entropy_model = EntropyBottleneck(channels=768) # TODO: this can't be hardcoded
         # TODO: Maybe introduce intermediate linear layer to enhance compression
         self.decoder = SwinTransformerDecoder(
-            dim=decoder_dim,
+            stage_dims=decoder_dims,
             num_heads=decoder_num_heads,
             windows_sizes=decoder_window_size,
             mlp_ratios=decoder_mlp_ratio,

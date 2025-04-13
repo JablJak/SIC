@@ -22,7 +22,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             self,
             encoder_type = "swin_v2_t",
             encoder_pretrained = True,
-            decoder_dim = 96,
+            decoder_dims = (240, 192, 144, 96, 48),
             decoder_num_heads = (24, 12, 6, 3),
             decoder_window_size = ((8, 8), (8, 8), (8, 8), (8, 8)),
             decoder_mlp_ratio = (4, 4, 4, 4),
@@ -39,14 +39,14 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         self.decoder_depths = decoder_depths
         self.encoder = self.g_a = self._create_encoder(encoder_type, encoder_pretrained)
         self.decoder = self.g_s = SwinTransformerDecoder(
-            dim=decoder_dim,
+            stage_dims=decoder_dims,
             num_heads=decoder_num_heads,
             windows_sizes=decoder_window_size,
             mlp_ratios=decoder_mlp_ratio,
             depths=decoder_depths,
             sd_factor=decoder_sd_factor,
         )
-        N = 768
+        N = 240
         h_a = nn.Sequential(
             conv3x3(N, N),
             nn.GELU(),

@@ -2,11 +2,34 @@ from functools import partial
 from typing import Optional, Callable, Any
 
 from compressai.layers import GDN
-from torch import nn
+from torch import nn, Tensor
 from torchvision.models._api import register_model, WeightsEnum
 from torchvision.models._utils import handle_legacy_interface, _ovewrite_named_param
-from torchvision.models.swin_transformer import PatchMergingV2, SwinTransformerBlockV2, Swin_S_Weights
+from torchvision.models.swin_transformer import PatchMergingV2, SwinTransformerBlockV2, Swin_S_Weights, \
+    _patch_merging_pad
 from torchvision.ops import Permute, MLP
+
+
+class VariableDepthPatchMerging(nn.Module):
+    def __init__(self, in_dim: int, out_dim: int, norm_layer: Callable[..., nn.Module] = nn.LayerNorm):
+        super().__init__()
+        self.in_dim = in_dim
+        self.out_dim = out_dim
+        self.reduction = nn.Linear(in_dim, out_dim, bias=False)
+        self.norm = norm_layer(out_dim)  # difference
+
+    def forward(self, x: Tensor):
+        """
+        Args:
+            x (Tensor): input tensor with expected layout of [..., H, W, C]
+        Returns:
+            Tensor with layout of [..., H/2, W/2, 2*C]
+        """
+        x = _patch_merging_pad(x)
+        x = self.reduction(x)  # ... H/2 W/2 2*C
+        x = self.norm(x)
+        return x
+
 
 
 class GDNSwinTransformer(nn.Module):
@@ -14,6 +37,7 @@ class GDNSwinTransformer(nn.Module):
         self,
         patch_size: list[int],
         embed_dim: int,
+        stage_dims: list[int],
         depths: list[int],
         num_heads: list[int],
         window_size: list[int],
@@ -24,7 +48,7 @@ class GDNSwinTransformer(nn.Module):
         num_classes: int = 1000,
         block = SwinTransformerBlockV2,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
-        downsample_layer: Callable[..., nn.Module] = PatchMergingV2,
+        downsample_layer: Callable[..., nn.Module] = VariableDepthPatchMerging,
     ):
         super().__init__()
         self.num_classes = num_classes
@@ -46,7 +70,7 @@ class GDNSwinTransformer(nn.Module):
         stage_block_id = 0
         for i_stage in range(len(depths)):
             stage: list[nn.Module] = []
-            dim = embed_dim * 2**i_stage
+            dim = stage_dims[i_stage]
             for i_layer in range(depths[i_stage]):
                 sd_prob = stochastic_depth_prob * float(stage_block_id) / (total_stage_blocks - 1)
                 swin_block = block(
@@ -71,7 +95,7 @@ class GDNSwinTransformer(nn.Module):
                 stage_block_id += 1
             layers.append(nn.Sequential(*stage))
             if i_stage < (len(depths) - 1):
-                layers.append(downsample_layer(dim, norm_layer))
+                layers.append(downsample_layer(4 * stage_dims[i_stage], stage_dims[i_stage + 1], norm_layer))
         self.features = nn.Sequential(*layers)
 
         num_features = embed_dim * 2 ** (len(depths) - 1)
@@ -106,6 +130,7 @@ def gdn_swin_v2_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = 
     return _gdn_swin_transformer(
         patch_size=[4, 4],
         embed_dim=96,
+        stage_dims=[96, 144, 192, 240],
         depths=[2, 2, 18, 2],
         num_heads=[3, 6, 12, 24],
         window_size=[8, 8],
@@ -113,13 +138,14 @@ def gdn_swin_v2_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = 
         weights=weights,
         progress=progress,
         block=SwinTransformerBlockV2,
-        downsample_layer=PatchMergingV2,
+        downsample_layer=VariableDepthPatchMerging,
         **kwargs,
     )
 
 def _gdn_swin_transformer(
     patch_size: list[int],
     embed_dim: int,
+    stage_dims: list[int],
     depths: list[int],
     num_heads: list[int],
     window_size: list[int],
@@ -138,6 +164,7 @@ def _gdn_swin_transformer(
         num_heads=num_heads,
         window_size=window_size,
         stochastic_depth_prob=stochastic_depth_prob,
+        stage_dims=stage_dims,
         **kwargs,
     )
 
