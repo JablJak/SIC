@@ -39,7 +39,6 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         super().__init__()
         self.encoder_type = encoder_type
         self.encoder_pretrained = encoder_pretrained
-        # TODO: Maybe introduce intermediate linear layer to enhance compression
         self.decoder_num_heads = decoder_num_heads
         self.decoder_window_size = decoder_window_size
         self.decoder_mlp_ratio = decoder_mlp_ratio
@@ -63,7 +62,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             depths=decoder_depths,
             sd_factor=decoder_sd_factor,
         )
-        N = 384
+        N = encoder_dims[-1]
         h_a = nn.Sequential(
             conv3x3(N, N),
             nn.GELU(),

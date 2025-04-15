@@ -10,18 +10,18 @@ from torchvision.models.swin_transformer import ShiftedWindowAttentionV2
 from torchvision.ops import StochasticDepth, MLP
 
 from src.models.gdn_swin_transformer import permute_and_gdn
+from src.utils.activation import LearnableTempSigmoid
+
 
 class PatchReconstruction(nn.Module):
     def __init__(self, dim):
         super().__init__()
-        self.conv_trans = nn.ConvTranspose2d(dim, 3, kernel_size=4, stride=2, padding=1)
-        self.norm = nn.BatchNorm2d(3)
-        self.activation = nn.Sigmoid()
+        self.conv_trans = nn.ConvTranspose2d(dim, 3, kernel_size=2, stride=2, padding=0)
+        self.activation = LearnableTempSigmoid()
 
     def forward(self, x):
         x = x.permute(0, 3, 1, 2)
         x = self.conv_trans(x)
-        x = self.norm(x)
         x = self.activation(x)
         return x
 
@@ -94,13 +94,15 @@ class SwinTransformerDecoderStage(nn.Module):
         self.norm = nn.LayerNorm(in_dim)
         self.pixel_shuffle = nn.PixelShuffle(upscale_factor=2)
         self.activation = nn.GELU()
+        self.gdn = permute_and_gdn(in_dim, inverse=True)
+
 
     def forward(self, x):
+        x = self.gdn(x)
         for i in range(self.depth):
             x = self.blocks[i](x)
         x = self.norm(x)
         x = self.linear(x)
-        # x = self.activation(x)
         x = x.permute(0, 3, 1, 2)
         x = self.pixel_shuffle(x)
         x = x.permute(0, 2, 3, 1)
@@ -116,14 +118,14 @@ class SwinTransformerDecoderBlock(nn.Module):
         shift_size,
         sd_factor,
         dropout: float = 0.0,
-        mlp_ratio=2.0,
+        mlp_ratio=4.0,
     ):
         super().__init__()
         self.norm1 = nn.LayerNorm(dim)
         self.norm2 = nn.LayerNorm(dim)
         self.attn = ShiftedWindowAttentionV2(dim=dim, window_size=window_size, num_heads=num_heads, shift_size=shift_size)
         self.mlp = MLP(dim, [int(dim * mlp_ratio), dim],
-                       activation_layer=partial(permute_and_gdn, dim=(dim * int(mlp_ratio)), inverse=True),
+                       activation_layer=nn.GELU,
                        inplace=None, dropout=dropout)
         self.stochastic_depth = StochasticDepth(sd_factor, "row")
 

@@ -297,13 +297,6 @@ if __name__ == '__main__':
 
     ycbcr = experiment.config["train_dataset"]["transform"][0]["module"] == "src.data.transforms.YCbCrCompression"
 
-    # if not ycbcr:
-    #     for param in model.g_a.parameters():
-    #         param.requires_grad = False
-    #     for param_name, param_weights in model.g_a.named_parameters("6."):
-    #          param_weights.requires_grad = True
-    #     for param_name, param_weights in model.g_a.named_parameters("7."):
-    #          param_weights.requires_grad = True
 
     loss = experiment.loss
     loss.to(device)
@@ -324,7 +317,7 @@ if __name__ == '__main__':
             model,
             optimizer,
             aux_optimizer,
-            scheduler,
+            None,
             aux_scheduler,
             scaler,
             device

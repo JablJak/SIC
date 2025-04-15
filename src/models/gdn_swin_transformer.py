@@ -84,18 +84,12 @@ class GDNSwinTransformer(nn.Module):
                     stochastic_depth_prob=sd_prob,
                     norm_layer=norm_layer,
                 )
-                swin_block.mlp = MLP(
-                    dim,
-                    [int(dim * mlp_ratio), dim],
-                    activation_layer=partial(permute_and_gdn, dim=(dim * int(mlp_ratio)), inverse=False),
-                    inplace=None,
-                    dropout=dropout
-                )
                 stage.append(swin_block)
                 stage_block_id += 1
             layers.append(nn.Sequential(*stage))
             if i_stage < (len(depths) - 1):
                 layers.append(downsample_layer(4 * stage_dims[i_stage], stage_dims[i_stage + 1], norm_layer))
+                layers.append(permute_and_gdn(stage_dims[i_stage + 1], inverse=False))
         self.features = nn.Sequential(*layers)
 
         num_features = embed_dim * 2 ** (len(depths) - 1)

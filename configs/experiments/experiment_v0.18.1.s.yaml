@@ -6,7 +6,7 @@ train_dataset:
   args:
     variant: train.X1
     subset_classes: 25
-    subset_samples: 5
+    subset_samples: 40
 
 val_dataset:
   module: src.data.imagenet_dataset.ImageNetDataset
@@ -16,7 +16,7 @@ val_dataset:
   args:
     variant: val.X
     subset_classes: 25
-    subset_samples: 20
+    subset_samples: 40
 
 test_dataset:
   module: src.data.coco_dataset.CocoDataset
@@ -32,25 +32,25 @@ test_dataset:
 model:
   module: src.models.swin_compression.SwinTransformerCompressionAutoencoder
   args:
-    pretrained_encoder: false
+    pretrained_encoder: true
     encoder_type: gdn_swin_v2_s
     encoder_embed_dim: 128
-    encoder_dims: [128, 192, 384, 384]
-    encoder_depths: [2, 4, 16, 4]
-    encoder_num_heads: [2, 3, 6, 6]
+    encoder_dims: [128, 256, 512, 512]
+    encoder_depths: [2, 2, 18, 6]
+    encoder_num_heads: [4, 8, 16, 12]
     encoder_window_size: [8, 8]
-    encoder_sd_factor: 0.3
+    encoder_sd_factor: 0.1
     encoder_mlp_ratio: 4
-    decoder_depths: [4, 16, 4, 2]
-    decoder_dims: [384, 384, 192, 128, 64]
-    decoder_num_heads: [6, 6, 3, 2]
+    decoder_depths: [6, 18, 2, 2]
+    decoder_dims: [512, 512, 256, 128, 64]
+    decoder_num_heads: [12, 16, 8, 4]
     decoder_window_size: [[8, 8], [8, 8], [8, 8], [8, 8]]
     decoder_mlp_ratio: [4, 4, 4, 4]
-    decoder_sd_factor: 0.3
+    decoder_sd_factor: 0.1
 
 dataloader:
   args:
-    batch_size: 4
+    batch_size: 8
     shuffle: true
     num_workers: 4
     pin_memory: false
@@ -58,7 +58,7 @@ dataloader:
 optimizer:
   module: torch.optim.AdamW
   args:
-    lr: !!float 2.5e-5
+    lr: !!float 7.5e-6
 
 scheduler:
   module: torch.optim.lr_scheduler.CosineAnnealingLR
@@ -77,7 +77,7 @@ aux_scheduler:
   module: torch.optim.lr_scheduler.CosineAnnealingLR
   enabled: true
   args:
-    eta_min: 0.0001
+    eta_min: 0.00001
     T_max: 200
 
 loss:
@@ -87,22 +87,21 @@ loss:
 
 rd_loss:
   enabled: true
-  lambda: 0.05
+  lambda: 0.01
 
 epochs: 200
 
-aux_optimizer_delay: 5
+aux_optimizer_delay: 10
 
 dataset_split_ratio: 0.7
 
 output:
   model:
     name: SWIN-S-IC
-    version: 0.17.0
+    version: 0.18.1
 
 project_name: INZ
-task_name: v0.17.0 SWIN-S Transformer Autoencoder based Image Compression
+task_name: v0.18.1 SWIN-S Transformer Autoencoder based Image Compression
 comment: |
-  - Architecture experiments
-  - Val dataset smaller
-  - Test dataset and calculate psnr/bpp precisely
+  - Remove GDN from MLP, but keep in stage
+  - Reduce kernel to 2 in patch reconstruction

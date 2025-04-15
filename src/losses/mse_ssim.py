@@ -20,8 +20,10 @@ class MSESSIM(torch.nn.Module):
             alpha (float): Weighting factor between MSE (1 - alpha) and SSIM (alpha). Defaults to 0.75.
         """
         super(MSESSIM, self).__init__()
+
         self.mse = torch.nn.MSELoss()
-        self.MS_SSIM = MS_SSIM()
+        if alpha != 0:
+            self.MS_SSIM = MS_SSIM()
         self.activation = torch.nn.Sigmoid()
         self.alpha = alpha
 
@@ -45,5 +47,5 @@ class MSESSIM(torch.nn.Module):
         if target.min() < (0 - epsilon) or target.max() > (1 + epsilon):
             target = self.activation(target)
         mse_loss = self.mse(pred, target) * mse_scale
-        ms_ssim_loss = self.MS_SSIM(pred, target)
+        ms_ssim_loss = self.MS_SSIM(pred, target) if self.alpha != 0 else 0
         return self.alpha * (1 - ms_ssim_loss) + (1 - self.alpha) * mse_loss

@@ -21,8 +21,8 @@ if __name__ == '__main__':
     print("Device:", device)
 
     models = [
-        ("SWIN-S-IC_0.11.1", "gdn_swin_v2_s"),
-        ("SWIN-S-IC_0.3.1_100", "swin_v2_s")
+        ("SWIN-S-IC_0.20.3", "gdn_swin_v2_s"),
+        # ("SWIN-S-IC_0.3.1_100", "swin_v2_s")
         # "SWIN-T-IC_0.12.0-150of400",
         # "SWIN-T-IC_0.9.4-210of400"
     ]
@@ -46,7 +46,19 @@ if __name__ == '__main__':
                 "args": {
                     "pretrained_encoder": False,
                     "encoder_type": m[1],
-                    "decoder_depths": [2, 18, 2, 2]
+                    "encoder_embed_dim": 128,
+                    "encoder_dims": [128, 256, 512, 384],
+                    "encoder_depths": [2, 2, 18, 6],
+                    "encoder_num_heads": [4, 8, 16, 12],
+                    "encoder_window_size": [8, 8],
+                    "encoder_sd_factor": 0.1,
+                    "encoder_mlp_ratio": 4,
+                    "decoder_depths": [6, 18, 2, 2],
+                    "decoder_dims": [384, 512, 256, 128, 64],
+                    "decoder_num_heads": [12, 16, 8, 4],
+                    "decoder_window_size": [[8, 8], [8, 8], [8, 8], [8, 8]],
+                    "decoder_mlp_ratio": [4, 4, 4, 4],
+                    "decoder_sd_factor": 0.1
                 }
             }))
         model.to(device)
@@ -81,7 +93,7 @@ if __name__ == '__main__':
             psnr_value = peak_signal_noise_ratio(x_orig_np, x_recon_np)
             print(f"PSNR: {psnr_value}")
             psnr_sum += psnr_value
-            bits = len(b_repr[0][0]) * 8
+            bits = sum([sum([len(b) for b in b_repr_item]) * 8 / len(b_repr_item) for b_repr_item in b_repr])
             bpp = bits / (in_img.size[0] * in_img.size[1])
             print(f"bpp: {bpp}")
             bpp_sum += bpp

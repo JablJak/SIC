@@ -27,7 +27,7 @@ class RGBCompression(nn.Module):
             std: Tuple[float, ...] = RGB_IMAGENET_STD,
             interpolation: InterpolationMode = InterpolationMode.BICUBIC,
             crop_size: int = 256,
-            resize_size: int = 260,
+            resize_size: int = 256,
             antialias: Optional[bool] = True,
             noresize = False
     ) -> None:
