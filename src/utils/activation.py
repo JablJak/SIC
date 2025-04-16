@@ -8,4 +8,5 @@ class LearnableTempSigmoid(nn.Module):
         self.temperature = nn.Parameter(torch.randn(1))
 
     def forward(self, input: Tensor) -> Tensor:
-        return torch.sigmoid(input/self.temperature)
+        temp = torch.clamp(self.temperature, min=1e-6)
+        return torch.sigmoid(input/temp)

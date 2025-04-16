@@ -16,7 +16,7 @@ from src.utils.activation import LearnableTempSigmoid
 class PatchReconstruction(nn.Module):
     def __init__(self, dim):
         super().__init__()
-        self.conv_trans1 = nn.ConvTranspose2d(dim, dim, kernel_size=5, stride=1, padding=2)
+        self.conv_trans1 = nn.ConvTranspose2d(dim, dim, kernel_size=3, stride=1, padding=1)
         self.conv_trans2 = nn.ConvTranspose2d(dim, 3, kernel_size=3, stride=1, padding=1)
         self.relu = nn.LeakyReLU()
         self.activation = LearnableTempSigmoid()
