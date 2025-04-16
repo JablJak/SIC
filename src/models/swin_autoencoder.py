@@ -18,11 +18,13 @@ class PatchReconstruction(nn.Module):
         super().__init__()
         self.conv_trans1 = nn.ConvTranspose2d(dim, dim, kernel_size=5, stride=1, padding=2)
         self.conv_trans2 = nn.ConvTranspose2d(dim, 3, kernel_size=3, stride=1, padding=1)
+        self.relu = nn.LeakyReLU()
         self.activation = LearnableTempSigmoid()
 
     def forward(self, x):
         x = x.permute(0, 3, 1, 2)
         x = self.conv_trans1(x)
+        x = self.relu(x)
         x = self.conv_trans2(x)
         x = self.activation(x)
         return x
