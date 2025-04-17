@@ -16,16 +16,12 @@ from src.utils.activation import LearnableTempSigmoid
 class PatchReconstruction(nn.Module):
     def __init__(self, dim):
         super().__init__()
-        self.conv_trans1 = nn.ConvTranspose2d(dim, dim, kernel_size=3, stride=1, padding=1)
-        self.conv_trans2 = nn.ConvTranspose2d(dim, 3, kernel_size=3, stride=1, padding=1)
-        self.relu = nn.LeakyReLU()
+        self.conv_trans = nn.ConvTranspose2d(dim, 3, kernel_size=2, stride=2, padding=0)
         self.activation = LearnableTempSigmoid()
 
     def forward(self, x):
         x = x.permute(0, 3, 1, 2)
-        x = self.conv_trans1(x)
-        x = self.relu(x)
-        x = self.conv_trans2(x)
+        x = self.conv_trans(x)
         x = self.activation(x)
         return x
 
