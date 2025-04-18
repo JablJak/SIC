@@ -39,7 +39,7 @@ def _scaled_lambda(current_iter, start_iter, num_iters, start_lambda, end_lambda
             return start_lambda * lambda_exp ** (current_iter - start_iter)
 
 
-def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux_optimizer_delay, target_lambda,
+def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux_optimizer_delay, target_lambda, batch_size,
            criterion, optimizer, aux_optimizer, aux_scheduler, num_epochs, device, scheduler, logger=None, ycbcr=False,
            task=None, start_epoch=1):
     # Train
@@ -48,6 +48,9 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
     start_lambda = 0.1
     lambda_scale_iters = 30
     scale_start_epoch = aux_optimizer_delay
+    accumulation_steps = 4
+    effective_batch_size = batch_size * accumulation_steps
+    max_grad_norm = 1.25
 
     model.train()
     for epoch in range(start_epoch, num_epochs):
@@ -59,16 +62,20 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
         psnr_metric = PeakSignalNoiseRatio().to(device)
         ssim_metric = StructuralSimilarityIndexMeasure().to(device)
 
+        running_loss = 0.0
+        batch_counter = 0
+
         # criterion.l = _scaled_lambda(epoch, start_iter=scale_start_epoch, num_iters=lambda_scale_iters,
         #                              start_lambda=start_lambda, end_lambda=target_lambda, current_lambda=criterion.l)
 
         if epoch > aux_optimizer_delay:
             optimize_bpp = True
 
+        optimizer.zero_grad()
+        if epoch > aux_optimizer_delay:
+            aux_optimizer.zero_grad()
         for x, _ in train_dataloader:
             x = x.to(device)
-            optimizer.zero_grad()
-            aux_optimizer.zero_grad()
             with autocast(device_type="cuda"):
                 output = model(x)
                 x_hat, y_likelihoods = output['x_hat'], output['likelihoods']['y']
@@ -77,26 +84,32 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                 else:
                     x = denormalize(x.detach(), RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
                 if isinstance(criterion, RDLoss):
-                    loss, bpp = criterion(x_hat, x, y_likelihoods, optimize_bpp)
+                    loss, bpp = criterion(x_hat, x, y_likelihoods, optimize_bpp) / accumulation_steps
                     epoch_bpp += bpp.item()
                 else:
-                    loss = criterion(x_hat, x)
+                    loss = criterion(x_hat, x) / accumulation_steps
 
-                aux_loss = model.aux_loss()
+                aux_loss = model.aux_loss() / accumulation_steps
+
+            batch_counter += 1
+            running_loss += loss.item()
 
             scaler.scale(loss).backward()
-            max_norm_value = 1.0
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_norm_value)
-            scaler.step(optimizer)
+            if batch_counter == accumulation_steps:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_grad_norm)
+                scaler.step(optimizer)
+                optimizer.zero_grad()
 
-            if epoch > aux_optimizer_delay:
-                aux_optimizer.zero_grad()
-                scaler.scale(aux_loss).backward()
-                scaler.step(aux_optimizer)
+                if epoch > aux_optimizer_delay:
+                    scaler.scale(aux_loss).backward()
+                    scaler.step(aux_optimizer)
+                    aux_optimizer.zero_grad()
 
-            scaler.update()
+                scaler.update()
 
-            epoch_loss += loss.item()
+                epoch_loss += running_loss
+                running_loss = 0
+                batch_counter = 0
 
             psnr_metric.update(x_hat, x)
             psnr = psnr_metric.compute()
@@ -105,6 +118,18 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
             ssim_metric.update(x_hat, x)
             ssim = ssim_metric.compute()
             epoch_ssim += ssim.item()
+
+        if batch_counter > 0:
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
+            scaler.step(optimizer)
+            optimizer.zero_grad()
+
+            if epoch > aux_optimizer_delay:
+                scaler.scale(aux_loss).backward()
+                scaler.step(aux_optimizer)
+                aux_optimizer.zero_grad()
+
+            scaler.update()
 
 
         avg_loss = epoch_loss / len(train_dataloader)
@@ -343,7 +368,8 @@ if __name__ == '__main__':
             scaler=scaler,
             aux_optimizer_delay=experiment.aux_optimizer_delay,
             start_epoch=start_epoch,
-            target_lambda=loss.l
+            target_lambda=loss.l,
+            batch_size=experiment_config['dataloader']['batch_size'],
         )
 
     # TODO: TRAIN TIME
