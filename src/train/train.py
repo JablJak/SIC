@@ -68,7 +68,7 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
         for x, _ in train_dataloader:
             x = x.to(device)
             optimizer.zero_grad()
-            # aux_optimizer.zero_grad()
+            aux_optimizer.zero_grad()
             with autocast(device_type="cuda"):
                 output = model(x)
                 x_hat, y_likelihoods = output['x_hat'], output['likelihoods']['y']
@@ -89,10 +89,10 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_norm_value)
             scaler.step(optimizer)
 
-            # if epoch > aux_optimizer_delay:
-            #     aux_optimizer.zero_grad()
-            #     scaler.scale(aux_loss).backward()
-            #     scaler.step(aux_optimizer)
+            if epoch > aux_optimizer_delay:
+                aux_optimizer.zero_grad()
+                scaler.scale(aux_loss).backward()
+                scaler.step(aux_optimizer)
 
             scaler.update()
 
@@ -193,8 +193,8 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
 
         if scheduler is not None:
             scheduler.step()
-        # if aux_scheduler is not None and epoch > aux_optimizer_delay:
-        #     aux_scheduler.step()
+        if aux_scheduler is not None and epoch > aux_optimizer_delay:
+            aux_scheduler.step()
 
         if epoch > aux_optimizer_delay and epoch % 10 == 0:
             avg_test_psnr = 0
@@ -304,7 +304,7 @@ if __name__ == '__main__':
     optimizer = experiment.optimizer
     scheduler = experiment.scheduler
 
-    # aux_optimizer = experiment.aux_optimizer
+    aux_optimizer = experiment.aux_optimizer
     aux_scheduler = experiment.aux_scheduler
 
     scaler = GradScaler()
@@ -333,7 +333,7 @@ if __name__ == '__main__':
             test_dataloader=test_dataloader,
             criterion=loss,
             optimizer=optimizer,
-            aux_optimizer=None,
+            aux_optimizer=aux_optimizer,
             aux_scheduler=aux_scheduler,
             num_epochs=experiment.epochs,
             device=device,
