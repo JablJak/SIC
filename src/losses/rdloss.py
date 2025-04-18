@@ -18,6 +18,6 @@ class RDLoss(nn.Module):
             bpp_loss = torch.log(y_likelihoods).sum() / (-math.log(2) * num_pixels)
         else:
             bpp_loss = torch.tensor(0,device=input.device, dtype=input.dtype)
-        loss = distortion +  self.l * (bpp_loss if optimize_bpp else 0)
+        loss = self.l * distortion + (bpp_loss if optimize_bpp else 0)
 
         return loss, bpp_loss
