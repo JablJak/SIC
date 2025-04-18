@@ -181,6 +181,11 @@ def model_from_config(config: dict[str, Any]) -> Module:
 
             model.load_state_dict(mapped, strict=False)
         else:
+            for param, _ in model.named_parameters():
+                print(param)
+            print("break")
+            for param, _ in state_dict.items():
+                print(param)
             model.load_state_dict(state_dict, strict=False)
         return model
     else:

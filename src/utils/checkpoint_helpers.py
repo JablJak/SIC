@@ -12,7 +12,7 @@ def save_training_state_with_clearml(task, model, optimizer, aux_optimizer,
     state_dict = {
         'model': model.state_dict(),
         'optimizer': optimizer.state_dict(),
-        'aux_optimizer': aux_optimizer.state_dict(),
+        'aux_optimizer': aux_optimizer.state_dict() if aux_optimizer else None,
         'scheduler': scheduler.state_dict() if scheduler else None,
         'aux_scheduler': aux_scheduler.state_dict() if aux_scheduler else None,
         'scaler': scaler.state_dict(),
@@ -63,16 +63,17 @@ def load_training_state_with_clearml_from_file(local_path, model, optimizer, aux
     torch.cuda.empty_cache()
     gc.collect()
 
-    print("[INFO] Loading aux_optimizer state_dict...")
-    aux_optimizer.load_state_dict(state['aux_optimizer'])
-    print("[INFO] Aux_optimizer state_dict loaded.")
-    del state['aux_optimizer'] # Zwolnij RAM
-    torch.cuda.empty_cache()
-    gc.collect()
+    if scheduler and 'scheduler' in state and state['scheduler']:
+        print("[INFO] Loading aux_optimizer state_dict...")
+        aux_optimizer.load_state_dict(state['aux_optimizer'])
+        print("[INFO] Aux_optimizer state_dict loaded.")
+        del state['aux_optimizer'] # Zwolnij RAM
+        torch.cuda.empty_cache()
+        gc.collect()
+        aux_optimizer.zero_grad(set_to_none=True)
 
     # Zerowanie gradientów - dobra praktyka, ale nie powinny istnieć w tym momencie
     optimizer.zero_grad(set_to_none=True)
-    aux_optimizer.zero_grad(set_to_none=True)
 
     if scheduler and 'scheduler' in state and state['scheduler']:
         print("[INFO] Loading scheduler state_dict...")
