@@ -91,6 +91,7 @@ class SwinTransformerDecoderStage(nn.Module):
                 sd_factor=sd_factor * ((blocks_remaining - i_block) / blocks_total),
             ) for i_block in range(depth)]
         )
+        self.norms = nn.ModuleList([nn.LayerNorm(in_dim) for _ in range(depth)])
         self.norm = nn.LayerNorm(in_dim)
         self.pixel_shuffle = nn.PixelShuffle(upscale_factor=2)
         self.activation = nn.GELU()
@@ -98,10 +99,9 @@ class SwinTransformerDecoderStage(nn.Module):
 
 
     def forward(self, x):
-        x = self.gdn(x)
         for i in range(self.depth):
-            x = self.blocks[i](x)
-        x = self.norm(x)
+            x = self.blocks[i](self.norms[i](x))
+        x = self.gdn(x)
         x = self.linear(x)
         x = x.permute(0, 3, 1, 2)
         x = self.pixel_shuffle(x)
