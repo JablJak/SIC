@@ -90,7 +90,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             latent_codec={
                 "y": CheckerboardLatentCodec(
                     latent_codec={
-                        "y": GaussianConditionalLatentCodec(quantizer="ste"),
+                        "y": GaussianConditionalLatentCodec(quantizer="noise"),
                     },
                     entropy_parameters=nn.Sequential(
                         nn.Conv2d(N * 12 // 3, N * 10 // 3, 1),
@@ -107,7 +107,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
                     entropy_bottleneck=EntropyBottleneck(N),
                     h_a=h_a,
                     h_s=h_s,
-                    quantizer="ste",
+                    quantizer="noise",
                 ),
             }
         )
