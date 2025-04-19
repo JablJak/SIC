@@ -189,31 +189,31 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
             aux_scheduler.step()
 
         if epoch > aux_optimizer_delay and epoch % 10 == 0:
-            avg_test_psnr = 0
-            avg_test_bpp = 0
             model.update()
-            with torch.no_grad():
-                for x_test_in, x_test in test_dataloader:
-                    x_test_int, x_test = x_test_in.to(device).detach(), x_test.to(device).detach()
-                    with autocast(device_type="cuda"):
-                        compress_output = model.compress(x_test_in)
-                        b_repr, shape = compress_output['strings'], compress_output['shape']
-                        x_hat_test = model.decompress(b_repr, shape)['x_hat']
-
-                        psnr = peak_signal_noise_ratio(x_test, x_hat_test).item()
-                        avg_test_psnr += psnr
-
-                        bits = sum([sum([len(b) for b in b_repr_item]) * 8 / len(b_repr_item) for b_repr_item in b_repr])
-                        _, _, H, W = x_hat_test.shape
-                        bpp = bits / (H * W)
-                        avg_test_bpp += bpp
-
-            avg_test_bpp /= len(test_dataloader)
-            avg_test_psnr /= len(test_dataloader)
-            print(f"[TEST] Epoch {epoch}/{num_epochs}, PSNR: {avg_test_psnr:.4f}, bpp: {avg_test_bpp:.4f}")
-            if logger is not None:
-                logger.report_scalar(title="PSNR", series="test", value=avg_test_psnr, iteration=epoch)
-                logger.report_scalar(title="bpp", series="test", value=avg_test_bpp, iteration=epoch)
+            # avg_test_psnr = 0
+            # avg_test_bpp = 0
+            # with torch.no_grad():
+            #     for x_test_in, x_test in test_dataloader:
+            #         x_test_int, x_test = x_test_in.to(device).detach(), x_test.to(device).detach()
+            #         with autocast(device_type="cuda"):
+            #             compress_output = model.compress(x_test_in)
+            #             b_repr, shape = compress_output['strings'], compress_output['shape']
+            #             x_hat_test = model.decompress(b_repr, shape)['x_hat']
+            #
+            #             psnr = peak_signal_noise_ratio(x_test, x_hat_test).item()
+            #             avg_test_psnr += psnr
+            #
+            #             bits = sum([sum([len(b) for b in b_repr_item]) * 8 / len(b_repr_item) for b_repr_item in b_repr])
+            #             _, _, H, W = x_hat_test.shape
+            #             bpp = bits / (H * W)
+            #             avg_test_bpp += bpp
+            #
+            # avg_test_bpp /= len(test_dataloader)
+            # avg_test_psnr /= len(test_dataloader)
+            # print(f"[TEST] Epoch {epoch}/{num_epochs}, PSNR: {avg_test_psnr:.4f}, bpp: {avg_test_bpp:.4f}")
+            # if logger is not None:
+            #     logger.report_scalar(title="PSNR", series="test", value=avg_test_psnr, iteration=epoch)
+            #     logger.report_scalar(title="bpp", series="test", value=avg_test_bpp, iteration=epoch)
         model.train()
     return model
 
@@ -305,7 +305,7 @@ if __name__ == '__main__':
         task, start_epoch = load_training_state_with_clearml_from_file(
             args.resume_checkpoint,
             model,
-            optimizer,
+            None,
             None,
             None,
             aux_scheduler,

@@ -6,7 +6,7 @@ from torch import nn, Tensor
 from torchvision.models._api import register_model, WeightsEnum
 from torchvision.models._utils import handle_legacy_interface, _ovewrite_named_param
 from torchvision.models.swin_transformer import PatchMergingV2, SwinTransformerBlockV2, Swin_S_Weights, \
-    _patch_merging_pad
+    _patch_merging_pad, ShiftedWindowAttentionV2, SwinTransformerBlock
 from torchvision.ops import Permute, MLP
 
 
@@ -31,6 +31,55 @@ class VariableDepthPatchMerging(nn.Module):
         return x
 
 
+class SwinTransformerBlockMixed(SwinTransformerBlock):
+    """
+    Swin Transformer V2 Block.
+    Args:
+        dim (int): Number of input channels.
+        num_heads (int): Number of attention heads.
+        window_size (List[int]): Window size.
+        shift_size (List[int]): Shift size for shifted window attention.
+        mlp_ratio (float): Ratio of mlp hidden dim to embedding dim. Default: 4.0.
+        dropout (float): Dropout rate. Default: 0.0.
+        attention_dropout (float): Attention dropout rate. Default: 0.0.
+        stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
+        norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm.
+        attn_layer (nn.Module): Attention layer. Default: ShiftedWindowAttentionV2.
+    """
+
+    def __init__(
+        self,
+        dim: int,
+        num_heads: int,
+        window_size: list[int],
+        shift_size: list[int],
+        mlp_ratio: float = 4.0,
+        dropout: float = 0.0,
+        attention_dropout: float = 0.0,
+        stochastic_depth_prob: float = 0.0,
+        norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
+        attn_layer: Callable[..., nn.Module] = ShiftedWindowAttentionV2,
+    ):
+        super().__init__(
+            dim,
+            num_heads,
+            window_size,
+            shift_size,
+            mlp_ratio=mlp_ratio,
+            dropout=dropout,
+            attention_dropout=attention_dropout,
+            stochastic_depth_prob=stochastic_depth_prob,
+            norm_layer=norm_layer,
+            attn_layer=attn_layer,
+        )
+
+    def forward(self, x: Tensor):
+        # Here is the difference, we apply norm after the attention in V2.
+        # In V1 we applied norm before the attention.
+        x = x + self.stochastic_depth(self.attn(self.norm1(x)))
+        x = x + self.stochastic_depth(self.mlp(self.norm2(x)))
+        return x
+
 
 class GDNSwinTransformer(nn.Module):
     def __init__(
@@ -46,7 +95,7 @@ class GDNSwinTransformer(nn.Module):
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.1,
         num_classes: int = 1000,
-        block = SwinTransformerBlockV2,
+        block = SwinTransformerBlockMixed,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         downsample_layer: Callable[..., nn.Module] = VariableDepthPatchMerging,
     ):
@@ -113,7 +162,6 @@ class GDNSwinTransformer(nn.Module):
         x = self.flatten(x)
         x = self.head(x)
         return x
-
 
 
 @register_model()

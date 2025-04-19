@@ -50,14 +50,16 @@ def load_training_state_with_clearml_from_file(local_path, model, optimizer, aux
     torch.cuda.empty_cache()
     gc.collect()
 
-    print("[INFO] Loading optimizer state_dict...")
-    optimizer.load_state_dict(state['optimizer'])
-    print("[INFO] Optimizer state_dict loaded.")
-    del state['optimizer']
-    torch.cuda.empty_cache()
-    gc.collect()
+    if optimizer and 'optimizer' in state and state['optimizer']:
+        print("[INFO] Loading optimizer state_dict...")
+        optimizer.load_state_dict(state['optimizer'])
+        print("[INFO] Optimizer state_dict loaded.")
+        del state['optimizer']
+        torch.cuda.empty_cache()
+        gc.collect()
+        optimizer.zero_grad(set_to_none=True)
 
-    if scheduler and 'scheduler' in state and state['scheduler']:
+    if aux_optimizer and 'aux_optimizer' in state and state['aux_optimizer']:
         print("[INFO] Loading aux_optimizer state_dict...")
         aux_optimizer.load_state_dict(state['aux_optimizer'])
         print("[INFO] Aux_optimizer state_dict loaded.")
@@ -66,7 +68,6 @@ def load_training_state_with_clearml_from_file(local_path, model, optimizer, aux
         gc.collect()
         aux_optimizer.zero_grad(set_to_none=True)
 
-    optimizer.zero_grad(set_to_none=True)
 
     if scheduler and 'scheduler' in state and state['scheduler']:
         print("[INFO] Loading scheduler state_dict...")

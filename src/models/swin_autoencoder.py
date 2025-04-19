@@ -138,6 +138,6 @@ class SwinTransformerDecoderBlock(nn.Module):
                     init.zeros_(m.bias)
 
     def forward(self, x: Tensor):
-        x = x + self.stochastic_depth(self.norm1(self.attn(x)))
-        x = x + self.stochastic_depth(self.norm2(self.mlp(x)))
+        x = x + self.stochastic_depth(self.attn(self.norm1(x)))
+        x = x + self.stochastic_depth(self.mlp(self.norm2(x)))
         return x
