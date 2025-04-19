@@ -22,10 +22,10 @@ class Experiment:
                 self.loss = initializers.rd_loss_wrapper_from_config(distortion_loss, self.config['rd_loss'])
         except KeyError:
             pass
-        try:
-            self.optimizer = initializers.optimizer_from_config(self.model.a_s_parameters(), self.config['optimizer'])
-        except KeyError:
-            self.optimizer = initializers.optimizer_from_config(self.model.parameters(), self.config['optimizer'])
+        # try:
+        self.optimizer = initializers.optimizer_from_config(self.model.a_s_parameters(), self.config['optimizer'])
+        # except KeyError:
+        #     self.optimizer = initializers.optimizer_from_config(self.model.parameters(), self.config['optimizer'])
         self.scheduler = initializers.scheduler_from_config(self.optimizer, self.config['scheduler'])
         self.aux_optimizer = initializers.optimizer_from_config(self.model.latent_codec.parameters(), self.config['aux_optimizer'])
         self.aux_scheduler = initializers.scheduler_from_config(self.aux_optimizer, self.config['aux_scheduler'])
