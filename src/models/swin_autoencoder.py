@@ -10,14 +10,14 @@ from torchvision.models.swin_transformer import ShiftedWindowAttentionV2
 from torchvision.ops import StochasticDepth, MLP
 
 from src.models.gdn_swin_transformer import permute_and_gdn
-from src.utils.activation import LearnableTempSigmoid
+from src.utils.activation import LearnableTempSigmoid, LearnableTempScaledTanh
 
 
 class PatchReconstruction(nn.Module):
     def __init__(self, dim):
         super().__init__()
         self.conv_trans = nn.ConvTranspose2d(dim, 3, kernel_size=2, stride=2, padding=0)
-        self.activation = LearnableTempSigmoid()
+        self.activation = LearnableTempScaledTanh()
 
     def forward(self, x):
         x = x.permute(0, 3, 1, 2)

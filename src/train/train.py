@@ -39,7 +39,7 @@ def _scaled_lambda(current_iter, start_iter, num_iters, start_lambda, end_lambda
             return start_lambda * lambda_exp ** (current_iter - start_iter)
 
 
-def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux_optimizer_delay, target_lambda, batch_size,
+def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux_optimizer_delay, target_lambda,
            criterion, optimizer, aux_optimizer, aux_scheduler, num_epochs, device, scheduler, logger=None, ycbcr=False,
            task=None, start_epoch=1):
     # Train
@@ -48,9 +48,6 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
     start_lambda = 0.1
     lambda_scale_iters = 30
     scale_start_epoch = aux_optimizer_delay
-    accumulation_steps = 8
-    effective_batch_size = batch_size * accumulation_steps
-    max_grad_norm = 1.25
 
     model.train()
     for epoch in range(start_epoch, num_epochs):
@@ -62,79 +59,48 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
         psnr_metric = PeakSignalNoiseRatio().to(device)
         ssim_metric = StructuralSimilarityIndexMeasure().to(device)
 
-        running_loss = 0.0
-        running_bpp = 0.0
-        batch_counter = 0
-
         # criterion.l = _scaled_lambda(epoch, start_iter=scale_start_epoch, num_iters=lambda_scale_iters,
         #                              start_lambda=start_lambda, end_lambda=target_lambda, current_lambda=criterion.l)
 
         if epoch > aux_optimizer_delay:
             optimize_bpp = True
 
-        optimizer.zero_grad()
-        if epoch > aux_optimizer_delay:
+        for x_in, x in train_dataloader:
+            x_in, x = x_in.to(device), x.to(device)
+            optimizer.zero_grad()
             aux_optimizer.zero_grad()
-        for x, _ in train_dataloader:
-            x = x.to(device)
             with autocast(device_type="cuda"):
-                output = model(x)
+                output = model(x_in)
                 x_hat, y_likelihoods = output['x_hat'], output['likelihoods']['y']
-                if ycbcr:
-                    x = denormalize(x.detach(), YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD)
-                else:
-                    x = denormalize(x.detach(), RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
                 if isinstance(criterion, RDLoss):
                     loss, bpp = criterion(x_hat, x, y_likelihoods, optimize_bpp)
-                    loss /= accumulation_steps
-                    bpp /= accumulation_steps
+                    epoch_bpp += bpp.item()
                 else:
-                    loss = criterion(x_hat, x) / accumulation_steps
+                    loss = criterion(x_hat, x)
 
-                aux_loss = model.aux_loss() / accumulation_steps
-
-            batch_counter += 1
-            running_loss += loss.item()
-            running_bpp += bpp.item()
+                aux_loss = model.aux_loss()
 
             scaler.scale(loss).backward()
-            if batch_counter == accumulation_steps:
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_grad_norm)
-                scaler.step(optimizer)
-                optimizer.zero_grad()
+            max_norm_value = 1.0
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_norm_value)
+            scaler.step(optimizer)
 
-                if epoch > aux_optimizer_delay:
-                    scaler.scale(aux_loss).backward()
-                    scaler.step(aux_optimizer)
-                    aux_optimizer.zero_grad()
+            if epoch > aux_optimizer_delay:
+                aux_optimizer.zero_grad()
+                scaler.scale(aux_loss).backward()
+                scaler.step(aux_optimizer)
 
-                scaler.update()
+            scaler.update()
 
-                epoch_loss += running_loss
-                epoch_bpp += running_bpp
-                running_loss = 0
-                running_bpp = 0
-                batch_counter = 0
+            epoch_loss += loss.item()
 
-            psnr_metric.update(x_hat, x)
+            psnr_metric.update(x_hat.detach(), x.detach())
             psnr = psnr_metric.compute()
             epoch_psnr += psnr.item()
 
-            ssim_metric.update(x_hat, x)
+            ssim_metric.update(x_hat.detach(), x.detach())
             ssim = ssim_metric.compute()
             epoch_ssim += ssim.item()
-
-        if batch_counter > 0:
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
-            scaler.step(optimizer)
-            optimizer.zero_grad()
-
-            if epoch > aux_optimizer_delay:
-                scaler.scale(aux_loss).backward()
-                scaler.step(aux_optimizer)
-                aux_optimizer.zero_grad()
-
-            scaler.update()
 
 
         avg_loss = epoch_loss / len(train_dataloader)
@@ -177,16 +143,12 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
         eval_bpp = 0
 
         with torch.no_grad():
-            for x_val, _ in val_dataloader:
-                x_val = x_val.to(device).detach()
+            for x_val_in, x_val in val_dataloader:
+                x_val_in, x_val = x_val_in.to(device).detach(), x_val.to(device).detach()
                 with autocast(device_type="cuda"):
-                    output = model(x_val)
+                    output = model(x_val_in)
                     x_hat_val, y_likelihoods_val = output['x_hat'], output['likelihoods']['y']
                     x_hat_val = x_hat_val.detach()
-                    if ycbcr:
-                        x_val = denormalize(x_val, YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD)
-                    else:
-                        x_val = denormalize(x_val, RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
                     if isinstance(criterion, RDLoss):
                         loss_val, bpp_val = criterion(x_hat_val, x_val, y_likelihoods_val)
                         eval_bpp += bpp_val.item()
@@ -231,14 +193,12 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
             avg_test_bpp = 0
             model.update()
             with torch.no_grad():
-                for x_test, _ in test_dataloader:
-                    x_test = x_test.to(device).detach()
+                for x_test_in, x_test in test_dataloader:
+                    x_test_int, x_test = x_test_in.to(device).detach(), x_test.to(device).detach()
                     with autocast(device_type="cuda"):
-                        compress_output = model.compress(x_test)
+                        compress_output = model.compress(x_test_in)
                         b_repr, shape = compress_output['strings'], compress_output['shape']
                         x_hat_test = model.decompress(b_repr, shape)['x_hat']
-
-                        x_test = denormalize(x_test, RGB_IMAGENET_MEAN, RGB_IMAGENET_STD)
 
                         psnr = peak_signal_noise_ratio(x_test, x_hat_test).item()
                         avg_test_psnr += psnr
@@ -373,8 +333,7 @@ if __name__ == '__main__':
             scaler=scaler,
             aux_optimizer_delay=experiment.aux_optimizer_delay,
             start_epoch=start_epoch,
-            target_lambda=loss.l,
-            batch_size=train_dataloader.batch_size,
+            target_lambda=loss.l
         )
 
     # TODO: TRAIN TIME

@@ -3,8 +3,10 @@ import os
 from copy import deepcopy
 from typing import Any, TypeAlias, Union, Iterable
 
+import sophia.sophia
 import torch
 import yaml
+from sophia import SophiaG
 from torchvision import transforms
 from torch.nn import Module
 from torch.optim import Optimizer
@@ -87,6 +89,9 @@ def dataset_from_config(config: dict[str, Any]) -> BaseDataset:
     if 'transform' in config.keys():
         tsfs = transforms.Compose([transform_from_config(tsf) for tsf in config['transform']])
         args['transform'] = tsfs
+    if 'target_transform' in config.keys():
+        tg_tsfs = transforms.Compose([transform_from_config(tsf) for tsf in config['target_transform']])
+        args['target_transform'] = tg_tsfs
     if 'subset_classes' in args and 'subset_samples' in args:
         num_classes = int(args.pop('subset_classes'))
         num_samples = int(args.pop('subset_samples'))
@@ -231,6 +236,8 @@ def optimizer_from_config(parameters: ParamsT, config: dict[str, Any]) -> Optimi
     package, module = config['module'].rsplit('.', 1)
     package = importlib.import_module(package)
     type = getattr(package, module)
+    SophiaG
+
     return type(params=parameters, **args)
 
 

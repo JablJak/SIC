@@ -14,5 +14,5 @@ class CocoDataset(BaseDataset):
             transforms.PILToTensor(),
             transforms.ConvertImageDtype(torch.float),
             Swin_V2_T_Weights.DEFAULT.transforms()
-        ])):
-        super().__init__(root_dir=f"{PROJECT_ROOT}/data/coco", transform=transform)
+        ]), target_transform=None):
+        super().__init__(root_dir=f"{PROJECT_ROOT}/data/coco", transform=transform, target_transform=target_transform)

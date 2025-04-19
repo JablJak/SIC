@@ -29,7 +29,8 @@ class RGBCompression(nn.Module):
             crop_size: int = 256,
             resize_size: int = 256,
             antialias: Optional[bool] = True,
-            noresize = False
+            noresize = False,
+            normalize = True
     ) -> None:
         super().__init__()
         self.mean = mean
@@ -39,6 +40,7 @@ class RGBCompression(nn.Module):
         self.resize_size = [resize_size]
         self.antialias = antialias
         self.noresize = noresize
+        self.normalize = normalize
 
     def forward(self, img: Tensor) -> Tensor:
         if not self.noresize:
@@ -47,7 +49,8 @@ class RGBCompression(nn.Module):
         if not isinstance(img, Tensor):
             img = functional.pil_to_tensor(img)
         img = functional.convert_image_dtype(img, torch.float)
-        img = functional.normalize(img, mean=list(self.mean), std=list(self.std))
+        if self.normalize:
+            img = functional.normalize(img, mean=list(self.mean), std=list(self.std))
         return img
 
 

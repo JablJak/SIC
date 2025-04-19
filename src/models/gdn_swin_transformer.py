@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Optional, Callable, Any
 
-from compressai.layers import GDN
+from compressai.layers import GDN, GDN1
 from torch import nn, Tensor
 from torchvision.models._api import register_model, WeightsEnum
 from torchvision.models._utils import handle_legacy_interface, _ovewrite_named_param
@@ -183,6 +183,6 @@ def _gdn_swin_transformer(
 def permute_and_gdn(dim: int, inverse: bool) -> nn.Sequential:
     return nn.Sequential(
         Permute([0, 3, 1, 2]),
-        GDN(dim, inverse=inverse),
+        GDN1(dim, inverse=inverse),
         Permute([0, 2, 3, 1])
     )

@@ -14,11 +14,11 @@ class ImageNetDataset(BaseDataset):
             transforms.ConvertImageDtype(torch.float),
             Swin_V2_T_Weights.DEFAULT.transforms()
         ]
-    ),
+    ), target_transform=None
         ):
         self.variant = variant
         variant_path = f"/{variant}" if variant is not None else ""
-        super().__init__(root_dir=f"{PROJECT_ROOT}/data/imagenet{variant_path}", transform=transform)
+        super().__init__(root_dir=f"{PROJECT_ROOT}/data/imagenet{variant_path}", transform=transform, target_transform=target_transform)
 
     def _choose_variant(self, variant: str | None) -> str | None:
         if variant is None:
