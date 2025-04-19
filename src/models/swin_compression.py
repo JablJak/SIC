@@ -1,9 +1,10 @@
 import torch
 from compressai.entropy_models import EntropyBottleneck
 from compressai.latent_codecs import EntropyBottleneckLatentCodec, HyperpriorLatentCodec, HyperLatentCodec, \
-    GaussianConditionalLatentCodec, CheckerboardLatentCodec
-from compressai.layers import conv3x3, subpel_conv3x3, CheckerboardMaskedConv2d
+    GaussianConditionalLatentCodec, CheckerboardLatentCodec, ChannelGroupsLatentCodec
+from compressai.layers import conv3x3, subpel_conv3x3, CheckerboardMaskedConv2d, sequential_channel_ramp
 from compressai.models import SimpleVAECompressionModel
+from compressai.models.utils import conv
 from torch import nn, autocast, Tensor
 from torchvision.models import swin_v2_t, swin_v2_s, swin_v2_b, Swin_V2_T_Weights, Swin_V2_S_Weights, Swin_V2_B_Weights
 
@@ -63,6 +64,11 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             sd_factor=decoder_sd_factor,
         )
         N = encoder_dims[-1]
+        M = N
+        groups = [48, 48, 96, 192, M - 384]
+
+        self.groups = list(groups)
+        assert sum(self.groups) == M
         h_a = nn.Sequential(
             conv3x3(N, N),
             nn.GELU(),
@@ -86,30 +92,78 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             nn.GELU(),
             conv3x3(N * 3 // 2, N * 2),
         )
+        # In [He2022], this is labeled "g_ch^(k)".
+        channel_context = {
+            f"y{k}": nn.Sequential(
+                conv(sum(self.groups[:k]), 224, kernel_size=5, stride=1),
+                nn.ReLU(inplace=True),
+                conv(224, 128, kernel_size=5, stride=1),
+                nn.ReLU(inplace=True),
+                conv(128, self.groups[k] * 2, kernel_size=5, stride=1),
+            )
+            for k in range(1, len(self.groups))
+        }
+
+        # In [He2022], this is labeled "g_sp^(k)".
+        spatial_context = [
+            CheckerboardMaskedConv2d(
+                self.groups[k],
+                self.groups[k] * 2,
+                kernel_size=5,
+                stride=1,
+                padding=2,
+            )
+            for k in range(len(self.groups))
+        ]
+
+        # In [He2022], this is labeled "Param Aggregation".
+        param_aggregation = [
+            sequential_channel_ramp(
+                # Input: spatial context, channel context, and hyper params.
+                self.groups[k] * 2 + (k > 0) * self.groups[k] * 2 + N * 2,
+                self.groups[k] * 2,
+                min_ch=N * 2,
+                num_layers=3,
+                interp="linear",
+                make_layer=nn.Conv2d,
+                make_act=lambda: nn.ReLU(inplace=True),
+                kernel_size=1,
+                stride=1,
+                padding=0,
+            )
+            for k in range(len(self.groups))
+        ]
+
+        # In [He2022], this is labeled the space-channel context model (SCCTX).
+        # The side params and channel context params are computed externally.
+        scctx_latent_codec = {
+            f"y{k}": CheckerboardLatentCodec(
+                latent_codec={
+                    "y": GaussianConditionalLatentCodec(quantizer="ste"),
+                },
+                context_prediction=spatial_context[k],
+                entropy_parameters=param_aggregation[k],
+            )
+            for k in range(len(self.groups))
+        }
+
+        # [He2022] uses a "hyperprior" architecture, which reconstructs y using z.
         self.latent_codec = HyperpriorLatentCodec(
             latent_codec={
-                "y": CheckerboardLatentCodec(
-                    latent_codec={
-                        "y": GaussianConditionalLatentCodec(quantizer="noise"),
-                    },
-                    entropy_parameters=nn.Sequential(
-                        nn.Conv2d(N * 12 // 3, N * 10 // 3, 1),
-                        nn.GELU(),
-                        nn.Conv2d(N * 10 // 3, N * 8 // 3, 1),
-                        nn.GELU(),
-                        nn.Conv2d(N * 8 // 3, N * 6 // 3, 1),
-                    ),
-                    context_prediction=CheckerboardMaskedConv2d(
-                        N, 2 * N, kernel_size=5, stride=1, padding=2
-                    ),
+                # Channel groups with space-channel context model (SCCTX):
+                "y": ChannelGroupsLatentCodec(
+                    groups=self.groups,
+                    channel_context=channel_context,
+                    latent_codec=scctx_latent_codec,
                 ),
+                # Side information branch containing z:
                 "hyper": HyperLatentCodec(
                     entropy_bottleneck=EntropyBottleneck(N),
                     h_a=h_a,
                     h_s=h_s,
-                    quantizer="noise",
+                    quantizer="ste",
                 ),
-            }
+            },
         )
 
     def _create_encoder(self,
