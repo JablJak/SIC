@@ -236,9 +236,19 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             "x_hat": x_hat,
         }
 
-    def a_s_parameters(self):
-        aux_params_list = list(self.latent_codec.parameters())
-        aux_params_ids = {id(p) for p in aux_params_list}
+    def parameters(self, aux=False):
+        main_parameters = [
+            param
+            for name, param in self.named_parameters()
+            if param.requires_grad and not name.endswith(".quantiles")
+        ]
 
-        main_params = [p for p in self.parameters() if id(p) not in aux_params_ids]
-        return main_params
+        aux_parameters = [
+            param
+            for name, param in self.named_parameters()
+            if param.requires_grad and name.endswith(".quantiles")
+        ]
+        if aux:
+            return iter(aux_parameters)
+        else:
+            return iter(main_parameters)
