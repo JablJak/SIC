@@ -62,16 +62,20 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
         # criterion.l = _scaled_lambda(epoch, start_iter=scale_start_epoch, num_iters=lambda_scale_iters,
         #                              start_lambda=start_lambda, end_lambda=target_lambda, current_lambda=criterion.l)
 
-        if epoch > aux_optimizer_delay:
+        if epoch > aux_optimizer_delay and aux_optimizer is not None:
             optimize_bpp = True
 
         for x_in, x in train_dataloader:
             x_in, x = x_in.to(device), x.to(device)
             optimizer.zero_grad()
-            aux_optimizer.zero_grad()
+            if aux_optimizer is not None:
+                aux_optimizer.zero_grad()
             with autocast(device_type="cuda"):
                 output = model(x_in)
-                x_hat, y_likelihoods = output['x_hat'], output['likelihoods']['y']
+                try:
+                    x_hat, y_likelihoods = output['x_hat'], output['likelihoods']['y']
+                except TypeError:
+                    x_hat, y_likelihoods = output['x_hat'], None
                 if isinstance(criterion, RDLoss):
                     loss, bpp = criterion(x_hat, x, y_likelihoods, optimize_bpp)
                     epoch_bpp += bpp.item()
@@ -85,7 +89,7 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_norm_value)
             scaler.step(optimizer)
 
-            if epoch > aux_optimizer_delay:
+            if epoch > aux_optimizer_delay and aux_optimizer is not None:
                 aux_optimizer.zero_grad()
                 scaler.scale(aux_loss).backward()
                 scaler.step(aux_optimizer)
@@ -185,10 +189,10 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
 
         if scheduler is not None:
             scheduler.step()
-        if aux_scheduler is not None and epoch > aux_optimizer_delay:
+        if aux_scheduler is not None and epoch > aux_optimizer_delay and aux_optimizer is not None:
             aux_scheduler.step()
 
-        if epoch > aux_optimizer_delay and epoch % 10 == 0:
+        if epoch > aux_optimizer_delay and epoch % 10 == 0 and aux_optimizer is not None:
             model.update()
             # avg_test_psnr = 0
             # avg_test_bpp = 0
@@ -333,7 +337,7 @@ if __name__ == '__main__':
             scaler=scaler,
             aux_optimizer_delay=experiment.aux_optimizer_delay,
             start_epoch=start_epoch,
-            target_lambda=loss.l
+            target_lambda=loss.l if isinstance(loss, RDLoss) else 0,
         )
 
     # TODO: TRAIN TIME

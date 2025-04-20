@@ -22,13 +22,17 @@ class Experiment:
                 self.loss = initializers.rd_loss_wrapper_from_config(distortion_loss, self.config['rd_loss'])
         except KeyError:
             pass
-        # try:
         self.optimizer = initializers.optimizer_from_config(self.model.parameters(), self.config['optimizer'])
-        # except KeyError:
-        #     self.optimizer = initializers.optimizer_from_config(self.model.parameters(), self.config['optimizer'])
         self.scheduler = initializers.scheduler_from_config(self.optimizer, self.config['scheduler'])
-        self.aux_optimizer = initializers.optimizer_from_config(self.model.parameters(aux=True), self.config['aux_optimizer'])
-        self.aux_scheduler = initializers.scheduler_from_config(self.aux_optimizer, self.config['aux_scheduler'])
+
+        self.aux_optimizer = (
+            initializers.optimizer_from_config(self.model.parameters(aux=True), self.config['aux_optimizer'])
+            if not self.model.no_compress else None
+        )
+        self.aux_scheduler = (
+            initializers.scheduler_from_config(self.aux_optimizer, self.config['aux_scheduler'])
+            if not self.model.no_compress else None
+        )
 
     def _set_training_data(self):
         self.epochs = self.config['epochs']
