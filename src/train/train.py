@@ -2,13 +2,11 @@ import argparse
 import datetime
 import os
 import random
+import sys
 
 import numpy as np
 import torch
 from torch import autocast, GradScaler
-from torch.optim import AdamW
-from torch.optim.lr_scheduler import SequentialLR, LinearLR, CosineAnnealingLR
-from torchmetrics.functional.image import peak_signal_noise_ratio
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
 
 from torchvision.transforms.v2.functional import to_pil_image
@@ -16,6 +14,7 @@ from torchvision.transforms.v2.functional import to_pil_image
 from src.data.transforms import YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD, \
     RGB_IMAGENET_MEAN, RGB_IMAGENET_STD, YCbCrDecompression, RGBDecompression
 from src.losses.rdloss import RDLoss
+from src.models.gdn_swin_transformer import LinearScheduler, GradualIntroductionLayer
 from src.train.experiment import Experiment
 from src.utils import clearml_helpers
 from src.utils.checkpoint_helpers import save_training_state_with_clearml, load_training_state_with_clearml_from_file
@@ -41,12 +40,13 @@ def _scaled_lambda(current_iter, start_iter, num_iters, start_lambda, end_lambda
 
 def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux_optimizer_delay, target_lambda,
            criterion, optimizer, aux_optimizer, aux_scheduler, num_epochs, device, scheduler, logger=None, ycbcr=False,
-           task=None, start_epoch=1):
+           task=None, start_epoch=1, log_file=None):
     # Train
-
+    alpha_scheduler = LinearScheduler(total_steps=100, initial_value=1.0, final_value=1.0)
     optimize_bpp = False
     start_lambda = 0.1
     lambda_scale_iters = 30
+    max_norm_value = 1.5
     scale_start_epoch = aux_optimizer_delay
 
     model.train()
@@ -58,6 +58,10 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
         epoch_lr = optimizer.param_groups[0]['lr']
         psnr_metric = PeakSignalNoiseRatio().to(device)
         ssim_metric = StructuralSimilarityIndexMeasure().to(device)
+        # alpha_set = { module.alpha for module in model.modules()
+        #     if isinstance(module, GradualIntroductionLayer) }
+        # assert not len(alpha_set) == 0, "No GradualIntroductionLayer found in model"
+        # assert len(alpha_set) == 1, "Alpha is not equal for all GradualIntroductionLayer"
 
         # criterion.l = _scaled_lambda(epoch, start_iter=scale_start_epoch, num_iters=lambda_scale_iters,
         #                              start_lambda=start_lambda, end_lambda=target_lambda, current_lambda=criterion.l)
@@ -81,11 +85,25 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                     epoch_bpp += bpp.item()
                 else:
                     loss = criterion(x_hat, x)
-
-                aux_loss = model.aux_loss()
+                if aux_optimizer is not None:
+                    aux_loss = model.aux_loss()
 
             scaler.scale(loss).backward()
-            max_norm_value = 1.0
+            # original_stdout = sys.stdout
+            # sys.stdout = log_file
+            # print("--- Normy Gradientów (L2 Norm) ---")
+            # total_norm = 0
+            # for name, param in model.named_parameters():
+            #     if param.grad is not None:
+            #         param_norm = param.grad.data.norm(2)
+            #         total_norm += param_norm.item() ** 2
+            #         print(f"Warstwa: {name}, Norma gradientu: {param_norm.item():.4f}")
+            #     else:
+            #         print(f"Warstwa: {name}, Brak gradientu")
+            # total_norm = total_norm ** 0.5
+            # print(f"--- Całkowita norma gradientów: {total_norm:.4f} ---")
+            # sys.stdout = original_stdout
+
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_norm_value)
             scaler.step(optimizer)
 
@@ -151,7 +169,10 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                 x_val_in, x_val = x_val_in.to(device).detach(), x_val.to(device).detach()
                 with autocast(device_type="cuda"):
                     output = model(x_val_in)
-                    x_hat_val, y_likelihoods_val = output['x_hat'], output['likelihoods']['y']
+                    try:
+                        x_hat_val, y_likelihoods_val = output['x_hat'], output['likelihoods']['y']
+                    except TypeError:
+                        x_hat_val, y_likelihoods_val = output['x_hat'], None
                     x_hat_val = x_hat_val.detach()
                     if isinstance(criterion, RDLoss):
                         loss_val, bpp_val = criterion(x_hat_val, x_val, y_likelihoods_val)
@@ -189,8 +210,15 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
 
         if scheduler is not None:
             scheduler.step()
+
         if aux_scheduler is not None and epoch > aux_optimizer_delay and aux_optimizer is not None:
             aux_scheduler.step()
+
+        alpha_scheduler.step()
+        for module in model.modules():
+            if isinstance(module, GradualIntroductionLayer):
+                module.set_alpha(alpha_scheduler.get_value())
+
 
         if epoch > aux_optimizer_delay and epoch % 10 == 0 and aux_optimizer is not None:
             model.update()
@@ -291,6 +319,10 @@ if __name__ == '__main__':
 
     ycbcr = experiment.config["train_dataset"]["transform"][0]["module"] == "src.data.transforms.YCbCrCompression"
 
+    # for module in model.modules():
+    # for name, param in model.named_parameters():
+    #     if name.startswith("encoder"):
+    #         param.requires_grad = False
 
     loss = experiment.loss
     loss.to(device)
@@ -338,10 +370,12 @@ if __name__ == '__main__':
             aux_optimizer_delay=experiment.aux_optimizer_delay,
             start_epoch=start_epoch,
             target_lambda=loss.l if isinstance(loss, RDLoss) else 0,
+            log_file=log_file
         )
 
     # TODO: TRAIN TIME
-    model.update()
+    if not model.no_compress:
+        model.update()
 
     trained_model.eval()
 

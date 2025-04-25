@@ -168,6 +168,7 @@ def model_from_config(config: dict[str, Any]) -> Module:
     model_package = importlib.import_module(model_package)
     model_type = getattr(model_package, model_module)
     pretrained_encoder = bool(args.pop('pretrained_encoder'))
+    args['encoder_pretrained'] = pretrained_encoder
     if pretrained_encoder:
         return model_type(**args)
     elif weights is not None:
@@ -186,15 +187,10 @@ def model_from_config(config: dict[str, Any]) -> Module:
 
             model.load_state_dict(mapped, strict=False)
         else:
-            for param, _ in model.named_parameters():
-                print(param)
-            print("break")
-            for param, _ in state_dict.items():
-                print(param)
             model.load_state_dict(state_dict, strict=False)
         return model
     else:
-        return model_type(encoder_pretrained=False, **args)
+        return model_type(**args)
 
 
 def optimizer_from_config(parameters: ParamsT, config: dict[str, Any]) -> Optimizer:

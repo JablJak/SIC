@@ -5,6 +5,7 @@ from compressai.latent_codecs import EntropyBottleneckLatentCodec, HyperpriorLat
 from compressai.layers import conv3x3, subpel_conv3x3, CheckerboardMaskedConv2d, sequential_channel_ramp
 from compressai.models import SimpleVAECompressionModel
 from compressai.models.utils import conv
+from networkx.classes import selfloop_edges
 from torch import nn, autocast, Tensor
 from torchvision.models import swin_v2_t, swin_v2_s, swin_v2_b, Swin_V2_T_Weights, Swin_V2_S_Weights, Swin_V2_B_Weights
 
@@ -36,7 +37,8 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             decoder_mlp_ratio = (4, 4, 4, 4),
             decoder_depths = (2, 6, 2, 2),
             decoder_sd_factor=0.1,
-            no_compress=False
+            no_compress=False,
+
     ):
         super().__init__()
         self.encoder_type = encoder_type
@@ -178,7 +180,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         num_heads,
         window_size,
         stochastic_depth_prob,
-        mlp_ratio
+        mlp_ratio,
     ):
         match encoder_name:
             case "swin_v2_t":
@@ -187,8 +189,8 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
                 weights = Swin_V2_S_Weights.DEFAULT
             case "swin_v2_b":
                 weights = Swin_V2_B_Weights.DEFAULT
-            case _:
-                weights = None
+            case "gdn_swin_v2_s":
+                weights = Swin_V2_S_Weights.DEFAULT
         return self.ENCODER_MAP[encoder_name](
             weights=(weights if pretrained else None),
             embed_dim=embed_dim,
@@ -197,7 +199,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             num_heads=num_heads,
             window_size=window_size,
             stochastic_depth_prob=stochastic_depth_prob,
-            mlp_ratio=mlp_ratio
+            mlp_ratio=mlp_ratio,
         ).features
 
     def _validate_args(self):
@@ -263,3 +265,4 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             return iter(aux_parameters)
         else:
             return iter(main_parameters)
+

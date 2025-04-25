@@ -41,7 +41,8 @@ class MSESSIM(torch.nn.Module):
         self.mse.to(pred.device)
         self.mse.to(pred.device)
         epsilon = 0.001
-        mse_scale = 255 ** 2
+        mse_scale = 1
+        # mse_scale = 255 ** 2
         if pred.min() < (0 - epsilon) or pred.max() > (1 +  epsilon):
             pred = self.activation(pred)
         if target.min() < (0 - epsilon) or target.max() > (1 + epsilon):

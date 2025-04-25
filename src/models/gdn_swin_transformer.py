@@ -1,12 +1,13 @@
 from functools import partial
 from typing import Optional, Callable, Any
 
+import torch
 from compressai.layers import GDN, GDN1
 from torch import nn, Tensor
 from torchvision.models._api import register_model, WeightsEnum
 from torchvision.models._utils import handle_legacy_interface, _ovewrite_named_param
 from torchvision.models.swin_transformer import PatchMergingV2, SwinTransformerBlockV2, Swin_S_Weights, \
-    _patch_merging_pad, ShiftedWindowAttentionV2, SwinTransformerBlock
+    _patch_merging_pad, ShiftedWindowAttentionV2, SwinTransformerBlock, Swin_V2_S_Weights
 from torchvision.ops import Permute, MLP
 
 
@@ -138,7 +139,7 @@ class GDNSwinTransformer(nn.Module):
             layers.append(nn.Sequential(*stage))
             if i_stage < (len(depths) - 1):
                 layers.append(downsample_layer(4 * stage_dims[i_stage], stage_dims[i_stage + 1], norm_layer))
-                layers.append(permute_and_gdn(stage_dims[i_stage + 1], inverse=False))
+                # layers.append(permute_and_gdn(stage_dims[i_stage + 1], inverse=False))
         self.features = nn.Sequential(*layers)
 
         num_features = embed_dim * 2 ** (len(depths) - 1)
@@ -165,10 +166,10 @@ class GDNSwinTransformer(nn.Module):
 
 
 @register_model()
-@handle_legacy_interface(weights=("pretrained", Swin_S_Weights.IMAGENET1K_V1))
+@handle_legacy_interface(weights=("pretrained", Swin_V2_S_Weights.IMAGENET1K_V1))
 def gdn_swin_v2_s(
         *,
-        weights: Optional[Swin_S_Weights] = None,
+        weights: Optional[Swin_V2_S_Weights] = None,
         embed_dim=96,
         stage_dims=[96, 192, 288, 384],
         depths=[2, 2, 18, 2],
@@ -177,7 +178,7 @@ def gdn_swin_v2_s(
         stochastic_depth_prob=0.3,
         mlp_ratio=4.0,
         progress: bool = True, **kwargs: Any) -> GDNSwinTransformer:
-    weights = Swin_S_Weights.verify(weights)
+    weights = Swin_V2_S_Weights.verify(weights)
 
     return _gdn_swin_transformer(
         patch_size=[4, 4],
@@ -228,9 +229,63 @@ def _gdn_swin_transformer(
 
     return model
 
+class LinearScheduler:
+    def __init__(self, total_steps, initial_value=0.0, final_value=1.0):
+        self.total_steps = total_steps
+        self.initial_value = initial_value
+        self.final_value = final_value
+        self.current_step = 0
+
+    def step(self):
+        value = self.get_value()
+        self.current_step += 1
+        return value
+
+    def get_value(self):
+        if self.current_step >= self.total_steps:
+            return self.final_value
+        progress = self.current_step / self.total_steps
+        return self.initial_value + progress * (self.final_value - self.initial_value)
+
+    def reset(self):
+         self.current_step = 0
+
+class GradualIntroductionLayer(nn.Module):
+    def __init__(self, layer_to_introduce, alpha=1.0, identity_path=None):
+        super().__init__()
+        self.alpha = 0.0
+        self.set_alpha(alpha)
+        self.layer = layer_to_introduce
+        self.identity = identity_path if identity_path is not None else nn.Identity()
+
+    def forward(self, x):
+        layer_output = self.layer(x)
+        identity_output = self.identity(x)
+
+        if layer_output.shape != identity_output.shape:
+             raise RuntimeError(f"Shape mismatch between layer output ({layer_output.shape}) "
+                                f"and identity path output ({identity_output.shape}). "
+                                "Weighted sum requires matching shapes.")
+
+        if self.training:
+            alpha_tensor = torch.tensor(self.alpha, dtype=x.dtype, device=x.device)
+
+            output = alpha_tensor * layer_output + (1.0 - alpha_tensor) * identity_output
+        else:
+            output = layer_output
+
+        return output
+
+    def set_alpha(self, alpha):
+        if alpha < 0.0 or alpha > 1.0:
+            raise ValueError("Alpha must be between 0.0 and 1.0.")
+        self.alpha = alpha
+
 def permute_and_gdn(dim: int, inverse: bool) -> nn.Sequential:
     return nn.Sequential(
         Permute([0, 3, 1, 2]),
-        GDN1(dim, inverse=inverse),
+        GradualIntroductionLayer(
+            layer_to_introduce=GDN1(in_channels=dim, inverse=inverse),
+        ),
         Permute([0, 2, 3, 1])
     )

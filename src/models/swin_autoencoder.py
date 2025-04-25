@@ -16,12 +16,12 @@ from src.utils.activation import LearnableTempSigmoid, LearnableTempScaledTanh
 class PatchReconstruction(nn.Module):
     def __init__(self, dim):
         super().__init__()
-        self.conv_trans = nn.ConvTranspose2d(dim, 3, kernel_size=2, stride=2, padding=0)
+        self.conv_trans_48 = nn.ConvTranspose2d(dim, 3, kernel_size=2, stride=2, padding=0)
         self.activation = LearnableTempScaledTanh()
 
     def forward(self, x):
         x = x.permute(0, 3, 1, 2)
-        x = self.conv_trans(x)
+        x = self.conv_trans_48(x)
         x = self.activation(x)
         return x
 
@@ -94,14 +94,14 @@ class SwinTransformerDecoderStage(nn.Module):
         self.norms = nn.ModuleList([nn.LayerNorm(in_dim) for _ in range(depth)])
         self.norm = nn.LayerNorm(in_dim)
         self.pixel_shuffle = nn.PixelShuffle(upscale_factor=2)
-        self.activation = nn.GELU()
-        self.gdn = permute_and_gdn(in_dim, inverse=True)
+        # self.gdn = permute_and_gdn(in_dim, inverse=True)
 
 
     def forward(self, x):
         for i in range(self.depth):
-            x = self.blocks[i](self.norms[i](x))
-        x = self.gdn(x)
+            x = self.blocks[i](x)
+        # x = self.gdn(x)
+        x = self.norm(x)
         x = self.linear(x)
         x = x.permute(0, 3, 1, 2)
         x = self.pixel_shuffle(x)
