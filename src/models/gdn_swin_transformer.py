@@ -95,73 +95,68 @@ class GDNSwinTransformer(nn.Module):
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.1,
-        num_classes: int = 1000,
         block = SwinTransformerBlockMixed,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         downsample_layer: Callable[..., nn.Module] = VariableDepthPatchMerging,
     ):
         super().__init__()
-        self.num_classes = num_classes
 
         if norm_layer is None:
             norm_layer = partial(nn.LayerNorm, eps=1e-5)
 
-        layers: list[nn.Module] = [
-            nn.Sequential(
-                nn.Conv2d(
-                    3, embed_dim, kernel_size=(patch_size[0], patch_size[1]), stride=(patch_size[0], patch_size[1])
-                ),
-                Permute([0, 2, 3, 1]),
-                norm_layer(embed_dim),
-            )
-        ]
+        self.patch_embed = nn.Sequential(
+            nn.Conv2d(
+                3, embed_dim, kernel_size=(patch_size[0], patch_size[1]), stride=(patch_size[0], patch_size[1])
+            ),
+            Permute([0, 2, 3, 1]),
+            norm_layer(embed_dim),
+        )
+
+        self.stages = nn.ModuleList()
+        self.downsamplers = nn.ModuleList()
+        self.gdn_layers = nn.ModuleList()
 
         total_stage_blocks = sum(depths)
         stage_block_id = 0
+        current_dim = embed_dim
+
         for i_stage in range(len(depths)):
-            stage: list[nn.Module] = []
+            stage_module_list: list[nn.Module] = []
             dim = stage_dims[i_stage]
             for i_layer in range(depths[i_stage]):
-                sd_prob = stochastic_depth_prob * float(stage_block_id) / (total_stage_blocks - 1)
+                sd_prob = stochastic_depth_prob * float(stage_block_id) / (total_stage_blocks - 1) if total_stage_blocks > 1 else 0.0
                 swin_block = block(
-                    dim,
-                    num_heads[i_stage],
-                    window_size=window_size,
+                    dim, num_heads[i_stage], window_size=window_size,
                     shift_size=[0 if i_layer % 2 == 0 else w // 2 for w in window_size],
-                    mlp_ratio=mlp_ratio,
-                    dropout=dropout,
-                    attention_dropout=attention_dropout,
-                    stochastic_depth_prob=sd_prob,
-                    norm_layer=norm_layer,
+                    mlp_ratio=mlp_ratio, dropout=dropout, attention_dropout=attention_dropout,
+                    stochastic_depth_prob=sd_prob, norm_layer=norm_layer,
                 )
-                stage.append(swin_block)
+                stage_module_list.append(swin_block)
                 stage_block_id += 1
-            layers.append(nn.Sequential(*stage))
+
+            self.stages.append(nn.Sequential(*stage_module_list))
+
             if i_stage < (len(depths) - 1):
-                layers.append(downsample_layer(4 * stage_dims[i_stage], stage_dims[i_stage + 1], norm_layer))
-                # layers.append(permute_and_gdn(stage_dims[i_stage + 1], inverse=False))
-        self.features = nn.Sequential(*layers)
+                next_dim = stage_dims[i_stage+1]
+                self.downsamplers.append(downsample_layer(4 * dim, next_dim, norm_layer))
+                self.gdn_layers.append(permute_and_gdn(next_dim, inverse=False))
+                current_dim = next_dim
+            else:
+                current_dim = dim
 
-        num_features = embed_dim * 2 ** (len(depths) - 1)
-        self.norm = norm_layer(num_features)
-        self.permute = Permute([0, 3, 1, 2])
-        self.avgpool = nn.AdaptiveAvgPool2d(1)
-        self.flatten = nn.Flatten(1)
-        self.head = nn.Linear(num_features, num_classes)
 
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.trunc_normal_(m.weight, std=0.02)
-                if m.bias is not None:
-                    nn.init.zeros_(m.bias)
 
     def forward(self, x):
-        x = self.features(x)
-        x = self.norm(x)
-        x = self.permute(x)
-        x = self.avgpool(x)
-        x = self.flatten(x)
-        x = self.head(x)
+        x = self.patch_embed(x)
+        output_stages = []
+
+        for i in range(len(self.stages)):
+            x = self.stages[i](x)
+            output_stages.append(x)
+            if i < len(self.downsamplers):
+                x = self.downsamplers[i](x)
+                x = self.gdn_layers[i](x)
+
         return x
 
 

@@ -7,6 +7,7 @@ import sys
 import numpy as np
 import torch
 from torch import autocast, GradScaler
+from torchmetrics.functional.image import peak_signal_noise_ratio
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
 
 from torchvision.transforms.v2.functional import to_pil_image
@@ -58,10 +59,10 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
         epoch_lr = optimizer.param_groups[0]['lr']
         psnr_metric = PeakSignalNoiseRatio().to(device)
         ssim_metric = StructuralSimilarityIndexMeasure().to(device)
-        # alpha_set = { module.alpha for module in model.modules()
-        #     if isinstance(module, GradualIntroductionLayer) }
-        # assert not len(alpha_set) == 0, "No GradualIntroductionLayer found in model"
-        # assert len(alpha_set) == 1, "Alpha is not equal for all GradualIntroductionLayer"
+        alpha_set = { module.alpha for module in model.modules()
+            if isinstance(module, GradualIntroductionLayer) }
+        assert not len(alpha_set) == 0, "No GradualIntroductionLayer found in model"
+        assert len(alpha_set) == 1, "Alpha is not equal for all GradualIntroductionLayer"
 
         # criterion.l = _scaled_lambda(epoch, start_iter=scale_start_epoch, num_iters=lambda_scale_iters,
         #                              start_lambda=start_lambda, end_lambda=target_lambda, current_lambda=criterion.l)
@@ -130,11 +131,13 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
         avg_ssim = epoch_ssim / len(train_dataloader)
         avg_bpp = epoch_bpp / len(train_dataloader)
 
-        print(f"[TRAIN] Epoch {epoch}/{num_epochs}, Loss: {avg_loss:.5f}, PSNR: {avg_psnr:.4f},"
-              f" SSIM: {avg_ssim:.4f}, bpp: {avg_bpp:.4f} lr: {epoch_lr}")
+        message = f"{datetime.datetime.now().strftime("%H:%M:%S")} [TRAIN] Epoch {epoch}/{num_epochs}, Loss: {avg_loss:.5f}, PSNR: {avg_psnr:.4f}," \
+              f" SSIM: {avg_ssim:.4f}, bpp: {avg_bpp:.4f}, lr: {epoch_lr}, alpha: {alpha_set.pop() if len(alpha_set) == 1 else 'N/A'}"
+        print(message)
 
         try:
             if logger is not None:
+                logger.report_text(message)
                 logger.report_scalar(title="Loss", series="train", value=avg_loss, iteration=epoch)
                 logger.report_scalar(title="PSNR", series="train", value=avg_psnr, iteration=epoch)
                 logger.report_scalar(title="SSIM", series="train", value=avg_ssim, iteration=epoch)
@@ -194,12 +197,14 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
         avg_eval_ssim = eval_ssim / len(val_dataloader)
         avg_eval_bpp = eval_bpp / len(val_dataloader)
 
-        print(f"[VAL] Epoch {epoch}/{num_epochs}, "
-              f"Loss: {avg_eval_loss:.4f}, PSNR: {avg_eval_psnr:.4f}, SSIM: {avg_eval_ssim:.4f}, "
-              f"bpp: {avg_eval_bpp:.4f} lr: {epoch_lr}")
+        message = f"{datetime.datetime.now().strftime("%H:%M:%S")} [VAL] Epoch {epoch}/{num_epochs}, " \
+              f"Loss: {avg_eval_loss:.4f}, PSNR: {avg_eval_psnr:.4f}, SSIM: {avg_eval_ssim:.4f}, " \
+              f"bpp: {avg_eval_bpp:.4f} lr: {epoch_lr:.5f}"
+        print(message)
 
         try:
             if logger is not None:
+                logger.report_text(message)
                 logger.report_scalar(title="PSNR", series="eval", value=avg_eval_psnr, iteration=epoch)
                 logger.report_scalar(title="SSIM", series="eval", value=avg_eval_ssim, iteration=epoch)
                 logger.report_scalar(title="Loss", series="eval", value=avg_eval_loss, iteration=epoch)
@@ -220,32 +225,35 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                 module.set_alpha(alpha_scheduler.get_value())
 
 
-        if epoch > aux_optimizer_delay and epoch % 10 == 0 and aux_optimizer is not None:
+        if epoch > aux_optimizer_delay and epoch % 5 == 0 and aux_optimizer is not None:
             model.update()
-            # avg_test_psnr = 0
-            # avg_test_bpp = 0
-            # with torch.no_grad():
-            #     for x_test_in, x_test in test_dataloader:
-            #         x_test_int, x_test = x_test_in.to(device).detach(), x_test.to(device).detach()
-            #         with autocast(device_type="cuda"):
-            #             compress_output = model.compress(x_test_in)
-            #             b_repr, shape = compress_output['strings'], compress_output['shape']
-            #             x_hat_test = model.decompress(b_repr, shape)['x_hat']
-            #
-            #             psnr = peak_signal_noise_ratio(x_test, x_hat_test).item()
-            #             avg_test_psnr += psnr
-            #
-            #             bits = sum([sum([len(b) for b in b_repr_item]) * 8 / len(b_repr_item) for b_repr_item in b_repr])
-            #             _, _, H, W = x_hat_test.shape
-            #             bpp = bits / (H * W)
-            #             avg_test_bpp += bpp
-            #
-            # avg_test_bpp /= len(test_dataloader)
-            # avg_test_psnr /= len(test_dataloader)
-            # print(f"[TEST] Epoch {epoch}/{num_epochs}, PSNR: {avg_test_psnr:.4f}, bpp: {avg_test_bpp:.4f}")
-            # if logger is not None:
-            #     logger.report_scalar(title="PSNR", series="test", value=avg_test_psnr, iteration=epoch)
-            #     logger.report_scalar(title="bpp", series="test", value=avg_test_bpp, iteration=epoch)
+            avg_test_psnr = 0
+            avg_test_bpp = 0
+            with torch.no_grad():
+                for x_test_in, x_test in test_dataloader:
+                    x_test_in, x_test = x_test_in.to(device).detach(), x_test.to(device).detach()
+                    with autocast(device_type="cuda"):
+                        compress_output = model.compress(x_test_in)
+                        b_repr, shape = compress_output['strings'], compress_output['shape']
+                        x_hat_test = model.decompress(b_repr, shape)['x_hat']
+
+                        psnr = peak_signal_noise_ratio(x_test, x_hat_test)
+                        avg_test_psnr += psnr
+
+                        bits = sum([sum([len(b) for b in b_repr_item]) * 8 / len(b_repr_item) for b_repr_item in b_repr])
+                        _, _, H, W = x_hat_test.shape
+                        bpp = bits / (H * W)
+                        avg_test_bpp += bpp
+
+            avg_test_bpp /= len(test_dataloader)
+            avg_test_psnr /= len(test_dataloader)
+
+            message = f"{datetime.datetime.now().strftime("%H:%M:%S")} [TEST] Epoch {epoch}/{num_epochs}, PSNR: {avg_test_psnr:.4f}, bpp: {avg_test_bpp:.4f}"
+            print(message)
+            if logger is not None:
+                logger.report_text(message)
+                logger.report_scalar(title="PSNR", series="test", value=avg_test_psnr, iteration=epoch)
+                logger.report_scalar(title="bpp", series="test", value=avg_test_bpp, iteration=epoch)
         model.train()
     return model
 

@@ -1,0 +1,128 @@
+train_dataset:
+  module: src.data.imagenet_dataset.ImageNetDataset
+  transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        crop_size: 256
+        resize_size: 256
+  target_transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        normalize: false
+        crop_size: 256
+        resize_size: 256
+  args:
+    variant: train.X1
+    subset_classes: 25
+    subset_samples: 200
+
+val_dataset:
+  module: src.data.imagenet_dataset.ImageNetDataset
+  transform:
+    - module: src.data.transforms.RGBCompression
+      args: {}
+  target_transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        normalize: false
+  args:
+    variant: val.X
+    subset_classes: 25
+    subset_samples: 40
+
+test_dataset:
+  module: src.data.coco_dataset.CocoDataset
+  transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        crop_size: 512
+        resize_size: 512
+  target_transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        normalize: false
+        crop_size: 512
+        resize_size: 512
+  args:
+    subset_classes: 1
+    subset_samples: 100
+
+model:
+  module: src.models.swin_compression.SwinTransformerCompressionAutoencoder
+  weights: SWIN-S-IC_0.47.0_BASE_AE
+  args:
+    pretrained_encoder: false
+    encoder_type: gdn_swin_v2_s
+    encoder_embed_dim: 96
+    encoder_dims: [96, 192, 384, 768]
+    encoder_depths: [2, 2, 18, 2]
+    encoder_num_heads: [3, 6, 12, 24]
+    encoder_window_size: [8, 8]
+    encoder_sd_factor: 0.1
+    encoder_mlp_ratio: 4
+    decoder_depths: [2, 18, 2, 2]
+    decoder_dims: [768, 384, 192, 96, 48]
+    decoder_num_heads: [24, 12, 6, 3]
+    decoder_window_size: [[8, 8], [8, 8], [8, 8], [8, 8]]
+    decoder_mlp_ratio: [4, 4, 4, 4]
+    decoder_sd_factor: 0.1
+    no_compress: false
+
+dataloader:
+  args:
+    batch_size: 8
+    shuffle: true
+    num_workers: 6
+    pin_memory: false
+
+optimizer:
+  module: sophia.sophia.SophiaG
+  args:
+    lr: !!float 5e-4
+    betas: [0.9, 0.99]
+    rho: 0.01
+
+scheduler:
+  module: torch.optim.lr_scheduler.LinearLR
+  enabled: true
+  args:
+    total_iters: 10
+    start_factor: 1.0
+    end_factor: 0.2
+
+aux_optimizer:
+  module: torch.optim.AdamW
+  args:
+    lr: 0.001
+
+aux_scheduler:
+  module: torch.optim.lr_scheduler.CosineAnnealingLR
+  enabled: true
+  args:
+    eta_min: 0.0005
+    T_max: 200
+
+loss:
+  module: src.losses.mse_ssim.MSESSIM
+  args:
+    alpha: 0
+
+rd_loss:
+  enabled: true
+  lambda: 0.001
+
+epochs: 400
+
+aux_optimizer_delay: 0
+
+dataset_split_ratio: 0.7
+
+output:
+  model:
+    name: SWIN-S-IC
+    version: 0.49.2
+
+project_name: INZ
+task_name: v0.49.2 SWIN-S Transformer Autoencoder based Image Compression
+comment: |
+ - Switch back to previous latent codec

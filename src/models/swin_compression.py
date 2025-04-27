@@ -249,7 +249,17 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             window_size=window_size,
             stochastic_depth_prob=stochastic_depth_prob,
             mlp_ratio=mlp_ratio,
-        ).features
+        ).features if encoder_name != "gdn_swin_v2_s" else \
+            self.ENCODER_MAP[encoder_name](
+            weights=(weights if pretrained else None),
+            embed_dim=embed_dim,
+            stage_dims=stage_dims,
+            depths=depths,
+            num_heads=num_heads,
+            window_size=window_size,
+            stochastic_depth_prob=stochastic_depth_prob,
+            mlp_ratio=mlp_ratio,
+        )
 
     def _validate_args(self):
         if self.encoder_type not in self.ENCODER_MAP:
