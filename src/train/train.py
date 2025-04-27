@@ -78,11 +78,11 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
             with autocast(device_type="cuda"):
                 output = model(x_in)
                 try:
-                    x_hat, y_likelihoods = output['x_hat'], output['likelihoods']['y']
+                    x_hat, likelihoods = output['x_hat'], output['likelihoods']
                 except TypeError:
-                    x_hat, y_likelihoods = output['x_hat'], None
+                    x_hat, likelihoods = output['x_hat'], None
                 if isinstance(criterion, RDLoss):
-                    loss, bpp = criterion(x_hat, x, y_likelihoods, optimize_bpp)
+                    loss, bpp = criterion(x_hat, x, likelihoods, optimize_bpp)
                     epoch_bpp += bpp.item()
                 else:
                     loss = criterion(x_hat, x)
@@ -173,12 +173,12 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                 with autocast(device_type="cuda"):
                     output = model(x_val_in)
                     try:
-                        x_hat_val, y_likelihoods_val = output['x_hat'], output['likelihoods']['y']
+                        x_hat_val, likelihoods_val = output['x_hat'], output['likelihoods']
                     except TypeError:
-                        x_hat_val, y_likelihoods_val = output['x_hat'], None
+                        x_hat_val, likelihoods_val = output['x_hat'], None
                     x_hat_val = x_hat_val.detach()
                     if isinstance(criterion, RDLoss):
-                        loss_val, bpp_val = criterion(x_hat_val, x_val, y_likelihoods_val)
+                        loss_val, bpp_val = criterion(x_hat_val, x_val, likelihoods_val)
                         eval_bpp += bpp_val.item()
                     else:
                         loss_val = criterion(x_hat_val, x_val)
@@ -224,15 +224,14 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
             if isinstance(module, GradualIntroductionLayer):
                 module.set_alpha(alpha_scheduler.get_value())
 
-
-        if epoch > aux_optimizer_delay and epoch % 5 == 0 and aux_optimizer is not None:
+        if epoch > aux_optimizer_delay and aux_optimizer is not None:
             model.update()
             avg_test_psnr = 0
             avg_test_bpp = 0
             with torch.no_grad():
                 for x_test_in, x_test in test_dataloader:
                     x_test_in, x_test = x_test_in.to(device).detach(), x_test.to(device).detach()
-                    with autocast(device_type="cuda"):
+                    with autocast(device_type="cuda", enabled=False):
                         compress_output = model.compress(x_test_in)
                         b_repr, shape = compress_output['strings'], compress_output['shape']
                         x_hat_test = model.decompress(b_repr, shape)['x_hat']
@@ -240,9 +239,10 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                         psnr = peak_signal_noise_ratio(x_test, x_hat_test)
                         avg_test_psnr += psnr
 
-                        bits = sum([sum([len(b) for b in b_repr_item]) * 8 / len(b_repr_item) for b_repr_item in b_repr])
+                        batch_size = len(b_repr[0])
+                        bits = sum(len(stream) * 8 for group in b_repr for stream in group)
                         _, _, H, W = x_hat_test.shape
-                        bpp = bits / (H * W)
+                        bpp = bits / (batch_size * H * W)
                         avg_test_bpp += bpp
 
             avg_test_bpp /= len(test_dataloader)

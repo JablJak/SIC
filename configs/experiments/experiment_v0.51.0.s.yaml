@@ -14,7 +14,7 @@ train_dataset:
   args:
     variant: train.X1
     subset_classes: 25
-    subset_samples: 1
+    subset_samples: 400
 
 val_dataset:
   module: src.data.imagenet_dataset.ImageNetDataset
@@ -28,7 +28,7 @@ val_dataset:
   args:
     variant: val.X
     subset_classes: 25
-    subset_samples: 1
+    subset_samples: 40
 
 test_dataset:
   module: src.data.coco_dataset.CocoDataset
@@ -45,11 +45,11 @@ test_dataset:
         resize_size: 512
   args:
     subset_classes: 1
-    subset_samples: 10
+    subset_samples: 100
 
 model:
   module: src.models.swin_compression.SwinTransformerCompressionAutoencoder
-  weights: SWIN-S-IC_0.50.3
+  weights: SWIN-S-IC_0.47.0_BASE_AE
   args:
     pretrained_encoder: false
     encoder_type: gdn_swin_v2_s
@@ -72,7 +72,7 @@ dataloader:
   args:
     batch_size: 8
     shuffle: true
-    num_workers: 0
+    num_workers: 6
     pin_memory: false
 
 optimizer:
@@ -120,10 +120,10 @@ dataset_split_ratio: 0.7
 output:
   model:
     name: SWIN-S-IC
-    version: 0.50.3
+    version: 0.51.0
 
 project_name: INZ
-task_name: v0.50.3 SWIN-S Transformer Autoencoder based Image Compression
+task_name: v0.51.0 SWIN-S Transformer Autoencoder based Image Compression
 comment: |
  - STE quantizer
  - GDN layers
