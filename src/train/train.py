@@ -47,7 +47,7 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
     optimize_bpp = False
     start_lambda = 0.1
     lambda_scale_iters = 30
-    max_norm_value = 1.5
+    max_norm_value = 2
     scale_start_epoch = aux_optimizer_delay
 
     model.train()
@@ -90,20 +90,24 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                     aux_loss = model.aux_loss()
 
             scaler.scale(loss).backward()
-            # original_stdout = sys.stdout
-            # sys.stdout = log_file
-            # print("--- Normy Gradientów (L2 Norm) ---")
-            # total_norm = 0
-            # for name, param in model.named_parameters():
-            #     if param.grad is not None:
-            #         param_norm = param.grad.data.norm(2)
-            #         total_norm += param_norm.item() ** 2
-            #         print(f"Warstwa: {name}, Norma gradientu: {param_norm.item():.4f}")
-            #     else:
-            #         print(f"Warstwa: {name}, Brak gradientu")
-            # total_norm = total_norm ** 0.5
-            # print(f"--- Całkowita norma gradientów: {total_norm:.4f} ---")
-            # sys.stdout = original_stdout
+            scaler.unscale_(optimizer)
+            if aux_optimizer is not None:
+                scaler.unscale_(aux_optimizer)
+
+            original_stdout = sys.stdout
+            sys.stdout = log_file
+            print("--- Normy Gradientów (L2 Norm) ---")
+            total_norm = 0
+            for name, param in model.named_parameters():
+                if param.grad is not None:
+                    param_norm = param.grad.data.norm(2)
+                    total_norm += param_norm.item() ** 2
+                    print(f"Warstwa: {name}, Norma gradientu: {param_norm.item():.4f}")
+                else:
+                    print(f"Warstwa: {name}, Brak gradientu")
+            total_norm = total_norm ** 0.5
+            print(f"--- Całkowita norma gradientów: {total_norm:.4f} ---")
+            sys.stdout = original_stdout
 
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_norm_value)
             scaler.step(optimizer)
