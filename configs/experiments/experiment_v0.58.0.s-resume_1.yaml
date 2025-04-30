@@ -14,7 +14,7 @@ train_dataset:
   args:
     variant: train.X2
     subset_classes: 25
-    subset_samples: 200
+    subset_samples: 400
 
 val_dataset:
   module: src.data.imagenet_dataset.ImageNetDataset
@@ -78,22 +78,22 @@ dataloader:
 optimizer:
   module: sophia.sophia.SophiaG
   args:
-    lr: !!float 3e-4
+    lr: !!float 1e-4
     betas: [0.95, 0.99]
-    rho: 0.05
+    rho: 0.02
 
 scheduler:
   module: torch.optim.lr_scheduler.LinearLR
   enabled: true
   args:
     total_iters: 10
-    start_factor: 1.0
-    end_factor: 0.25
+    start_factor: 0.75
+    end_factor: 0.5
 
 aux_optimizer:
   module: torch.optim.AdamW
   args:
-    lr: 0.001
+    lr: 0.0001
 
 aux_scheduler:
   module: torch.optim.lr_scheduler.CosineAnnealingLR
@@ -109,9 +109,9 @@ loss:
 
 rd_loss:
   enabled: true
-  lambda: !!float 1e-3
+  lambda: !!float 1e-2
 
-epochs: 400
+epochs: 50
 
 aux_optimizer_delay: 0
 

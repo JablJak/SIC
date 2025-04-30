@@ -140,9 +140,6 @@ class GDNSwinTransformer(nn.Module):
                 next_dim = stage_dims[i_stage+1]
                 self.downsamplers.append(downsample_layer(4 * dim, next_dim, norm_layer))
                 self.gdn_layers.append(permute_and_gdn(next_dim, inverse=False))
-                current_dim = next_dim
-            else:
-                current_dim = dim
 
 
 

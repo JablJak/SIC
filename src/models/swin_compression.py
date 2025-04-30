@@ -47,7 +47,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         self.decoder_window_size = decoder_window_size
         self.decoder_mlp_ratio = decoder_mlp_ratio
         self.decoder_depths = decoder_depths
-        self.encoder = self.g_a = self._create_encoder(
+        self.g_a = self._create_encoder(
             encoder_name=encoder_type,
             pretrained=encoder_pretrained,
             embed_dim=encoder_embed_dim,
@@ -58,7 +58,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             stochastic_depth_prob=encoder_sd_factor,
             mlp_ratio=encoder_mlp_ratio,
         )
-        self.decoder = self.g_s = SwinTransformerDecoder(
+        self.g_s = SwinTransformerDecoder(
             stage_dims=decoder_dims,
             num_heads=decoder_num_heads,
             windows_sizes=decoder_window_size,

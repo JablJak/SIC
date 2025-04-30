@@ -1124,10 +1124,18 @@ def model_from_config(config: dict[str, Any]) -> Module:
                 else:
                     mapped_state_dict[old_key] = old_weight
 
-                # else: klucz nie podlega mapowaniu
+            filtered_state_dict = {}
+
+            for new_key, new_weight in mapped_state_dict.items():
+                if new_key not in new_model_state_dict.keys():
+                    continue
+                elif new_model_state_dict[new_key].shape != new_weight.shape:
+                    print(f"Shape mismatch! Key: {new_key} ({new_weight.shape}). Skipping.")
+                else:
+                    filtered_state_dict[new_key] = new_weight
 
             # Wczytaj zmapowane wagi do nowego modelu
-            missing_keys, unexpected_keys = model.load_state_dict(mapped_state_dict, strict=False)
+            missing_keys, unexpected_keys = model.load_state_dict(filtered_state_dict, strict=False)
 
             print("--- Weight loading process finished ---")
             print(f"Number of keys in mapped state_dict: {len(mapped_state_dict)}")

@@ -86,13 +86,9 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                     epoch_bpp += bpp.item()
                 else:
                     loss = criterion(x_hat, x)
-                if aux_optimizer is not None:
-                    aux_loss = model.aux_loss()
 
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
-            if aux_optimizer is not None:
-                scaler.unscale_(aux_optimizer)
 
             original_stdout = sys.stdout
             sys.stdout = log_file
@@ -113,8 +109,10 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
             scaler.step(optimizer)
 
             if epoch > aux_optimizer_delay and aux_optimizer is not None:
-                aux_optimizer.zero_grad()
+                with autocast(device_type="cuda"):
+                    aux_loss = model.aux_loss()
                 scaler.scale(aux_loss).backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(aux=True), max_norm=max_norm_value)
                 scaler.step(aux_optimizer)
 
             scaler.update()
