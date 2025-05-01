@@ -77,8 +77,8 @@ class SwinTransformerBlockMixed(SwinTransformerBlock):
     def forward(self, x: Tensor):
         # Here is the difference, we apply norm after the attention in V2.
         # In V1 we applied norm before the attention.
-        x = x + self.stochastic_depth(self.attn(self.norm1(x)))
-        x = x + self.stochastic_depth(self.mlp(self.norm2(x)))
+        x = x + self.stochastic_depth(self.norm1(self.attn(x)))
+        x = x + self.stochastic_depth(self.norm2(self.mlp(x)))
         return x
 
 
@@ -201,8 +201,6 @@ def _gdn_swin_transformer(
     progress: bool,
     **kwargs: Any,
 ) -> GDNSwinTransformer:
-    if weights is not None:
-        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = GDNSwinTransformer(
         patch_size=patch_size,

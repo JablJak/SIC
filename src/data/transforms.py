@@ -7,6 +7,8 @@ from torchvision.transforms import InterpolationMode, functional
 
 RGB_IMAGENET_MEAN = (0.485, 0.456, 0.406)
 RGB_IMAGENET_STD = (0.229, 0.224, 0.225)
+RGB_COCO_MEAN = (0.470, 0.447, 0.408)
+RGB_COCO_STD = (0.270, 0.266, 0.281)
 YCBCR_IMAGENET_MEAN = (0.459, -0.030, 0.019)
 YCBCR_IMAGENET_STD = (0.150, 0.140, 0.149)
 RGB_TO_YCBCR_MAT = [

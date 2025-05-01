@@ -17,7 +17,7 @@ from src.data.transforms import YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD, \
 from src.losses.rdloss import RDLoss
 from src.models.gdn_swin_transformer import LinearScheduler, GradualIntroductionLayer
 from src.train.experiment import Experiment
-from src.utils import clearml_helpers
+from src.utils import clearml_helpers, initializers
 from src.utils.checkpoint_helpers import save_training_state_with_clearml, load_training_state_with_clearml_from_file
 from src.utils.clearml_helpers import  start_experiment
 from src.utils.const import MODEL_CHECKPOINT_PATH, EXPERIMENTS_CONFIG_PATH, \
@@ -351,7 +351,7 @@ if __name__ == '__main__':
         task, start_epoch = load_training_state_with_clearml_from_file(
             args.resume_checkpoint,
             model,
-            None,
+            optimizer,
             None,
             None,
             aux_scheduler,
@@ -360,6 +360,13 @@ if __name__ == '__main__':
         )
 
     logger = task.get_logger() if task is not None else None
+
+    # for i, param_group in enumerate(optimizer.param_groups):
+    #     param_group['initial_lr'] = 2.5e-5
+    # for i, param_group in enumerate(optimizer.param_groups):
+    #     param_group['lr'] = 2.5e-5
+    #
+    # scheduler = initializers.scheduler_from_config(optimizer, experiment_config['scheduler'])
 
     with open(f"logs/{datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")}.log", "a") as log_file:
         trained_model = _train(
