@@ -11,6 +11,7 @@ from torchvision.ops import StochasticDepth, MLP
 
 from src.models.gdn_swin_transformer import permute_and_gdn
 from src.utils.activation import LearnableTempSigmoid, LearnableTempScaledTanh
+from src.utils.initializers import initialize_weights
 
 
 class PatchReconstruction(nn.Module):
@@ -98,8 +99,10 @@ class SwinTransformerDecoderStage(nn.Module):
 
 
     def forward(self, x):
+        residual = x
         for i in range(self.depth):
             x = self.blocks[i](x)
+        x = x + residual
         x = self.norm(x)
         x = self.linear(x)
         x = x.permute(0, 3, 1, 2)
@@ -117,25 +120,19 @@ class SwinTransformerDecoderBlock(nn.Module):
         window_size,
         shift_size,
         sd_factor,
-        dropout: float = 0.0,
+        dropout: float = 0.1,
         mlp_ratio=4.0,
     ):
         super().__init__()
         self.norm1 = nn.LayerNorm(dim)
         self.norm2 = nn.LayerNorm(dim)
-        self.attn = ShiftedWindowAttentionV2(dim=dim, window_size=window_size, num_heads=num_heads, shift_size=shift_size)
+        self.attn = ShiftedWindowAttentionV2(dim=dim, window_size=window_size, num_heads=num_heads, shift_size=shift_size, attention_dropout=0.1)
         self.mlp = MLP(dim, [int(dim * mlp_ratio), dim],
                        activation_layer=nn.GELU,
                        inplace=None, dropout=dropout)
         self.stochastic_depth = StochasticDepth(sd_factor, "row")
 
-        # TODO: Initialize rest of the layers
-
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                init.xavier_uniform_(m.weight)
-                if m.bias is not None:
-                    init.zeros_(m.bias)
+        initialize_weights(self)
 
     def forward(self, x: Tensor):
         x = x + self.stochastic_depth(self.norm1(self.attn(x)))

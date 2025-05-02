@@ -10,6 +10,8 @@ from torchvision.models.swin_transformer import PatchMergingV2, SwinTransformerB
     _patch_merging_pad, ShiftedWindowAttentionV2, SwinTransformerBlock, Swin_V2_S_Weights
 from torchvision.ops import Permute, MLP
 
+from src.utils.initializers import initialize_weights
+
 
 class VariableDepthPatchMerging(nn.Module):
     def __init__(self, in_dim: int, out_dim: int, norm_layer: Callable[..., nn.Module] = nn.LayerNorm):
@@ -55,8 +57,8 @@ class SwinTransformerBlockMixed(SwinTransformerBlock):
         window_size: list[int],
         shift_size: list[int],
         mlp_ratio: float = 4.0,
-        dropout: float = 0.0,
-        attention_dropout: float = 0.0,
+        dropout: float = 0.1,
+        attention_dropout: float = 0.1,
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
         attn_layer: Callable[..., nn.Module] = ShiftedWindowAttentionV2,
@@ -92,8 +94,8 @@ class GDNSwinTransformer(nn.Module):
         num_heads: list[int],
         window_size: list[int],
         mlp_ratio: float = 4.0,
-        dropout: float = 0.0,
-        attention_dropout: float = 0.0,
+        dropout: float = 0.1,
+        attention_dropout: float = 0.1,
         stochastic_depth_prob: float = 0.1,
         block = SwinTransformerBlockMixed,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
@@ -115,10 +117,10 @@ class GDNSwinTransformer(nn.Module):
         self.stages = nn.ModuleList()
         self.downsamplers = nn.ModuleList()
         self.gdn_layers = nn.ModuleList()
+        self.residual_norms = nn.ModuleList()
 
         total_stage_blocks = sum(depths)
         stage_block_id = 0
-        current_dim = embed_dim
 
         for i_stage in range(len(depths)):
             stage_module_list: list[nn.Module] = []
@@ -135,21 +137,24 @@ class GDNSwinTransformer(nn.Module):
                 stage_block_id += 1
 
             self.stages.append(nn.Sequential(*stage_module_list))
+            self.residual_norms.append(norm_layer(dim))
 
             if i_stage < (len(depths) - 1):
                 next_dim = stage_dims[i_stage+1]
                 self.downsamplers.append(downsample_layer(4 * dim, next_dim, norm_layer))
                 self.gdn_layers.append(permute_and_gdn(next_dim, inverse=False))
 
+        initialize_weights(self)
 
 
     def forward(self, x):
         x = self.patch_embed(x)
-        output_stages = []
 
         for i in range(len(self.stages)):
+            residual = x
             x = self.stages[i](x)
-            output_stages.append(x)
+            x = x + residual
+            x = self.residual_norms[i](x)
             if i < len(self.downsamplers):
                 x = self.downsamplers[i](x)
                 x = self.gdn_layers[i](x)

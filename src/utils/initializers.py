@@ -7,8 +7,9 @@ import sophia.sophia
 import torch
 import yaml
 from sophia import SophiaG
+from torch import nn
 from torchvision import transforms
-from torch.nn import Module
+from torch.nn import Module, init
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
@@ -1255,3 +1256,17 @@ def loss_from_config(config: dict[str, Any]) -> Module:
 def rd_loss_wrapper_from_config(loss_function: Module, config: dict[str, Any]) -> Module:
     l = config['lambda']
     return RDLoss(distortion_loss=loss_function, l=l)
+
+def initialize_weights(module):
+    for m in module.modules():
+        if isinstance(m, (nn.Linear, nn.Conv1d, nn.Conv2d, nn.Conv3d)):
+            init.kaiming_uniform_(m.weight, mode='fan_in', nonlinearity='relu')
+            if m.bias is not None:
+                init.zeros_(m.bias)
+        elif isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d, nn.LayerNorm, nn.GroupNorm)):
+            if m.weight is not None:
+                init.constant_(m.weight, 1)
+            if m.bias is not None:
+                init.constant_(m.bias, 0)
+        elif isinstance(m, nn.Embedding):
+             init.normal_(m.weight, mean=0, std=0.02)
