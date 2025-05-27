@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     models = [
         # ("SWIN-S-IC_0.20.3", "gdn_swin_v2_s"),
-        ("SWIN-S-IC_0.49.3_2.5bpp", "gdn_swin_v2_s"),
+        ("SWIN-S-IC-BASE_0.58.0", "gdn_swin_v2_s"),
         # ("SWIN-S-IC_0.3.1_100", "swin_v2_s")
         # "SWIN-T-IC_0.12.0-150of400",
         # "SWIN-T-IC_0.9.4-210of400"
@@ -52,31 +52,31 @@ if __name__ == '__main__':
                     "pretrained_encoder": False,
                     "encoder_type": m[1],
                     "encoder_embed_dim": 96,
-                    "encoder_dims": [96, 192, 384, 768],
+                    "encoder_dims": [96, 192, 384, 512],
                     "encoder_depths": [2, 2, 18, 2],
-                    "encoder_num_heads": [3, 6, 12, 24],
+                    "encoder_num_heads": [3, 6, 12, 16],
                     "encoder_window_size": [8, 8],
                     "encoder_sd_factor": 0.1,
                     "encoder_mlp_ratio": 4,
                     "decoder_depths": [2, 18, 2, 2],
-                    "decoder_dims": [768, 384, 192, 96, 48],
-                    "decoder_num_heads": [24, 12, 6, 3],
+                    "decoder_dims": [512, 384, 192, 96, 48],
+                    "decoder_num_heads": [16, 12, 6, 3],
                     "decoder_window_size": [[8, 8], [8, 8], [8, 8], [8, 8]],
                     "decoder_mlp_ratio": [4, 4, 4, 4],
                     "decoder_sd_factor": 0.1,
                     "no_compress": False
                 }
             }))
-        state = torch.load("/run/media/jakub/Dane/Studia/INZ/checkpoint/checkpoint_20.pth", map_location='cpu')
-        model.load_state_dict(state['model'], strict=False)
+        # state = torch.load("/run/media/jakub/Dane/Studia/INZ/checkpoint/checkpoint_20.pth", map_location='cpu')
+        # model.load_state_dict(state['model'], strict=False)
 
         model.to(device)
         params: typing.Iterator[Parameter]  = model.g_s.reconstruction.activation.parameters()
         for param in params:
             print(param.data)
         model.update()
-        torch.save(model.state_dict(), "../../models/SWIN-S-IC_0.50.2.pth")
-
+        # torch.save(model.state_dict(), "../../models/SWIN-S-IC_0.50.2.pth")
+        print(sum(param.numel() for param in model.parameters() if param.requires_grad))
         model.eval()
         for iteration in range(pic_num):
             x_batch, _ = next(dataloader_iter)
@@ -95,9 +95,9 @@ if __name__ == '__main__':
             out_img: PIL.Image.Image = to_pil_image(x_recon[0])
             out_img = out_img.crop((0, 0, in_img.size[0], in_img.size[1]))
 
-            os.makedirs(os.path.join(ARTIFACTS_PATH, "SWIN-S-IC_0.50.2"), exist_ok=True)
-            im_img_path = os.path.join(ARTIFACTS_PATH, "SWIN-S-IC_0.50.2", f"{iteration}_original.png")
-            out_img_path = os.path.join(ARTIFACTS_PATH, "SWIN-S-IC_0.50.2", f"{iteration}_compressed.png")
+            os.makedirs(os.path.join(ARTIFACTS_PATH, m[0]), exist_ok=True)
+            im_img_path = os.path.join(ARTIFACTS_PATH, m[0], f"{iteration}_original.png")
+            out_img_path = os.path.join(ARTIFACTS_PATH, m[0], f"{iteration}_compressed.png")
             in_img.save(im_img_path)
             out_img.save(out_img_path)
 

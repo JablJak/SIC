@@ -1193,10 +1193,10 @@ def optimizer_from_config(parameters: ParamsT, config: dict[str, Any]) -> Optimi
         init_optimizer(parameters=model.parameters(), config=config)
     """
     args = config['args']
+    args.pop("lr")
     package, module = config['module'].rsplit('.', 1)
     package = importlib.import_module(package)
     type = getattr(package, module)
-    SophiaG
 
     return type(params=parameters, **args)
 

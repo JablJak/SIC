@@ -16,7 +16,7 @@ class ImageNetDataset(BaseDataset):
         ]
     ), target_transform=None
         ):
-        self.variant = variant
+        self.variant = self._choose_variant(variant)
         variant_path = f"/{variant}" if variant is not None else ""
         super().__init__(root_dir=f"{PROJECT_ROOT}/data/imagenet{variant_path}", transform=transform, target_transform=target_transform)
 

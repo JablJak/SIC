@@ -34,8 +34,8 @@ def load_training_state_with_clearml_from_file(local_path, model, optimizer, aux
     print("[INFO] Checkpoint loaded to CPU.")
 
     task_id = state.get("clearml_task_id")
-    if not task_id:
-        raise ValueError("'clearml_task_id' not found in checkpoint")
+    # if not task_id:
+    #     raise ValueError("'clearml_task_id' not found in checkpoint")
 
     model.to(device)
     print(f"[INFO] Model moved to {device}.")
@@ -89,8 +89,11 @@ def load_training_state_with_clearml_from_file(local_path, model, optimizer, aux
 
     start_epoch = state['epoch'] + 1
 
-    task = Task.get_task(task_id=task_id)
-    print(f"[INFO] Loaded ClearML Task: {task.name} (id={task_id})")
+    if task_id:
+        task = Task.get_task(task_id=task_id)
+        print(f"[INFO] Loaded ClearML Task: {task.name} (id={task_id})")
+    else:
+        task = None
 
     print(f"[INFO] Successfully loaded training state from epoch {start_epoch - 1}")
 

@@ -5,20 +5,18 @@ train_dataset:
       args:
         mean: [0.470, 0.447, 0.408]
         std: [0.270, 0.266, 0.281]
-        crop_size: 320
-        resize_size: 320
+        crop_size: 256
+        resize_size: 256
   target_transform:
     - module: src.data.transforms.RGBCompression
       args:
         mean: [ 0.470, 0.447, 0.408 ]
         std: [ 0.270, 0.266, 0.281 ]
         normalize: false
-        crop_size: 320
-        resize_size: 320
+        crop_size: 256
+        resize_size: 256
   args:
-    variant: train
     subset_classes: 1
-#    subset_samples: 1024
     subset_samples: 16384
 
 val_dataset:
@@ -28,15 +26,15 @@ val_dataset:
       args:
         mean: [ 0.470, 0.447, 0.408 ]
         std: [ 0.270, 0.266, 0.281 ]
-        crop_size: 320
-        resize_size: 320
+        crop_size: 256
+        resize_size: 256
   target_transform:
     - module: src.data.transforms.RGBCompression
       args:
         mean: [ 0.470, 0.447, 0.408 ]
         std: [ 0.270, 0.266, 0.281 ]
-        crop_size: 320
-        resize_size: 320
+        crop_size: 256
+        resize_size: 256
         normalize: false
   args:
     variant: val.X
@@ -57,7 +55,6 @@ test_dataset:
         crop_size: 512
         resize_size: 512
   args:
-    variant: test
     subset_classes: 1
     subset_samples: 100
 
@@ -68,15 +65,15 @@ model:
     encoder_type: gdn_swin_v2_s
     encoder_embed_dim: 96
     encoder_dims: [96, 192, 384, 512]
-    encoder_depths: [2, 2, 16, 2]
+    encoder_depths: [2, 2, 18, 2]
     encoder_num_heads: [3, 6, 12, 16]
-    encoder_window_size: [10, 10]
+    encoder_window_size: [8, 8]
     encoder_sd_factor: 0.1
     encoder_mlp_ratio: 4
-    decoder_depths: [2, 16, 2, 2]
+    decoder_depths: [2, 18, 2, 2]
     decoder_dims: [512, 384, 192, 96, 48]
     decoder_num_heads: [16, 12, 6, 3]
-    decoder_window_size: [[10, 10], [10, 10], [10, 10], [10, 10]]
+    decoder_window_size: [[8, 8], [8, 8], [8, 8], [8, 8]]
     decoder_mlp_ratio: [4, 4, 4, 4]
     decoder_sd_factor: 0.1
     no_compress: true
@@ -89,21 +86,22 @@ dataloader:
     pin_memory: false
 
 optimizer:
-  module: sophia.SophiaG
+  module: torch.optim.AdamW
   args:
-    lr: [!!float 3e-4, !!float 5e-5]
-    rho: 0.03
-    betas: [ 0.9, 0.99 ]
+    lr: !!float 3e-5
+#    rho: 0.075
+#    betas: [ 0.9, 0.99 ]
 
 scheduler:
   module: torch.optim.lr_scheduler.CyclicLR
-  enabled: true
+  enabled: false
   args:
-    base_lr: [!!float 5e-6, !!float 5e-6]
-    max_lr: [!!float 5e-5, !!float 2e-5]
-    mode: triangular
-    step_size_up: 20
-    step_size_down: 20
+    base_lr: [!!float 5e-5, !!float 8e-6]
+    max_lr: [!!float 1e-4, !!float 2e-5]
+    mode: triangular2
+    step_size_up: 10
+    step_size_down: 40
+    last_epoch: 10
 
 aux_optimizer:
   module: torch.optim.AdamW
@@ -134,10 +132,10 @@ dataset_split_ratio: 0.7
 
 output:
   model:
-    name: SWIN-S-IC-BASE-TEST
-    version: 0.65.1
+    name: SWIN-S-IC-BASE
+    version: 0.62.2
 
 project_name: INZ
-task_name: v0.65.1 SWIN-S Transformer Autoencoder based Image Compression
+task_name: v0.62.2 SWIN-S Transformer Autoencoder based Image Compression
 comment: |
- - replaced gdn with layernorm + gelu
+ - cnn branch

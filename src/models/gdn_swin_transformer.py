@@ -75,14 +75,18 @@ class SwinTransformerBlockMixed(SwinTransformerBlock):
             norm_layer=norm_layer,
             attn_layer=attn_layer,
         )
+        # self.norm3 = norm_layer(dim)
+        # self.cnn_post_attn = CNNPostAttn(dim)
 
     def forward(self, x: Tensor):
-        # Here is the difference, we apply norm after the attention in V2.
-        # In V1 we applied norm before the attention.
+        # x = x + self.stochastic_depth(self.norm1(self.attn(x)))
+        # cnn = self.cnn_inv_post_attn(x)
+        # mlp = self.mlp(x)
+        # x = x + self.stochastic_depth(self.norm2(0.5 * cnn + 0.5 * mlp))
+        # return x
         x = x + self.stochastic_depth(self.norm1(self.attn(x)))
         x = x + self.stochastic_depth(self.norm2(self.mlp(x)))
         return x
-
 
 class GDNSwinTransformer(nn.Module):
     def __init__(
@@ -275,6 +279,51 @@ class GradualIntroductionLayer(nn.Module):
         if alpha < 0.0 or alpha > 1.0:
             raise ValueError("Alpha must be between 0.0 and 1.0.")
         self.alpha = alpha
+        
+class CNNPostAttn(nn.Module):
+    def __init__(self, dim: int):
+        super().__init__()
+        self.conv1 = nn.Conv2d(dim, dim, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(dim, dim, kernel_size=3, stride=1, padding=1)
+        # self.gdn1 = GDN1(in_channels=dim, inverse=False)
+        # self.gdn2 = GDN1(in_channels=dim, inverse=False)
+        self.norm1 = nn.BatchNorm2d(dim)
+        self.norm2 = nn.BatchNorm2d(dim)
+        self.gelu1 = nn.GELU()
+        self.gelu2 = nn.GELU()
+
+    def forward(self, x):
+        x = x.permute(0, 3, 1, 2)
+        x = self.conv1(x)
+        x = self.norm1(x)
+        x = self.gelu1(x)
+        x = self.conv2(x)
+        x = self.norm2(x)
+        x = self.gelu2(x)
+        return x.permute(0, 2, 3, 1)
+
+
+class CNNInvPostAttn(nn.Module):
+    def __init__(self, dim: int):
+        super().__init__()
+        self.conv1 = nn.ConvTranspose2d(dim, dim, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.ConvTranspose2d(dim, dim, kernel_size=3, stride=1, padding=1)
+        # self.gdn1 = GDN1(in_channels=dim, inverse=True)
+        # self.gdn2 = GDN1(in_channels=dim, inverse=True)
+        self.norm1 = nn.BatchNorm2d(dim)
+        self.norm2 = nn.BatchNorm2d(dim)
+        self.gelu1 = nn.GELU()
+        self.gelu2 = nn.GELU()
+
+    def forward(self, x):
+        x = x.permute(0, 3, 1, 2)
+        x = self.conv1(x)
+        x = self.norm1(x)
+        x = self.gelu1(x)
+        x = self.conv2(x)
+        x = self.norm2(x)
+        x = self.gelu2(x)
+        return x.permute(0, 2, 3, 1)
 
 def permute_and_gdn(dim: int, inverse: bool) -> nn.Sequential:
     return nn.Sequential(

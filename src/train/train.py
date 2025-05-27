@@ -47,7 +47,7 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
     optimize_bpp = False
     start_lambda = 0.1
     lambda_scale_iters = 30
-    max_norm_value = 2
+    max_norm_value = 1
     scale_start_epoch = aux_optimizer_delay
 
     model.train()
@@ -57,12 +57,13 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
         epoch_ssim = 0
         epoch_bpp = 0
         epoch_lr = optimizer.param_groups[0]['lr']
+        epoch_cnn_lr = optimizer.param_groups[1]['lr']
         psnr_metric = PeakSignalNoiseRatio().to(device)
         ssim_metric = StructuralSimilarityIndexMeasure().to(device)
         alpha_set = { module.alpha for module in model.modules()
             if isinstance(module, GradualIntroductionLayer) }
-        assert not len(alpha_set) == 0, "No GradualIntroductionLayer found in model"
-        assert len(alpha_set) == 1, "Alpha is not equal for all GradualIntroductionLayer"
+        # assert not len(alpha_set) == 0, "No GradualIntroductionLayer found in model"
+        # assert len(alpha_set) == 1, "Alpha is not equal for all GradualIntroductionLayer"
 
         # criterion.l = _scaled_lambda(epoch, start_iter=scale_start_epoch, num_iters=lambda_scale_iters,
         #                              start_lambda=start_lambda, end_lambda=target_lambda, current_lambda=criterion.l)
@@ -134,7 +135,7 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
         avg_bpp = epoch_bpp / len(train_dataloader)
 
         message = f"{datetime.datetime.now().strftime("%H:%M:%S")} [TRAIN] Epoch {epoch}/{num_epochs}, Loss: {avg_loss:.5f}, PSNR: {avg_psnr:.4f}," \
-              f" SSIM: {avg_ssim:.4f}, bpp: {avg_bpp:.4f}, lr: {epoch_lr}, alpha: {alpha_set.pop() if len(alpha_set) == 1 else 'N/A'}"
+              f" SSIM: {avg_ssim:.4f}, bpp: {avg_bpp:.4f}, lr1: {epoch_lr:4g}, lr2: {epoch_cnn_lr:4g}, alpha: {alpha_set.pop() if len(alpha_set) == 1 else 'N/A'}"
         print(message)
 
         try:
@@ -149,7 +150,18 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
         except Exception as e:
             print(f"[Warning] Logging to ClearML failed: {e}")
 
-        if epoch % 10 == 0 and epoch > 0:
+        # save_training_state_with_clearml(
+        #     task=task,
+        #     model=model,
+        #     optimizer=optimizer,
+        #     aux_optimizer=None,
+        #     scheduler=scheduler,
+        #     aux_scheduler=aux_scheduler,
+        #     scaler=scaler,
+        #     current_epoch=epoch,
+        #     save_path=f"{MODEL_CHECKPOINT_PATH}/last_checkpoint.pth"
+        # )
+        if epoch % 5 == 0 and epoch > 0:
             save_training_state_with_clearml(
                 task=task,
                 model=model,
@@ -201,7 +213,7 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
 
         message = f"{datetime.datetime.now().strftime("%H:%M:%S")} [VAL] Epoch {epoch}/{num_epochs}, " \
               f"Loss: {avg_eval_loss:.4f}, PSNR: {avg_eval_psnr:.4f}, SSIM: {avg_eval_ssim:.4f}, " \
-              f"bpp: {avg_eval_bpp:.4f} lr: {epoch_lr:.5f}"
+              f"bpp: {avg_eval_bpp:.4f}, lr1: {epoch_lr:4g}, lr2: {epoch_cnn_lr:4g}"
         print(message)
 
         try:
@@ -351,7 +363,7 @@ if __name__ == '__main__':
         task, start_epoch = load_training_state_with_clearml_from_file(
             args.resume_checkpoint,
             model,
-            optimizer,
+            None,
             None,
             None,
             aux_scheduler,
@@ -362,11 +374,11 @@ if __name__ == '__main__':
     logger = task.get_logger() if task is not None else None
 
     # for i, param_group in enumerate(optimizer.param_groups):
-    #     param_group['initial_lr'] = 2.5e-5
+    #     param_group['initial_lr'] = 1e-4
     # for i, param_group in enumerate(optimizer.param_groups):
-    #     param_group['lr'] = 2.5e-5
-    #
-    # scheduler = initializers.scheduler_from_config(optimizer, experiment_config['scheduler'])
+    #     param_group['lr'] = 1e-4
+
+    scheduler = initializers.scheduler_from_config(optimizer, experiment_config['scheduler'])
 
     with open(f"logs/{datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")}.log", "a") as log_file:
         trained_model = _train(

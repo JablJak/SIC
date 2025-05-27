@@ -1,3 +1,8 @@
+import gc
+
+import torch
+
+from src.models.swin_compression import SwinTransformerCompressionAutoencoder
 from src.utils import initializers
 
 
@@ -14,7 +19,7 @@ class Experiment:
         self.val_dataset = initializers.dataset_from_config(self.config['val_dataset'])
         self.test_dataset = initializers.dataset_from_config(self.config['test_dataset'])
 
-        self.model = initializers.model_from_config(self.config['model'])
+        self.model: SwinTransformerCompressionAutoencoder = initializers.model_from_config(self.config['model'])
         distortion_loss = initializers.loss_from_config(self.config['loss'])
         self.loss = distortion_loss
         try:
@@ -22,7 +27,15 @@ class Experiment:
                 self.loss = initializers.rd_loss_wrapper_from_config(distortion_loss, self.config['rd_loss'])
         except KeyError:
             pass
-        self.optimizer = initializers.optimizer_from_config(self.model.parameters(), self.config['optimizer'])
+        param_groups = [
+            {'params': [param for name, param in self.model.parameters(named=True) if "cnn" not in str(name)], 'lr': self.config['optimizer']['args']['lr'][0]},
+            {'params': [param for name, param in self.model.parameters(named=True) if "cnn" in str(name)], 'lr': self.config['optimizer']['args']['lr'][1] },
+        ]
+        self.optimizer = initializers.optimizer_from_config(param_groups, self.config['optimizer'])
+        # for i, param_group in enumerate(self.optimizer.param_groups):
+        #     param_group['initial_lr'] = 1e-4
+        # for i, param_group in enumerate(self.optimizer.param_groups):
+        #     param_group['lr'] = 1e-4
         self.scheduler = initializers.scheduler_from_config(self.optimizer, self.config['scheduler'])
 
         self.aux_optimizer = (

@@ -9,7 +9,7 @@ from torch import nn, Tensor
 from torchvision.models.swin_transformer import ShiftedWindowAttentionV2
 from torchvision.ops import StochasticDepth, MLP
 
-from src.models.gdn_swin_transformer import permute_and_gdn
+from src.models.gdn_swin_transformer import permute_and_gdn, CNNPostAttn, CNNInvPostAttn
 from src.utils.activation import LearnableTempSigmoid, LearnableTempScaledTanh
 from src.utils.initializers import initialize_weights
 
@@ -57,6 +57,8 @@ class SwinTransformerDecoder(nn.Module):
         ]
         self.stages = nn.ModuleList(stages)
         self.reconstruction = PatchReconstruction(stage_dims[-1])
+
+        initialize_weights(self)
 
     def forward(self, x):
         for stage in self.stages:
@@ -126,15 +128,20 @@ class SwinTransformerDecoderBlock(nn.Module):
         super().__init__()
         self.norm1 = nn.LayerNorm(dim)
         self.norm2 = nn.LayerNorm(dim)
+        # self.norm3 = nn.LayerNorm(dim)
         self.attn = ShiftedWindowAttentionV2(dim=dim, window_size=window_size, num_heads=num_heads, shift_size=shift_size, attention_dropout=0.1)
         self.mlp = MLP(dim, [int(dim * mlp_ratio), dim],
                        activation_layer=nn.GELU,
                        inplace=None, dropout=dropout)
         self.stochastic_depth = StochasticDepth(sd_factor, "row")
-
-        initialize_weights(self)
+        # self.cnn_inv_post_attn = CNNInvPostAttn(dim)
 
     def forward(self, x: Tensor):
+        # x = x + self.stochastic_depth(self.norm1(self.attn(x)))
+        # cnn = self.cnn_inv_post_attn(x)
+        # mlp = self.mlp(x)
+        # x = x + self.stochastic_depth(self.norm2(0.5 * cnn + 0.5 * mlp))
+        # return x
         x = x + self.stochastic_depth(self.norm1(self.attn(x)))
         x = x + self.stochastic_depth(self.norm2(self.mlp(x)))
         return x

@@ -308,15 +308,15 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             "x_hat": x_hat,
         }
 
-    def parameters(self, aux=False):
+    def parameters(self, aux=False, named=False):
         main_parameters = [
-            param
+            (name, param) if named else param
             for name, param in self.named_parameters()
             if param.requires_grad and not name.endswith(".quantiles")
         ]
 
         aux_parameters = [
-            param
+            (name, param) if named else param
             for name, param in self.named_parameters()
             if param.requires_grad and name.endswith(".quantiles")
         ]

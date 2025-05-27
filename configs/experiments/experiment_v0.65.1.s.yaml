@@ -16,7 +16,6 @@ train_dataset:
         crop_size: 320
         resize_size: 320
   args:
-    variant: train
     subset_classes: 1
 #    subset_samples: 1024
     subset_samples: 16384
@@ -57,7 +56,6 @@ test_dataset:
         crop_size: 512
         resize_size: 512
   args:
-    variant: test
     subset_classes: 1
     subset_samples: 100
 
@@ -89,7 +87,7 @@ dataloader:
     pin_memory: false
 
 optimizer:
-  module: sophia.SophiaG
+  module: sophia.sophia.SophiaG
   args:
     lr: [!!float 3e-4, !!float 5e-5]
     rho: 0.03
@@ -134,7 +132,7 @@ dataset_split_ratio: 0.7
 
 output:
   model:
-    name: SWIN-S-IC-BASE-TEST
+    name: SWIN-S-IC-BASE
     version: 0.65.1
 
 project_name: INZ
