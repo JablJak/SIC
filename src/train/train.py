@@ -4,6 +4,7 @@ import os
 import random
 import sys
 
+import lion_pytorch
 import numpy as np
 import torch
 from torch import autocast, GradScaler
@@ -41,23 +42,22 @@ def _scaled_lambda(current_iter, start_iter, num_iters, start_lambda, end_lambda
 
 def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux_optimizer_delay, target_lambda,
            criterion, optimizer, aux_optimizer, aux_scheduler, num_epochs, device, scheduler, logger=None, ycbcr=False,
-           task=None, start_epoch=1, log_file=None):
+           task=None, start_epoch=1, global_step=0, log_file=None, log_frequency=100, accumulation_steps=4):
     # Train
     alpha_scheduler = LinearScheduler(total_steps=100, initial_value=1.0, final_value=1.0)
     optimize_bpp = False
+    max_norm_value = 5
     start_lambda = 0.1
     lambda_scale_iters = 30
-    max_norm_value = 1
     scale_start_epoch = aux_optimizer_delay
 
     model.train()
     for epoch in range(start_epoch, num_epochs):
-        epoch_loss = 0
-        epoch_psnr = 0
-        epoch_ssim = 0
-        epoch_bpp = 0
-        epoch_lr = optimizer.param_groups[0]['lr']
-        epoch_cnn_lr = optimizer.param_groups[1]['lr']
+        interval_loss = 0
+        interval_bpp = 0
+        interval_lr = optimizer.param_groups[0]['lr']
+        accumulated_loss = 0
+        accumulated_bpp = 0
         psnr_metric = PeakSignalNoiseRatio().to(device)
         ssim_metric = StructuralSimilarityIndexMeasure().to(device)
         alpha_set = { module.alpha for module in model.modules()
@@ -68,14 +68,11 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
         # criterion.l = _scaled_lambda(epoch, start_iter=scale_start_epoch, num_iters=lambda_scale_iters,
         #                              start_lambda=start_lambda, end_lambda=target_lambda, current_lambda=criterion.l)
 
-        if epoch > aux_optimizer_delay and aux_optimizer is not None:
-            optimize_bpp = True
-
-        for x_in, x in train_dataloader:
+        for i, (x_in, x) in enumerate(train_dataloader):
+            if global_step > aux_optimizer_delay and aux_optimizer is not None:
+                optimize_bpp = True
+            global_step += 1
             x_in, x = x_in.to(device), x.to(device)
-            optimizer.zero_grad()
-            if aux_optimizer is not None:
-                aux_optimizer.zero_grad()
             with autocast(device_type="cuda"):
                 output = model(x_in)
                 try:
@@ -84,83 +81,76 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                     x_hat, likelihoods = output['x_hat'], None
                 if isinstance(criterion, RDLoss):
                     loss, bpp = criterion(x_hat, x, likelihoods, optimize_bpp)
-                    epoch_bpp += bpp.item()
                 else:
                     loss = criterion(x_hat, x)
+                    bpp = torch.tensor(0.0)
 
-            scaler.scale(loss).backward()
-            scaler.unscale_(optimizer)
-
-            original_stdout = sys.stdout
-            sys.stdout = log_file
-            print("--- Normy Gradientów (L2 Norm) ---")
-            total_norm = 0
-            for name, param in model.named_parameters():
-                if param.grad is not None:
-                    param_norm = param.grad.data.norm(2)
-                    total_norm += param_norm.item() ** 2
-                    print(f"Warstwa: {name}, Norma gradientu: {param_norm.item():.4f}")
-                else:
-                    print(f"Warstwa: {name}, Brak gradientu")
-            total_norm = total_norm ** 0.5
-            print(f"--- Całkowita norma gradientów: {total_norm:.4f} ---")
-            sys.stdout = original_stdout
-
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_norm_value)
-            scaler.step(optimizer)
-
-            if epoch > aux_optimizer_delay and aux_optimizer is not None:
-                with autocast(device_type="cuda"):
+                total_loss = loss / accumulation_steps
+                if global_step > aux_optimizer_delay and aux_optimizer is not None:
                     aux_loss = model.aux_loss()
-                scaler.scale(aux_loss).backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(aux=True), max_norm=max_norm_value)
-                scaler.step(aux_optimizer)
+                    total_loss = total_loss + aux_loss / accumulation_steps
 
-            scaler.update()
+            scaler.scale(total_loss).backward()
+            interval_loss += loss.item()
+            interval_bpp += bpp.item()
 
-            epoch_loss += loss.item()
+            if (i + 1) % accumulation_steps == 0:
+                scaler.unscale_(optimizer)
+                total_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_norm_value)
+                scaler.step(optimizer)
+                if global_step > aux_optimizer_delay and aux_optimizer is not None:
+                    scaler.step(aux_optimizer)
+                scaler.update()
+                optimizer.zero_grad()
+                if aux_optimizer is not None:
+                    aux_optimizer.zero_grad()
 
             psnr_metric.update(x_hat.detach(), x.detach())
-            psnr = psnr_metric.compute()
-            epoch_psnr += psnr.item()
-
             ssim_metric.update(x_hat.detach(), x.detach())
-            ssim = ssim_metric.compute()
-            epoch_ssim += ssim.item()
 
+            if global_step % log_frequency == 0:
+                avg_interval_loss = interval_loss / log_frequency
+                avg_interval_bpp = interval_bpp / log_frequency
+                avg_interval_psnr = psnr_metric.compute()
+                avg_interval_ssim = ssim_metric.compute()
+                message = f"{datetime.datetime.now().strftime("%H:%M:%S")} [TRAIN] Epoch {epoch}/{num_epochs}, Step: {global_step}, Loss: {avg_interval_loss:.5f}, PSNR: {avg_interval_psnr:.4f}," \
+                      f" SSIM: {avg_interval_ssim:.4f}, bpp: {avg_interval_bpp:.4f}, lr: {interval_lr:4g}, alpha: {alpha_set.pop() if len(alpha_set) == 1 else 'N/A'}"
+                print(message)
+                try:
+                    if logger is not None:
+                        logger.report_text(message)
+                        logger.report_scalar(title="Loss", series="train", value=avg_interval_loss, iteration=global_step)
+                        logger.report_scalar(title="PSNR", series="train", value=avg_interval_psnr, iteration=global_step)
+                        logger.report_scalar(title="SSIM", series="train", value=avg_interval_ssim, iteration=global_step)
+                        logger.report_scalar(title="LR", series="train", value=interval_lr, iteration=global_step)
+                        if avg_interval_bpp != 0:
+                            logger.report_scalar(title="bpp", series="train", value=avg_interval_bpp, iteration=global_step)
+                        # for name, param in model.named_parameters():
+                        #     if param.requires_grad and param.grad is not None:
+                        #         logger.report_histogram(title='Weights', series=name, values=param.data.cpu().flatten(),
+                        #                                 iteration=global_step)
+                        #         logger.report_histogram(title='Gradients', series=name, values=param.grad.cpu().flatten(),
+                        #                                 iteration=global_step)
 
-        avg_loss = epoch_loss / len(train_dataloader)
-        avg_psnr = epoch_psnr / len(train_dataloader)
-        avg_ssim = epoch_ssim / len(train_dataloader)
-        avg_bpp = epoch_bpp / len(train_dataloader)
+                except Exception as e:
+                    print(f"[Warning] Logging to ClearML failed: {e}")
+                interval_bpp = 0
+                interval_loss = 0
+                psnr_metric.reset()
+                ssim_metric.reset()
 
-        message = f"{datetime.datetime.now().strftime("%H:%M:%S")} [TRAIN] Epoch {epoch}/{num_epochs}, Loss: {avg_loss:.5f}, PSNR: {avg_psnr:.4f}," \
-              f" SSIM: {avg_ssim:.4f}, bpp: {avg_bpp:.4f}, lr1: {epoch_lr:4g}, lr2: {epoch_cnn_lr:4g}, alpha: {alpha_set.pop() if len(alpha_set) == 1 else 'N/A'}"
-        print(message)
-
-        try:
-            if logger is not None:
-                logger.report_text(message)
-                logger.report_scalar(title="Loss", series="train", value=avg_loss, iteration=epoch)
-                logger.report_scalar(title="PSNR", series="train", value=avg_psnr, iteration=epoch)
-                logger.report_scalar(title="SSIM", series="train", value=avg_ssim, iteration=epoch)
-                logger.report_scalar(title="LR", series="train", value=epoch_lr, iteration=epoch)
-                if avg_bpp != 0:
-                    logger.report_scalar(title="bpp", series="train", value=avg_bpp, iteration=epoch)
-        except Exception as e:
-            print(f"[Warning] Logging to ClearML failed: {e}")
-
-        # save_training_state_with_clearml(
-        #     task=task,
-        #     model=model,
-        #     optimizer=optimizer,
-        #     aux_optimizer=None,
-        #     scheduler=scheduler,
-        #     aux_scheduler=aux_scheduler,
-        #     scaler=scaler,
-        #     current_epoch=epoch,
-        #     save_path=f"{MODEL_CHECKPOINT_PATH}/last_checkpoint.pth"
-        # )
+        save_training_state_with_clearml(
+            task=task,
+            model=model,
+            optimizer=optimizer,
+            aux_optimizer=None,
+            scheduler=scheduler,
+            aux_scheduler=aux_scheduler,
+            scaler=scaler,
+            current_epoch=epoch,
+            current_step=global_step,
+            save_path=f"{MODEL_CHECKPOINT_PATH}/last_checkpoint.pth"
+        )
         if epoch % 5 == 0 and epoch > 0:
             save_training_state_with_clearml(
                 task=task,
@@ -171,6 +161,7 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                 aux_scheduler=aux_scheduler,
                 scaler=scaler,
                 current_epoch=epoch,
+                current_step=global_step,
                 save_path=f"{MODEL_CHECKPOINT_PATH}/checkpoint_{epoch}.pth"
             )
 
@@ -211,17 +202,16 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
         avg_eval_ssim = eval_ssim / len(val_dataloader)
         avg_eval_bpp = eval_bpp / len(val_dataloader)
 
-        message = f"{datetime.datetime.now().strftime("%H:%M:%S")} [VAL] Epoch {epoch}/{num_epochs}, " \
+        message = f"{datetime.datetime.now().strftime("%H:%M:%S")} [VAL] Epoch {epoch}/{num_epochs}, Step: {global_step}, " \
               f"Loss: {avg_eval_loss:.4f}, PSNR: {avg_eval_psnr:.4f}, SSIM: {avg_eval_ssim:.4f}, " \
-              f"bpp: {avg_eval_bpp:.4f}, lr1: {epoch_lr:4g}, lr2: {epoch_cnn_lr:4g}"
+              f"bpp: {avg_eval_bpp:.4f}"
         print(message)
-
         try:
             if logger is not None:
                 logger.report_text(message)
-                logger.report_scalar(title="PSNR", series="eval", value=avg_eval_psnr, iteration=epoch)
-                logger.report_scalar(title="SSIM", series="eval", value=avg_eval_ssim, iteration=epoch)
-                logger.report_scalar(title="Loss", series="eval", value=avg_eval_loss, iteration=epoch)
+                logger.report_scalar(title="PSNR", series="eval", value=avg_eval_psnr, iteration=global_step)
+                logger.report_scalar(title="SSIM", series="eval", value=avg_eval_ssim, iteration=global_step)
+                logger.report_scalar(title="Loss", series="eval", value=avg_eval_loss, iteration=global_step)
                 if avg_eval_bpp != 0:
                     logger.report_scalar(title="bpp", series="eval", value=avg_eval_bpp, iteration=epoch)
         except Exception as e:
@@ -238,7 +228,7 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
             if isinstance(module, GradualIntroductionLayer):
                 module.set_alpha(alpha_scheduler.get_value())
 
-        if epoch > aux_optimizer_delay and aux_optimizer is not None:
+        if global_step > aux_optimizer_delay and aux_optimizer is not None:
             model.update()
             avg_test_psnr = 0
             avg_test_bpp = 0
@@ -262,12 +252,13 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
             avg_test_bpp /= len(test_dataloader)
             avg_test_psnr /= len(test_dataloader)
 
-            message = f"{datetime.datetime.now().strftime("%H:%M:%S")} [TEST] Epoch {epoch}/{num_epochs}, PSNR: {avg_test_psnr:.4f}, bpp: {avg_test_bpp:.4f}"
+            message = f"{datetime.datetime.now().strftime("%H:%M:%S")} [TEST] Epoch {epoch}/{num_epochs}, Step: {global_step}, PSNR: {avg_test_psnr:.4f}, bpp: {avg_test_bpp:.4f}"
             print(message)
             if logger is not None:
                 logger.report_text(message)
                 logger.report_scalar(title="PSNR", series="test", value=avg_test_psnr, iteration=epoch)
                 logger.report_scalar(title="bpp", series="test", value=avg_test_bpp, iteration=epoch)
+
         model.train()
     return model
 
@@ -329,6 +320,7 @@ if __name__ == '__main__':
 
     device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
     print("Device:", device)
+    assert torch.cuda.is_available(), "CUDA is not available."
 
     train_dataset, val_dataset, test_dataset = experiment.train_dataset, experiment.val_dataset, experiment.test_dataset
 
@@ -358,13 +350,14 @@ if __name__ == '__main__':
     scaler = GradScaler()
 
     start_epoch = 1
+    start_step = 0
     if args.resume_checkpoint:
         print(f"[INFO] Resuming training from checkpoint: {args.resume_checkpoint}")
-        task, start_epoch = load_training_state_with_clearml_from_file(
+        task, start_epoch, start_step = load_training_state_with_clearml_from_file(
             args.resume_checkpoint,
             model,
-            None,
-            None,
+            optimizer,
+            aux_optimizer,
             None,
             aux_scheduler,
             scaler,
@@ -398,8 +391,11 @@ if __name__ == '__main__':
             scaler=scaler,
             aux_optimizer_delay=experiment.aux_optimizer_delay,
             start_epoch=start_epoch,
+            global_step=start_step,
             target_lambda=loss.l if isinstance(loss, RDLoss) else 0,
-            log_file=log_file
+            log_file=log_file,
+            log_frequency=experiment.log_frequency,
+            accumulation_steps=experiment.accumulation_steps
         )
 
     # TODO: TRAIN TIME

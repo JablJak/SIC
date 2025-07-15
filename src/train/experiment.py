@@ -28,8 +28,7 @@ class Experiment:
         except KeyError:
             pass
         param_groups = [
-            {'params': [param for name, param in self.model.parameters(named=True) if "cnn" not in str(name)], 'lr': self.config['optimizer']['args']['lr'][0]},
-            {'params': [param for name, param in self.model.parameters(named=True) if "cnn" in str(name)], 'lr': self.config['optimizer']['args']['lr'][1] },
+            {'params': [param for name, param in self.model.parameters(named=True) if "cnn" not in str(name)], 'lr': self.config['optimizer']['args']['lr']},
         ]
         self.optimizer = initializers.optimizer_from_config(param_groups, self.config['optimizer'])
         # for i, param_group in enumerate(self.optimizer.param_groups):
@@ -49,8 +48,10 @@ class Experiment:
 
     def _set_training_data(self):
         self.epochs = self.config['epochs']
-        self.dataset_split_ratio = self.config['dataset_split_ratio']
-        self.aux_optimizer_delay = self.config['aux_optimizer_delay']
+        self.dataset_split_ratio = int(self.config['dataset_split_ratio'])
+        self.aux_optimizer_delay = int(self.config['aux_optimizer_delay'])
+        self.log_frequency = int(self.config['log_frequency'])
+        self.accumulation_steps = int(self.config['accumulation_steps'])
 
     def _set_experiment_metadata(self):
         self.project = self.config['project_name']

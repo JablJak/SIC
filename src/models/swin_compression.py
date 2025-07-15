@@ -9,7 +9,7 @@ from networkx.classes import selfloop_edges
 from torch import nn, autocast, Tensor
 from torchvision.models import swin_v2_t, swin_v2_s, swin_v2_b, Swin_V2_T_Weights, Swin_V2_S_Weights, Swin_V2_B_Weights
 
-from src.models.gdn_swin_transformer import gdn_swin_v2_s
+from src.models.gdn_swin_transformer import gdn_swin_v2_s, gdn_swin_v2_b
 from src.models.swin_autoencoder import SwinTransformerDecoder
 
 class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
@@ -18,6 +18,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         "swin_v2_s": swin_v2_s,
         "swin_v2_b": swin_v2_b,
         "gdn_swin_v2_s": gdn_swin_v2_s,
+        "gdn_swin_v2_b": gdn_swin_v2_b,
     }
 
     def __init__(
@@ -240,6 +241,8 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
                 weights = Swin_V2_B_Weights.DEFAULT
             case "gdn_swin_v2_s":
                 weights = Swin_V2_S_Weights.DEFAULT
+            case "gdn_swin_v2_b":
+                weights = Swin_V2_B_Weights.DEFAULT
         return self.ENCODER_MAP[encoder_name](
             weights=(weights if pretrained else None),
             embed_dim=embed_dim,
@@ -249,7 +252,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             window_size=window_size,
             stochastic_depth_prob=stochastic_depth_prob,
             mlp_ratio=mlp_ratio,
-        ).features if encoder_name != "gdn_swin_v2_s" else \
+        ).features if not encoder_name.startswith("gdn") else \
             self.ENCODER_MAP[encoder_name](
             weights=(weights if pretrained else None),
             embed_dim=embed_dim,

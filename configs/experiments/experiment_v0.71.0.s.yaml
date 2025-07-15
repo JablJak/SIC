@@ -5,20 +5,20 @@ train_dataset:
       args:
         mean: [0.470, 0.447, 0.408]
         std: [0.270, 0.266, 0.281]
-        crop_size: 256
-        resize_size: 256
+        crop_size: 512
+        resize_size: 512
   target_transform:
     - module: src.data.transforms.RGBCompression
       args:
         mean: [ 0.470, 0.447, 0.408 ]
         std: [ 0.270, 0.266, 0.281 ]
         normalize: false
-        crop_size: 256
-        resize_size: 256
+        crop_size: 512
+        resize_size: 512
   args:
     variant: train
     subset_classes: 1
-    subset_samples: 128
+    subset_samples: 131072
 
 val_dataset:
   module: src.data.coco_dataset.CocoDataset
@@ -62,41 +62,40 @@ test_dataset:
 
 model:
   module: src.models.swin_compression.SwinTransformerCompressionAutoencoder
-  weights: SWIN-S-IC_0.55.0_BASE_AE
   args:
     pretrained_encoder: false
     encoder_type: gdn_swin_v2_s
     encoder_embed_dim: 96
-    encoder_dims: [96, 192, 384, 512]
-    encoder_depths: [2, 2, 16, 4]
-    encoder_num_heads: [3, 6, 12, 16]
-    encoder_window_size: [8, 8]
+    encoder_dims: [ 96, 192, 384, 768 ]
+    encoder_depths: [ 2, 2, 18, 2 ]
+    encoder_num_heads: [ 3, 6, 12, 24 ]
+    encoder_window_size: [ 8, 8 ]
     encoder_sd_factor: 0.1
     encoder_mlp_ratio: 4
-    decoder_depths: [4, 16, 2, 2]
-    decoder_dims: [512, 384, 192, 96, 48]
-    decoder_num_heads: [16, 12, 6, 3]
-    decoder_window_size: [[8, 8], [8, 8], [8, 8], [8, 8]]
-    decoder_mlp_ratio: [4, 4, 4, 4]
+    decoder_depths: [ 2, 18, 2, 2 ]
+    decoder_dims: [ 768, 384, 192, 96, 48 ]
+    decoder_num_heads: [ 24, 12, 6, 3 ]
+    decoder_window_size: [ [ 8, 8 ], [ 8, 8 ], [ 8, 8 ], [ 8, 8 ] ]
+    decoder_mlp_ratio: [ 4, 4, 4, 4 ]
     decoder_sd_factor: 0.1
     no_compress: false
 
 dataloader:
   args:
-    batch_size: 4
+    batch_size: 2
     shuffle: true
-    num_workers: 2
+    num_workers: 4
     pin_memory: false
 
 optimizer:
   module: lion_pytorch.Lion
   args:
-    lr: !!float 1e-5
-    betas: [0.95, 0.999]
+    lr: !!float 1e-4
+    weight_decay: 0
 
 scheduler:
   module: torch.optim.lr_scheduler.LinearLR
-  enabled: true
+  enabled: false
   args:
     total_iters: 10
     start_factor: 1.0
@@ -105,7 +104,7 @@ scheduler:
 aux_optimizer:
   module: torch.optim.AdamW
   args:
-    lr: 0.001
+    lr: !!float 1e-3
 
 aux_scheduler:
   module: torch.optim.lr_scheduler.CosineAnnealingLR
@@ -121,20 +120,21 @@ loss:
 
 rd_loss:
   enabled: true
-  lambda: !!float 1e-4
+  lambda: !!float 5e-2
 
 epochs: 400
 log_frequency: 100
+accumulation_steps: 32
 
-aux_optimizer_delay: 0
+aux_optimizer_delay: 10000
 
 dataset_split_ratio: 0.7
 
 output:
   model:
     name: SWIN-S-IC
-    version: 0.68.0-TEST
+    version: 0.71.0
 
 project_name: INZ
-task_name: TEST v0.68.0 SWIN-S Transformer Autoencoder based Image Compression
+task_name: v0.71.0 SWIN-S Transformer Autoencoder based Image Compression
 comment: |

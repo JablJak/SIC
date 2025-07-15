@@ -7,8 +7,8 @@ from clearml import Task
 
 
 def save_training_state_with_clearml(task, model, optimizer, aux_optimizer,
-                                     scheduler, aux_scheduler, scaler,
-                                     current_epoch: int, save_path: str):
+                                     scheduler, aux_scheduler, scaler, current_epoch: int,
+                                     current_step: int, save_path: str):
     state_dict = {
         'model': model.state_dict(),
         'optimizer': optimizer.state_dict(),
@@ -17,6 +17,7 @@ def save_training_state_with_clearml(task, model, optimizer, aux_optimizer,
         'aux_scheduler': aux_scheduler.state_dict() if aux_scheduler else None,
         'scaler': scaler.state_dict(),
         'epoch': current_epoch,
+        'step': current_step,
         'clearml_task_id': task.id if task is not None else None,
     }
 
@@ -88,6 +89,7 @@ def load_training_state_with_clearml_from_file(local_path, model, optimizer, aux
     gc.collect()
 
     start_epoch = state['epoch'] + 1
+    start_step = state['step']
 
     if task_id:
         task = Task.get_task(task_id=task_id)
@@ -101,4 +103,4 @@ def load_training_state_with_clearml_from_file(local_path, model, optimizer, aux
     torch.cuda.empty_cache()
     gc.collect()
 
-    return task, start_epoch
+    return task, start_epoch, start_step

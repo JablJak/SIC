@@ -7,7 +7,7 @@ from torch import nn, Tensor
 from torchvision.models._api import register_model, WeightsEnum
 from torchvision.models._utils import handle_legacy_interface, _ovewrite_named_param
 from torchvision.models.swin_transformer import PatchMergingV2, SwinTransformerBlockV2, Swin_S_Weights, \
-    _patch_merging_pad, ShiftedWindowAttentionV2, SwinTransformerBlock, Swin_V2_S_Weights
+    _patch_merging_pad, ShiftedWindowAttentionV2, SwinTransformerBlock, Swin_V2_S_Weights, Swin_V2_B_Weights
 from torchvision.ops import Permute, MLP
 
 from src.utils.initializers import initialize_weights
@@ -120,7 +120,6 @@ class GDNSwinTransformer(nn.Module):
 
         self.stages = nn.ModuleList()
         self.downsamplers = nn.ModuleList()
-        self.gdn_layers = nn.ModuleList()
         self.residual_norms = nn.ModuleList()
 
         total_stage_blocks = sum(depths)
@@ -146,7 +145,6 @@ class GDNSwinTransformer(nn.Module):
             if i_stage < (len(depths) - 1):
                 next_dim = stage_dims[i_stage+1]
                 self.downsamplers.append(downsample_layer(4 * dim, next_dim, norm_layer))
-                self.gdn_layers.append(permute_and_gdn(next_dim, inverse=False))
 
         initialize_weights(self)
 
@@ -161,7 +159,6 @@ class GDNSwinTransformer(nn.Module):
             x = self.residual_norms[i](x)
             if i < len(self.downsamplers):
                 x = self.downsamplers[i](x)
-                x = self.gdn_layers[i](x)
 
         return x
 
@@ -180,6 +177,36 @@ def gdn_swin_v2_s(
         mlp_ratio=4.0,
         progress: bool = True, **kwargs: Any) -> GDNSwinTransformer:
     weights = Swin_V2_S_Weights.verify(weights)
+
+    return _gdn_swin_transformer(
+        patch_size=[4, 4],
+        embed_dim=embed_dim,
+        stage_dims=stage_dims,
+        depths=depths,
+        num_heads=num_heads,
+        window_size=window_size,
+        stochastic_depth_prob=stochastic_depth_prob,
+        mlp_ratio=mlp_ratio,
+        weights=weights,
+        progress=progress,
+        block=SwinTransformerBlockV2,
+        downsample_layer=VariableDepthPatchMerging,
+        **kwargs,
+    )
+@register_model()
+@handle_legacy_interface(weights=("pretrained", Swin_V2_B_Weights.IMAGENET1K_V1))
+def gdn_swin_v2_b(
+        *,
+        weights: Optional[Swin_V2_B_Weights] = None,
+        embed_dim=128,
+        stage_dims=[128, 256, 512, 1024],
+        depths=[2, 2, 18, 2],
+        num_heads=[4, 8, 16, 32],
+        window_size=[7, 7],
+        stochastic_depth_prob=0.3,
+        mlp_ratio=4.0,
+        progress: bool = True, **kwargs: Any) -> GDNSwinTransformer:
+    weights = Swin_V2_B_Weights.verify(weights)
 
     return _gdn_swin_transformer(
         patch_size=[4, 4],

@@ -44,8 +44,10 @@ class MSESSIM(torch.nn.Module):
         mse_scale = 1
         # mse_scale = 255 ** 2
         if pred.min() < (0 - epsilon) or pred.max() > (1 +  epsilon):
+            print("dupa1")
             pred = self.activation(pred)
         if target.min() < (0 - epsilon) or target.max() > (1 + epsilon):
+            print("dupa2")
             target = self.activation(target)
         mse_loss = self.mse(pred, target) * mse_scale
         ms_ssim_loss = self.MS_SSIM(pred, target) if self.alpha != 0 else 0

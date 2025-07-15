@@ -25,17 +25,19 @@ if __name__ == '__main__':
 
     models = [
         # ("SWIN-S-IC_0.20.3", "gdn_swin_v2_s"),
-        ("SWIN-S-IC-BASE_0.58.0", "gdn_swin_v2_s"),
+        # ("SWIN-S-IC-BASE_0.58.0", "gdn_swin_v2_s"),
+        ("SWIN-S-IC_0.70.3", "gdn_swin_v2_s"),
         # ("SWIN-S-IC_0.3.1_100", "swin_v2_s")
         # "SWIN-T-IC_0.12.0-150of400",
         # "SWIN-T-IC_0.9.4-210of400"
     ]
 
-    transform = RGBCompression(crop_size=512, resize_size=512)
-    target_transform = RGBCompression(crop_size=512, resize_size=512, normalize=False)
-    # transform = RGBCompression(crop_size=512, resize_size=512)
+    transform = RGBCompression(crop_size=512, resize_size=512, mean=(0.470, 0.447, 0.408), std=(0.270, 0.266, 0.281))
+    target_transform = RGBCompression(crop_size=512, resize_size=512, normalize=False, mean=(0.470, 0.447, 0.408), std=(
+        0.270, 0.266, 0.281))
+    # transform = RGBCompression(crop_size=256, resize_size=256)
 
-    dataset = KodakDataset(transform=transform, target_transform=target_transform)
+    dataset = CocoDataset(transform=transform, target_transform=target_transform, variant='val')
 
 
     pic_num = 20
@@ -44,38 +46,38 @@ if __name__ == '__main__':
         psnr_sum = 0
         bpp_sum = 0
         ssim_sum = 0
-        dataloader_iter = iter(torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=8))
+        dataloader_iter = iter(torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=1, pin_memory=False))
         model: SwinTransformerCompressionAutoencoder = typing.cast(SwinTransformerCompressionAutoencoder, model_from_config(
             {
                 "module": "src.models.swin_compression.SwinTransformerCompressionAutoencoder",
                 "args": {
                     "pretrained_encoder": False,
-                    "encoder_type": m[1],
+                    "encoder_type": "gdn_swin_v2_s",
                     "encoder_embed_dim": 96,
-                    "encoder_dims": [96, 192, 384, 512],
+                    "encoder_dims": [96, 192, 384, 768],
                     "encoder_depths": [2, 2, 18, 2],
-                    "encoder_num_heads": [3, 6, 12, 16],
+                    "encoder_num_heads": [3, 6, 12, 24],
                     "encoder_window_size": [8, 8],
                     "encoder_sd_factor": 0.1,
                     "encoder_mlp_ratio": 4,
                     "decoder_depths": [2, 18, 2, 2],
-                    "decoder_dims": [512, 384, 192, 96, 48],
-                    "decoder_num_heads": [16, 12, 6, 3],
+                    "decoder_dims": [768, 384, 192, 96, 48],
+                    "decoder_num_heads": [24, 12, 6, 3],
                     "decoder_window_size": [[8, 8], [8, 8], [8, 8], [8, 8]],
                     "decoder_mlp_ratio": [4, 4, 4, 4],
                     "decoder_sd_factor": 0.1,
                     "no_compress": False
                 }
             }))
-        # state = torch.load("/run/media/jakub/Dane/Studia/INZ/checkpoint/checkpoint_20.pth", map_location='cpu')
-        # model.load_state_dict(state['model'], strict=False)
+        state = torch.load("/run/media/jakub/Dane/Studia/INZ/checkpoint/last_checkpoint.pth", map_location='cpu')
+        model.load_state_dict(state['model'], strict=False)
 
         model.to(device)
         params: typing.Iterator[Parameter]  = model.g_s.reconstruction.activation.parameters()
         for param in params:
             print(param.data)
         model.update()
-        # torch.save(model.state_dict(), "../../models/SWIN-S-IC_0.50.2.pth")
+        torch.save(model.state_dict(), f"../../models/{m[0]}.pth")
         print(sum(param.numel() for param in model.parameters() if param.requires_grad))
         model.eval()
         for iteration in range(pic_num):
@@ -89,7 +91,8 @@ if __name__ == '__main__':
                 # output = model(x_batch)
                 # x_recon, y_likelihoods = output['x_hat'], None
 
-            output_transform = RGBDecompression(denorm=True).to(x_batch.device)
+            output_transform = RGBDecompression(denorm=True, mean=(0.470, 0.447, 0.408), std=(0.270, 0.266,
+                                                                                              0.281)).to(x_batch.device)
 
             in_img: PIL.Image.Image = output_transform(x_batch)[0] # TODO: Examine
             out_img: PIL.Image.Image = to_pil_image(x_recon[0])

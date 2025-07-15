@@ -18,7 +18,7 @@ train_dataset:
   args:
     variant: train
     subset_classes: 1
-    subset_samples: 128
+    subset_samples: 65536
 
 val_dataset:
   module: src.data.coco_dataset.CocoDataset
@@ -62,50 +62,51 @@ test_dataset:
 
 model:
   module: src.models.swin_compression.SwinTransformerCompressionAutoencoder
-  weights: SWIN-S-IC_0.55.0_BASE_AE
+  weights: SWIN-B-IC-BASE_0.1.0
   args:
     pretrained_encoder: false
-    encoder_type: gdn_swin_v2_s
-    encoder_embed_dim: 96
-    encoder_dims: [96, 192, 384, 512]
-    encoder_depths: [2, 2, 16, 4]
-    encoder_num_heads: [3, 6, 12, 16]
+    encoder_type: gdn_swin_v2_b
+    encoder_embed_dim: 128
+    encoder_dims: [128, 256, 512, 1024]
+    encoder_depths: [2, 2, 16, 2]
+    encoder_num_heads: [4, 8, 16, 32]
     encoder_window_size: [8, 8]
     encoder_sd_factor: 0.1
     encoder_mlp_ratio: 4
-    decoder_depths: [4, 16, 2, 2]
-    decoder_dims: [512, 384, 192, 96, 48]
-    decoder_num_heads: [16, 12, 6, 3]
+    decoder_depths: [2, 18, 2, 2]
+    decoder_dims: [1024, 512, 256, 128, 64]
+    decoder_num_heads: [32, 16, 8, 4]
     decoder_window_size: [[8, 8], [8, 8], [8, 8], [8, 8]]
     decoder_mlp_ratio: [4, 4, 4, 4]
     decoder_sd_factor: 0.1
-    no_compress: false
+    no_compress: true
 
 dataloader:
   args:
-    batch_size: 4
+    batch_size: 8
     shuffle: true
-    num_workers: 2
+    num_workers: 4
     pin_memory: false
 
 optimizer:
-  module: lion_pytorch.Lion
+  module: sophia.sophia.SophiaG
   args:
-    lr: !!float 1e-5
-    betas: [0.95, 0.999]
+    lr: [!!float 5e-6, !!float 5e-6]
+    rho: 0.03
+    betas: [ 0.9, 0.99 ]
 
 scheduler:
   module: torch.optim.lr_scheduler.LinearLR
-  enabled: true
+  enabled: false
   args:
-    total_iters: 10
     start_factor: 1.0
-    end_factor: 0.25
+    end_factor: 0.01
+    total_iters: 10
 
 aux_optimizer:
   module: torch.optim.AdamW
   args:
-    lr: 0.001
+    lr: !!float 5e-4
 
 aux_scheduler:
   module: torch.optim.lr_scheduler.CosineAnnealingLR
@@ -120,11 +121,10 @@ loss:
     alpha: 0
 
 rd_loss:
-  enabled: true
-  lambda: !!float 1e-4
+  enabled: false
+  lambda: !!float 5e-4
 
 epochs: 400
-log_frequency: 100
 
 aux_optimizer_delay: 0
 
@@ -132,9 +132,9 @@ dataset_split_ratio: 0.7
 
 output:
   model:
-    name: SWIN-S-IC
-    version: 0.68.0-TEST
+    name: SWIN-B-IC-BASE
+    version: 0.1.3
 
 project_name: INZ
-task_name: TEST v0.68.0 SWIN-S Transformer Autoencoder based Image Compression
+task_name: v0.1.3 BASE SWIN-B Transformer Autoencoder based Image Compression
 comment: |
