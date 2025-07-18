@@ -279,8 +279,8 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         y = self.g_a(x)
         if not self.no_compress:
             y = y.permute(0, 3, 1, 2)
-            with autocast(device_type=x.device.type, enabled=False):
-                y_out = self.latent_codec(y)
+            # with autocast(device_type=x.device.type, enabled=False):
+            y_out = self.latent_codec(y)
             y_hat = y_out["y_hat"]
             y_hat = y_hat.permute(0, 2, 3, 1)
             x_hat = self.g_s(y_hat)

@@ -73,34 +73,37 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                 optimize_bpp = True
             global_step += 1
             x_in, x = x_in.to(device), x.to(device)
-            with autocast(device_type="cuda"):
-                output = model(x_in)
-                try:
-                    x_hat, likelihoods = output['x_hat'], output['likelihoods']
-                except TypeError:
-                    x_hat, likelihoods = output['x_hat'], None
-                if isinstance(criterion, RDLoss):
-                    loss, bpp = criterion(x_hat, x, likelihoods, optimize_bpp)
-                else:
-                    loss = criterion(x_hat, x)
-                    bpp = torch.tensor(0.0)
+            # with autocast(device_type="cuda"):
+            output = model(x_in)
+            try:
+                x_hat, likelihoods = output['x_hat'], output['likelihoods']
+            except TypeError:
+                x_hat, likelihoods = output['x_hat'], None
+            if isinstance(criterion, RDLoss):
+                loss, bpp = criterion(x_hat, x, likelihoods, optimize_bpp)
+            else:
+                loss = criterion(x_hat, x)
+                bpp = torch.tensor(0.0)
 
-                total_loss = loss / accumulation_steps
-                if global_step > aux_optimizer_delay and aux_optimizer is not None:
-                    aux_loss = model.aux_loss()
-                    total_loss = total_loss + aux_loss / accumulation_steps
+            total_loss = loss / accumulation_steps
+            if global_step > aux_optimizer_delay and aux_optimizer is not None:
+                aux_loss = model.aux_loss()
+                total_loss = total_loss + aux_loss / accumulation_steps
 
-            scaler.scale(total_loss).backward()
+            # scaler.scale(total_loss).backward()
+            total_loss.backward()
             interval_loss += loss.item()
             interval_bpp += bpp.item()
 
             if (i + 1) % accumulation_steps == 0:
-                scaler.unscale_(optimizer)
+                # scaler.unscale_(optimizer)
                 total_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_norm_value)
-                scaler.step(optimizer)
+                # scaler.step(optimizer)
+                optimizer.step()
                 if global_step > aux_optimizer_delay and aux_optimizer is not None:
-                    scaler.step(aux_optimizer)
-                scaler.update()
+                    # scaler.step(aux_optimizer)
+                    aux_optimizer.step()
+                # scaler.update()
                 optimizer.zero_grad()
                 if aux_optimizer is not None:
                     aux_optimizer.zero_grad()
@@ -113,7 +116,7 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                 avg_interval_bpp = interval_bpp / log_frequency
                 avg_interval_psnr = psnr_metric.compute()
                 avg_interval_ssim = ssim_metric.compute()
-                message = f"{datetime.datetime.now().strftime("%H:%M:%S")} [TRAIN] Epoch {epoch}/{num_epochs}, Step: {global_step}, Loss: {avg_interval_loss:.5f}, PSNR: {avg_interval_psnr:.4f}," \
+                message = f"{datetime.datetime.now().strftime('%H:%M:%S')} [TRAIN] Epoch {epoch}/{num_epochs}, Step: {global_step}, Loss: {avg_interval_loss:.5f}, PSNR: {avg_interval_psnr:.4f}," \
                       f" SSIM: {avg_interval_ssim:.4f}, bpp: {avg_interval_bpp:.4f}, lr: {interval_lr:4g}, alpha: {alpha_set.pop() if len(alpha_set) == 1 else 'N/A'}"
                 print(message)
                 try:
@@ -167,6 +170,8 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
 
         # Eval
         model.eval()
+        psnr_metric_val = PeakSignalNoiseRatio().to(device)
+        ssim_metric_val = StructuralSimilarityIndexMeasure().to(device)
         eval_loss = 0
         eval_psnr = 0
         eval_ssim = 0
@@ -175,34 +180,33 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
         with torch.no_grad():
             for x_val_in, x_val in val_dataloader:
                 x_val_in, x_val = x_val_in.to(device).detach(), x_val.to(device).detach()
-                with autocast(device_type="cuda"):
-                    output = model(x_val_in)
-                    try:
-                        x_hat_val, likelihoods_val = output['x_hat'], output['likelihoods']
-                    except TypeError:
-                        x_hat_val, likelihoods_val = output['x_hat'], None
-                    x_hat_val = x_hat_val.detach()
-                    if isinstance(criterion, RDLoss):
-                        loss_val, bpp_val = criterion(x_hat_val, x_val, likelihoods_val)
-                        eval_bpp += bpp_val.item()
-                    else:
-                        loss_val = criterion(x_hat_val, x_val)
+                # with autocast(device_type="cuda"):
+                output = model(x_val_in)
+                try:
+                    x_hat_val, likelihoods_val = output['x_hat'], output['likelihoods']
+                except TypeError:
+                    x_hat_val, likelihoods_val = output['x_hat'], None
+                x_hat_val = x_hat_val.detach()
+                if isinstance(criterion, RDLoss):
+                    loss_val, bpp_val = criterion(x_hat_val, x_val, likelihoods_val)
+                    eval_bpp += bpp_val.item()
+                else:
+                    loss_val = criterion(x_hat_val, x_val)
                 eval_loss += loss_val.item()
 
-                psnr_metric_val = PeakSignalNoiseRatio().to(device)
                 psnr_metric_val.update(x_hat_val, x_val)
                 eval_psnr += psnr_metric_val.compute().item()
 
-                ssim_metric_val = StructuralSimilarityIndexMeasure().to(device)
                 ssim_metric_val.update(x_hat_val, x_val)
                 eval_ssim += ssim_metric_val.compute().item()
 
+        avg_eval_psnr = psnr_metric_val.compute()
+        avg_eval_ssim = ssim_metric_val.compute()
+
         avg_eval_loss = eval_loss / len(val_dataloader)
-        avg_eval_psnr = eval_psnr / len(val_dataloader)
-        avg_eval_ssim = eval_ssim / len(val_dataloader)
         avg_eval_bpp = eval_bpp / len(val_dataloader)
 
-        message = f"{datetime.datetime.now().strftime("%H:%M:%S")} [VAL] Epoch {epoch}/{num_epochs}, Step: {global_step}, " \
+        message = f"{datetime.datetime.now().strftime('%H:%M:%S')} [VAL] Epoch {epoch}/{num_epochs}, Step: {global_step}, " \
               f"Loss: {avg_eval_loss:.4f}, PSNR: {avg_eval_psnr:.4f}, SSIM: {avg_eval_ssim:.4f}, " \
               f"bpp: {avg_eval_bpp:.4f}"
         print(message)
@@ -235,24 +239,24 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
             with torch.no_grad():
                 for x_test_in, x_test in test_dataloader:
                     x_test_in, x_test = x_test_in.to(device).detach(), x_test.to(device).detach()
-                    with autocast(device_type="cuda", enabled=False):
-                        compress_output = model.compress(x_test_in)
-                        b_repr, shape = compress_output['strings'], compress_output['shape']
-                        x_hat_test = model.decompress(b_repr, shape)['x_hat']
+                    # with autocast(device_type="cuda", enabled=False):
+                    compress_output = model.compress(x_test_in)
+                    b_repr, shape = compress_output['strings'], compress_output['shape']
+                    x_hat_test = model.decompress(b_repr, shape)['x_hat']
 
-                        psnr = peak_signal_noise_ratio(x_test, x_hat_test)
-                        avg_test_psnr += psnr
+                    psnr = peak_signal_noise_ratio(x_test, x_hat_test)
+                    avg_test_psnr += psnr
 
-                        batch_size = len(b_repr[0])
-                        bits = sum(len(stream) * 8 for group in b_repr for stream in group)
-                        _, _, H, W = x_hat_test.shape
-                        bpp = bits / (batch_size * H * W)
-                        avg_test_bpp += bpp
+                    batch_size = len(b_repr[0])
+                    bits = sum(len(stream) * 8 for group in b_repr for stream in group)
+                    _, _, H, W = x_hat_test.shape
+                    bpp = bits / (batch_size * H * W)
+                    avg_test_bpp += bpp
 
             avg_test_bpp /= len(test_dataloader)
             avg_test_psnr /= len(test_dataloader)
 
-            message = f"{datetime.datetime.now().strftime("%H:%M:%S")} [TEST] Epoch {epoch}/{num_epochs}, Step: {global_step}, PSNR: {avg_test_psnr:.4f}, bpp: {avg_test_bpp:.4f}"
+            message = f"{datetime.datetime.now().strftime('%H:%M:%S')} [TEST] Epoch {epoch}/{num_epochs}, Step: {global_step}, PSNR: {avg_test_psnr:.4f}, bpp: {avg_test_bpp:.4f}"
             print(message)
             if logger is not None:
                 logger.report_text(message)
@@ -299,6 +303,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print("CMD line args:", args)
+
+    # import debugpy
+    #
+    # debugpy.listen(15678)  # ~5% narzutu
+    # IDE można podłączyć później, gdy potrzeba
 
     experiment_config = read_config(args.config)
     experiment = Experiment(experiment_config)
@@ -347,7 +356,8 @@ if __name__ == '__main__':
     aux_optimizer = experiment.aux_optimizer
     aux_scheduler = experiment.aux_scheduler
 
-    scaler = GradScaler()
+    # scaler = GradScaler()
+    scaler = None
 
     start_epoch = 1
     start_step = 0
@@ -373,7 +383,7 @@ if __name__ == '__main__':
 
     scheduler = initializers.scheduler_from_config(optimizer, experiment_config['scheduler'])
 
-    with open(f"logs/{datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")}.log", "a") as log_file:
+    with open(f"logs/{datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')}.log", "a") as log_file:
         trained_model = _train(
             model=model,
             train_dataloader=train_dataloader,

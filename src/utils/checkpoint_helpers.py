@@ -15,7 +15,7 @@ def save_training_state_with_clearml(task, model, optimizer, aux_optimizer,
         'aux_optimizer': aux_optimizer.state_dict() if aux_optimizer else None,
         'scheduler': scheduler.state_dict() if scheduler else None,
         'aux_scheduler': aux_scheduler.state_dict() if aux_scheduler else None,
-        'scaler': scaler.state_dict(),
+        'scaler': scaler.state_dict() if scaler else None,
         'epoch': current_epoch,
         'step': current_step,
         'clearml_task_id': task.id if task is not None else None,
@@ -82,11 +82,12 @@ def load_training_state_with_clearml_from_file(local_path, model, optimizer, aux
         del state['aux_scheduler']
         print("[INFO] Aux_scheduler state_dict loaded.")
 
-    print("[INFO] Loading scaler state_dict...")
-    scaler.load_state_dict(state['scaler'])
-    print("[INFO] Scaler state_dict loaded.")
-    del state['scaler']
-    gc.collect()
+    if scaler and 'scaler' in state and state['scaler']:
+        print("[INFO] Loading scaler state_dict...")
+        scaler.load_state_dict(state['scaler'])
+        print("[INFO] Scaler state_dict loaded.")
+        del state['scaler']
+        gc.collect()
 
     start_epoch = state['epoch'] + 1
     start_step = state['step']

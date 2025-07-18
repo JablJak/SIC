@@ -3,7 +3,6 @@ import os
 from copy import deepcopy
 from typing import Any, TypeAlias, Union, Iterable
 
-import sophia.sophia
 import torch
 import yaml
 from sophia import SophiaG
@@ -1099,57 +1098,39 @@ def model_from_config(config: dict[str, Any]) -> Module:
             model.load_state_dict(mapped, strict=False)
             print("Loaded SWIN-T-IC_0.3 weights with specific mapping.")
         else:
-            # Użyj standardowego mapowania za pomocą key_mapping_dict
-            print("Applying general mapping using key_mapping_dict...")
-            mapped_state_dict = {}
-            # Pobierz state_dict nowego modelu raz, aby uniknąć wielokrotnego wywoływania
-            new_model_state_dict = model.state_dict()
-
-            for old_key, old_weight in state_dict.items():
-                if old_key in key_mapping_dict:
-                    new_key = key_mapping_dict[old_key]
-
-                    # --- POPRAWIONY FRAGMENT ---
-                    # Sprawdź, czy zmapowany klucz istnieje w state_dict nowego modelu
-                    # i porównaj kształty tensorów
-                    if new_key in new_model_state_dict:
-                        new_weight_shape = new_model_state_dict[new_key].shape
-                        if old_weight.shape == new_weight_shape:
-                            mapped_state_dict[new_key] = old_weight
-                        else:
-                            print(f"Shape mismatch! Old key: {old_key} ({old_weight.shape}), "
-                                  f"Mapped New key: {new_key} ({new_weight_shape}). Skipping.")
-                    else:
-                        print(f"Warning: Mapped key '{new_key}' (from old key '{old_key}') not found in the new model's state_dict.")
-                    # --- KONIEC POPRAWIONEGO FRAGMENTU ---
-                else:
-                    mapped_state_dict[old_key] = old_weight
-
+            # # Użyj standardowego mapowania za pomocą key_mapping_dict
+            # print("Applying general mapping using key_mapping_dict...")
+            # mapped_state_dict = {}
+            # # Pobierz state_dict nowego modelu raz, aby uniknąć wielokrotnego wywoływania
+            # new_model_state_dict = model.state_dict()
+            #
+            # for old_key, old_weight in state_dict.items():
+            #     if old_key in key_mapping_dict:
+            #         new_key = key_mapping_dict[old_key]
+            #
+            #         # --- POPRAWIONY FRAGMENT ---
+            #         # Sprawdź, czy zmapowany klucz istnieje w state_dict nowego modelu
+            #         # i porównaj kształty tensorów
+            #         if new_key in new_model_state_dict:
+            #             new_weight_shape = new_model_state_dict[new_key].shape
+            #             if old_weight.shape == new_weight_shape:
+            #                 mapped_state_dict[new_key] = old_weight
+            #             else:
+            #                 print(f"Shape mismatch! Old key: {old_key} ({old_weight.shape}), "
+            #                       f"Mapped New key: {new_key} ({new_weight_shape}). Skipping.")
+            #         else:
+            #             print(f"Warning: Mapped key '{new_key}' (from old key '{old_key}') not found in the new model's state_dict.")
+            #         # --- KONIEC POPRAWIONEGO FRAGMENTU ---
+            #     else:
+            #         mapped_state_dict[old_key] = old_weight
+            #
             filtered_state_dict = {}
 
-            for new_key, new_weight in mapped_state_dict.items():
-                if new_key not in new_model_state_dict.keys():
-                    continue
-                elif new_model_state_dict[new_key].shape != new_weight.shape:
-                    print(f"Shape mismatch! Key: {new_key} ({new_weight.shape}). Skipping.")
-                else:
-                    filtered_state_dict[new_key] = new_weight
-
-            # Wczytaj zmapowane wagi do nowego modelu
-            missing_keys, unexpected_keys = model.load_state_dict(filtered_state_dict, strict=False)
-
-            print("--- Weight loading process finished ---")
-            print(f"Number of keys in mapped state_dict: {len(mapped_state_dict)}")
-            if missing_keys:
-                print(f"Missing keys ({len(missing_keys)}): {missing_keys[:10]}...") # Pokaż pierwsze 10
-                all_missing_are_gdn = all("gdn" in key for key in missing_keys)
-                print(f"All missing keys are from GDN layers: {all_missing_are_gdn}")
-                if not all_missing_are_gdn:
-                    missing_keys = list(filter(lambda key: "gdn" not in key, missing_keys))
-                    print(f"Missing keys ({len(missing_keys)}): {missing_keys}") # Pokaż pierwsze 10
-            if unexpected_keys:
-                 print(f"Unexpected keys ({len(unexpected_keys)}): {unexpected_keys}") # Powinno być puste przy mapowaniu
-
+            for key, weight in state_dict.items():
+                if not "latent_codec" in key:
+                    filtered_state_dict[key] = weight
+            print("Loaded filtered weights.")
+            model.load_state_dict(filtered_state_dict, strict=False)
         return model
     else:
         # Inicjalizuj model bez wczytywania wag (użyje domyślnej inicjalizacji PyTorch)
