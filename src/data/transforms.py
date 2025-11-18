@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from torchvision.transforms import InterpolationMode, functional
+from torchvision.transforms.v2 import RandomCrop
 
 RGB_IMAGENET_MEAN = (0.485, 0.456, 0.406)
 RGB_IMAGENET_STD = (0.229, 0.224, 0.225)
@@ -43,11 +44,12 @@ class RGBCompression(nn.Module):
         self.antialias = antialias
         self.noresize = noresize
         self.normalize = normalize
+        self.crop = RandomCrop(self.crop_size, pad_if_needed=True)
 
     def forward(self, img: Tensor) -> Tensor:
         if not self.noresize:
             # img = functional.resize(img, self.resize_size, interpolation=self.interpolation, antialias=self.antialias)
-            img = functional.center_crop(img, self.crop_size)
+            img = self.crop(img)
         if not isinstance(img, Tensor):
             img = functional.pil_to_tensor(img)
         img = functional.convert_image_dtype(img, torch.float)

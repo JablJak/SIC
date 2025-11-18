@@ -99,9 +99,9 @@ class SwinTransformerDecoderStage(nn.Module):
             ) for i_block in range(depth)]
         )
         self.norms = nn.ModuleList([nn.LayerNorm(in_dim) for _ in range(depth)])
-        self.norm_1 = nn.LayerNorm(in_dim)
-        self.norm_2 = nn.LayerNorm(out_dim)
+        self.pre_split_norm = nn.LayerNorm(in_dim)
         self.pixel_shuffle = nn.PixelShuffle(upscale_factor=2)
+        self.conv = nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1)
         self.checkpointing = checkpointing
 
 
@@ -112,14 +112,13 @@ class SwinTransformerDecoderStage(nn.Module):
                 x = checkpoint(self.blocks[i], x, use_reentrant=False)
             else:
                 x = self.blocks[i](x)
-            x = self.norms[i](x)
         x = x + residual
-        x = self.norm_1(x)
+        x = self.pre_split_norm(x)
         x = self.linear(x)
         x = x.permute(0, 3, 1, 2)
         x = self.pixel_shuffle(x)
+        x = self.conv(x)
         x = x.permute(0, 2, 3, 1)
-        x = self.norm_2(x)
         return x
 
 

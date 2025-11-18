@@ -20,7 +20,7 @@ train_dataset:
     subset_samples: 131072
     patch_sizes: [[256, 256]]
     train: false
-  
+
 val_dataset:
   module: src.data.div2k_dataset.DIV2KDataset
   transform:

@@ -38,6 +38,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             decoder_mlp_ratio = (4, 4, 4, 4),
             decoder_depths = (2, 6, 2, 2),
             decoder_sd_factor=0.1,
+            bottleneck_dim=256,
             no_compress=False,
             checkpointing=False,
     ):
@@ -71,6 +72,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         )
         self.no_compress = no_compress
         self.checkpointing = checkpointing
+        self.bottleneck_dim = bottleneck_dim
         if not no_compress:
             N = encoder_dims[-1]
             # M = N
@@ -174,7 +176,10 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             #         ),
             #     },
             # )
-            N = encoder_dims[-1]
+
+            N = bottleneck_dim
+            self.a_proj = nn.Conv2d(encoder_dims[-1], N, kernel_size=1)
+            self.s_proj = nn.Conv2d(N, encoder_dims[-1], kernel_size=1)
             h_a = nn.Sequential(
                 conv3x3(N, N),
                 nn.GELU(),
@@ -202,7 +207,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
                 latent_codec={
                     "y": CheckerboardLatentCodec(
                         latent_codec={
-                            "y": GaussianConditionalLatentCodec(quantizer="ste"),
+                            "y": GaussianConditionalLatentCodec(quantizer="noise"),
                         },
                         entropy_parameters=nn.Sequential(
                             nn.Conv2d(N * 12 // 3, N * 10 // 3, 1),
@@ -219,7 +224,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
                         entropy_bottleneck=EntropyBottleneck(N),
                         h_a=h_a,
                         h_s=h_s,
-                        quantizer="ste",
+                        quantizer="noise",
                     ),
                 }
             )
@@ -285,9 +290,11 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         y = self.g_a(x)
         if not self.no_compress:
             y = y.permute(0, 3, 1, 2)
+            y = self.a_proj(y)
             # with autocast(device_type=x.device.type, enabled=False):
             y_out = self.latent_codec(y)
             y_hat = y_out["y_hat"]
+            y_hat = self.s_proj(y_hat)
             y_hat = y_hat.permute(0, 2, 3, 1)
             x_hat = self.g_s(y_hat)
             return {
@@ -305,12 +312,14 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
     def compress(self, x):
         y = self.g_a(x)
         y = y.permute(0, 3, 1, 2)
+        y = self.a_proj(y)
         outputs = self.latent_codec.compress(y)
         return outputs
 
     def decompress(self, *args, **kwargs):
         y_out = self.latent_codec.decompress(*args, **kwargs)
         y_hat = y_out["y_hat"]
+        y_hat = self.s_proj(y_hat)
         y_hat = y_hat.permute(0, 2, 3, 1)
         x_hat = self.g_s(y_hat)
         return {
