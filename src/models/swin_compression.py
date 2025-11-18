@@ -39,7 +39,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             decoder_depths = (2, 6, 2, 2),
             decoder_sd_factor=0.1,
             no_compress=False,
-
+            checkpointing=False,
     ):
         super().__init__()
         self.encoder_type = encoder_type
@@ -58,6 +58,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             window_size=encoder_window_size,
             stochastic_depth_prob=encoder_sd_factor,
             mlp_ratio=encoder_mlp_ratio,
+            checkpointing=checkpointing
         )
         self.g_s = SwinTransformerDecoder(
             stage_dims=decoder_dims,
@@ -66,15 +67,17 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             mlp_ratios=decoder_mlp_ratio,
             depths=decoder_depths,
             sd_factor=decoder_sd_factor,
+            checkpointing=checkpointing
         )
         self.no_compress = no_compress
+        self.checkpointing = checkpointing
         if not no_compress:
             N = encoder_dims[-1]
-            M = N
-            groups = [48, 48, 96, 192, M - 384]
+            # M = N
+            # groups = [128, 128, 256, 256, 256]
 
-            self.groups = list(groups)
-            assert sum(self.groups) == M
+            # self.groups = list(groups)
+            # assert sum(self.groups) == M
             # h_a = nn.Sequential(
             #     conv3x3(N, N),
             #     nn.GELU(),
@@ -145,7 +148,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             # scctx_latent_codec = {
             #     f"y{k}": CheckerboardLatentCodec(
             #         latent_codec={
-            #             "y": GaussianConditionalLatentCodec(quantizer="ste"),
+            #             "y": GaussianConditionalLatentCodec(quantizer="noise"),
             #         },
             #         context_prediction=spatial_context[k],
             #         entropy_parameters=param_aggregation[k],
@@ -167,7 +170,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             #             entropy_bottleneck=EntropyBottleneck(N),
             #             h_a=h_a,
             #             h_s=h_s,
-            #             quantizer="ste",
+            #             quantizer="noise",
             #         ),
             #     },
             # )
@@ -231,6 +234,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
         window_size,
         stochastic_depth_prob,
         mlp_ratio,
+        checkpointing
     ):
         match encoder_name:
             case "swin_v2_t":
@@ -252,6 +256,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             window_size=window_size,
             stochastic_depth_prob=stochastic_depth_prob,
             mlp_ratio=mlp_ratio,
+            checkpointing=checkpointing
         ).features if not encoder_name.startswith("gdn") else \
             self.ENCODER_MAP[encoder_name](
             weights=(weights if pretrained else None),
@@ -262,6 +267,7 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
             window_size=window_size,
             stochastic_depth_prob=stochastic_depth_prob,
             mlp_ratio=mlp_ratio,
+            checkpointing=checkpointing
         )
 
     def _validate_args(self):

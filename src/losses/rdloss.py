@@ -19,7 +19,7 @@ class RDLoss(nn.Module):
         if optimize_bpp:
             total_log_likelihood = 0
             for k, lh_tensor in likelihoods.items():
-                lh_tensor_clamped = lh_tensor.clamp(min=1e-9)
+                lh_tensor_clamped = lh_tensor.clamp(min=1e-6)
                 total_log_likelihood += torch.log(lh_tensor_clamped).sum()
             total_bits = total_log_likelihood / (-math.log(2))
             bpp_loss = total_bits / num_pixels

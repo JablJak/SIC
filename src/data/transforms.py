@@ -28,8 +28,8 @@ class RGBCompression(nn.Module):
             mean: Tuple[float, ...] = RGB_IMAGENET_MEAN,
             std: Tuple[float, ...] = RGB_IMAGENET_STD,
             interpolation: InterpolationMode = InterpolationMode.BICUBIC,
-            crop_size: int = 256,
-            resize_size: int = 256,
+            crop_size: list[int] = [256],
+            resize_size: list[int] = [256],
             antialias: Optional[bool] = True,
             noresize = False,
             normalize = True
@@ -38,15 +38,15 @@ class RGBCompression(nn.Module):
         self.mean = mean
         self.std = std
         self.interpolation = interpolation
-        self.crop_size = [crop_size]
-        self.resize_size = [resize_size]
+        self.crop_size = crop_size
+        self.resize_size = resize_size
         self.antialias = antialias
         self.noresize = noresize
         self.normalize = normalize
 
     def forward(self, img: Tensor) -> Tensor:
         if not self.noresize:
-            img = functional.resize(img, self.resize_size, interpolation=self.interpolation, antialias=self.antialias)
+            # img = functional.resize(img, self.resize_size, interpolation=self.interpolation, antialias=self.antialias)
             img = functional.center_crop(img, self.crop_size)
         if not isinstance(img, Tensor):
             img = functional.pil_to_tensor(img)

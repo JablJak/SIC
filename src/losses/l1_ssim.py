@@ -1,5 +1,7 @@
 import torch
 from piqa import MS_SSIM
+from pytorch_msssim import ms_ssim
+
 
 # TODO: Docstrings
 class L1SSIM(torch.nn.Module):
@@ -9,7 +11,7 @@ class L1SSIM(torch.nn.Module):
     the trade-off between MSE and SSIM losses.
     """
 
-    def __init__(self, alpha=0.75):
+    def __init__(self, alpha=0):
         """
         Initialize the MSE_SSIM module.
 
@@ -18,8 +20,6 @@ class L1SSIM(torch.nn.Module):
         """
         super(L1SSIM, self).__init__()
         self.l1 = torch.nn.L1Loss()
-        self.MS_SSIM = MS_SSIM()
-        self.activation = torch.nn.Sigmoid()
         self.alpha = alpha
 
     def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
@@ -33,7 +33,5 @@ class L1SSIM(torch.nn.Module):
         Returns:
             torch.Tensor: The calculated loss value.
         """
-        pred = self.activation(pred)
-        target = self.activation(target)
-        ms_ssim_loss = self.MS_SSIM(pred, target)
+        ms_ssim_loss = ms_ssim(pred, target, data_range=1.0) if self.alpha != 0 else 0
         return self.alpha * (1 - ms_ssim_loss) + (1 - self.alpha) * self.l1(pred, target)

@@ -10,7 +10,7 @@ from src.utils.const import PROJECT_ROOT
 COCO_ROOT = f"{PROJECT_ROOT}/data/datasets/awsaf49/coco-2017-dataset/versions/2/coco2017"
 
 class CocoDataset(BaseDataset):
-    def __init__(self, variant: str | None, transform=None, target_transform=None):
+    def __init__(self, variant: str | None, transform=None, target_transform=None, patch_sizes=((256, 384), (384, 256)), train=False):
         if not os.path.exists(COCO_ROOT) or len(os.listdir(COCO_ROOT)) == 0:
             path = kagglehub.dataset_download("awsaf49/coco-2017-dataset")
             print("Path to dataset files:", path)
@@ -26,7 +26,8 @@ class CocoDataset(BaseDataset):
 
         self.variant = self._choose_variant(variant)
         variant_path = f"{variant}" if variant is not None else ""
-        super().__init__(root_dir=os.path.join(COCO_ROOT, variant_path), transform=transform, target_transform=target_transform)
+        super().__init__(root_dir=os.path.join(COCO_ROOT, variant_path), transform=transform, target_transform=target_transform,
+                        patch_sizes = patch_sizes, train = train)
 
     def _choose_variant(self, variant: str | None) -> str | None:
         if variant is None:

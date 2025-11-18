@@ -1,4 +1,6 @@
 import gc
+import re
+from typing import cast
 
 import torch
 
@@ -27,8 +29,42 @@ class Experiment:
                 self.loss = initializers.rd_loss_wrapper_from_config(distortion_loss, self.config['rd_loss'])
         except KeyError:
             pass
+        first_group_keys, second_group_keys, third_group_keys, fourth_group_keys, default_group_keys = [], [], [], [], []
+        for name, param in self.model.parameters(named=True):
+            if re.match(r"g_s\.stages\.3.*", name):
+                first_group_keys.append(param)
+            elif re.match(r"g_s\.stages\.2.*", name):
+                second_group_keys.append(param)
+            elif re.match(r"g_a\.(stages|residual_norms_downsamplers)\.[01].*", name):
+                pass
+            elif re.match(r"g_(a\.stages\.2|s\.stages\.1).*", name):
+                third_group_keys.append(param)
+            elif re.match(r"g_(a\.stages\.3|s\.stages\.0).*", name):
+                fourth_group_keys.append(param)
+            else:
+                default_group_keys.append(param)
+
         param_groups = [
-            {'params': [param for name, param in self.model.parameters(named=True) if "cnn" not in str(name)], 'lr': self.config['optimizer']['args']['lr']},
+            {
+                'params': first_group_keys,
+                'lr': self.config['optimizer']['first_lr']
+            },
+            {
+                'params': second_group_keys,
+                'lr': self.config['optimizer']['second_lr']
+            },
+            {
+                'params': third_group_keys,
+                'lr': self.config['optimizer']['third_lr']
+            },
+            # {
+            #     'params': fourth_group_keys,
+            #     'lr': self.config['optimizer']['fourth_lr']
+            # },
+            {
+                'params': default_group_keys,
+                'lr': self.config['optimizer']['args']['lr']
+            }
         ]
         self.optimizer = initializers.optimizer_from_config(param_groups, self.config['optimizer'])
         # for i, param_group in enumerate(self.optimizer.param_groups):

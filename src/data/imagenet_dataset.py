@@ -18,17 +18,15 @@ class ImageNetDataset(BaseDataset):
         ):
         self.variant = self._choose_variant(variant)
         variant_path = f"/{variant}" if variant is not None else ""
-        super().__init__(root_dir=f"{PROJECT_ROOT}/data/imagenet{variant_path}", transform=transform, target_transform=target_transform)
+        super().__init__(root_dir=f"{PROJECT_ROOT}/data/imagenet-det{variant_path}", transform=transform, target_transform=target_transform)
 
     def _choose_variant(self, variant: str | None) -> str | None:
         if variant is None:
             return None
         allowed_variants = [
-            "train.X1",
-            "train.X2",
-            "train.X3",
-            "train.X4",
-            "val.X"
+            "train",
+            "val",
+            "test"
         ]
         if variant not in allowed_variants:
             raise ValueError(f"Variant {variant} is not allowed")

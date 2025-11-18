@@ -369,18 +369,18 @@ if __name__ == '__main__':
     models = [
         # ("SWIN-S-IC_0.20.3", "gdn_swin_v2_s"),
         # ("SWIN-S-IC-BASE_0.58.0", "gdn_swin_v2_s"),
-        ("SWIN-S-IC_0.70.11", "gdn_swin_v2_s"),
+        ("SWIN-B-IC_0.7.1.5", "gdn_swin_v2_b"),
         # ("SWIN-S-IC_0.3.1_100", "swin_v2_s")
         # "SWIN-T-IC_0.12.0-150of400",
         # "SWIN-T-IC_0.9.4-210of400"
     ]
 
-    transform = RGBCompression(crop_size=512, resize_size=512, mean=(0.470, 0.447, 0.408), std=(0.270, 0.266, 0.281))
-    target_transform = RGBCompression(crop_size=512, resize_size=512, normalize=False, mean=(0.470, 0.447, 0.408), std=(
+    transform = RGBCompression(noresize=True, normalize=False, mean=(0.470, 0.447, 0.408), std=(0.270, 0.266, 0.281))
+    target_transform = RGBCompression(normalize=False, noresize=True, mean=(0.470, 0.447, 0.408), std=(
         0.270, 0.266, 0.281))
     # transform = RGBCompression(crop_size=256, resize_size=256)
 
-    dataset = CocoDataset(transform=transform, target_transform=target_transform, variant='test')
+    dataset = KodakDataset(transform=transform, target_transform=target_transform)
 
 
     pic_num = 20
@@ -396,27 +396,28 @@ if __name__ == '__main__':
                 # "weights": "SWIN-S-IC_0.70.10",
                 "args": {
                     "pretrained_encoder": False,
-                    "encoder_type": "gdn_swin_v2_s",
-                    "encoder_embed_dim": 96,
-                    "encoder_dims": [96, 192, 384, 768],
-                    "encoder_depths": [2, 2, 18, 2],
-                    "encoder_num_heads": [3, 6, 12, 24],
+                    "encoder_type": "gdn_swin_v2_b",
+                    "encoder_embed_dim": 128,
+                    "encoder_dims": [128, 256, 512, 1024],
+                    "encoder_depths": [2, 2, 8, 4],
+                    "encoder_num_heads": [4, 8, 16, 32],
                     "encoder_window_size": [8, 8],
                     "encoder_sd_factor": 0.1,
-                    "encoder_mlp_ratio": 4,
-                    "decoder_depths": [2, 18, 2, 2],
-                    "decoder_dims": [768, 384, 192, 96, 48],
-                    "decoder_num_heads": [24, 12, 6, 3],
+                    "encoder_mlp_ratio": 3,
+                    "decoder_depths": [4, 8, 2, 2],
+                    "decoder_dims": [1024, 512, 256, 128, 64],
+                    "decoder_num_heads": [32, 16, 8, 4],
                     "decoder_window_size": [[8, 8], [8, 8], [8, 8], [8, 8]],
-                    "decoder_mlp_ratio": [4, 4, 4, 4],
-                    "decoder_sd_factor": 0.1,
-                    "no_compress": False
+                    "decoder_mlp_ratio": [3, 3, 3, 3],
+                    "decoder_sd_factor": 0.05,
+                    "no_compress": False,
+                    "checkpointing": False,
                 }
             }))
         # state = torch.load("D:\\Studia\\INZ\\checkpoint\\last_checkpoint.pth", map_location='cpu')
-        state = torch.load("/run/media/jakub/Dane/Studia/INZ/checkpoint/checkpoint_32900.pth", map_location='cpu')
-        model.load_state_dict(state['model'], strict=False)
-
+        state = torch.load("/run/media/jakub/Dane/Studia/INZ/checkpoint/checkpoint_130000.pth", map_location='cpu')
+        model.load_state_dict(state['model'])
+        print(state['model'].keys())
         model.eval()
 
         # diagnose_model_state(model)
@@ -425,8 +426,10 @@ if __name__ == '__main__':
         # Sprawdź wagi
         # weights_ok = check_model_weights(model)
         model.update(force=True, update_quantiles=True)
+        # model.update()
         # print(weights_ok)
         # manually_build_buffers(model)
+        # model.update(force=True, update_quantiles=True)
         model.to(device)
         # test_compression_pipeline(model)
         # verify_cdf_values(model)
@@ -448,7 +451,7 @@ if __name__ == '__main__':
                 # output = model(x_batch)
                 # x_recon, y_likelihoods = output['x_hat'], None
 
-            output_transform = RGBDecompression(denorm=True, mean=(0.470, 0.447, 0.408), std=(0.270, 0.266,
+            output_transform = RGBDecompression(denorm=False, mean=(0.470, 0.447, 0.408), std=(0.270, 0.266,
                                                                                               0.281)).to(x_batch.device)
 
             in_img: PIL.Image.Image = output_transform(x_batch)[0] # TODO: Examine
@@ -467,7 +470,7 @@ if __name__ == '__main__':
             image1 = imread(im_img_path)
             image2 = imread(out_img_path)
 
-            psnr_value = peak_signal_noise_ratio(image1, image2)
+            psnr_value = peak_signal_noise_ratio(image1, image2, data_range=255.0)
             print(f"PSNR: {psnr_value}")
             psnr_sum += psnr_value
 

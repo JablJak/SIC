@@ -1,0 +1,146 @@
+
+train_dataset:
+  module: src.data.coco_dataset.CocoDataset
+  transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        mean: [0.470, 0.447, 0.408]
+        std: [0.270, 0.266, 0.281]
+        crop_size: [128, 256]
+  target_transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        mean: [ 0.470, 0.447, 0.408 ]
+        std: [ 0.270, 0.266, 0.281 ]
+        normalize: false
+        crop_size: [128, 256]
+  args:
+    variant: train
+    subset_classes: 1
+    subset_samples: 131072
+
+val_dataset:
+  module: src.data.coco_dataset.CocoDataset
+  transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        mean: [ 0.470, 0.447, 0.408 ]
+        std: [ 0.270, 0.266, 0.281 ]
+        crop_size: [128, 256]
+  target_transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        mean: [ 0.470, 0.447, 0.408 ]
+        std: [ 0.270, 0.266, 0.281 ]
+        crop_size: [128, 256]
+        normalize: false
+  args:
+    variant: val
+    subset_classes: 1
+    subset_samples: 1024
+
+test_dataset:
+  module: src.data.kodak_dataset.KodakDataset
+  transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        mean: [ 0.470, 0.447, 0.408 ]
+        std: [ 0.270, 0.266, 0.281 ]
+        crop_size: 512
+        resize_size: 512
+  target_transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        mean: [ 0.470, 0.447, 0.408 ]
+        std: [ 0.270, 0.266, 0.281 ]
+        crop_size: 512
+        resize_size: 512
+        normalize: false
+  args: {}
+
+model:
+  module: src.models.swin_compression.SwinTransformerCompressionAutoencoder
+  args:
+    pretrained_encoder: false
+    encoder_type: gdn_swin_v2_b
+    encoder_embed_dim: 128
+    encoder_dims: [ 128, 256, 512, 1024 ]
+    encoder_depths: [ 2, 2, 12, 4 ]
+    encoder_num_heads: [ 4, 8, 16, 32 ]
+    encoder_window_size: [ 8, 8 ]
+    encoder_sd_factor: 0.1
+    encoder_mlp_ratio: 3
+    decoder_depths: [ 4, 12, 2, 2 ]
+    decoder_dims: [ 1024, 512, 256, 128, 64 ]
+    decoder_num_heads: [ 32, 16, 8, 4 ]
+    decoder_window_size: [ [ 8, 8 ], [ 8, 8 ], [ 8, 8 ], [ 8, 8 ] ]
+    decoder_mlp_ratio: [ 3, 3, 3, 3 ]
+    decoder_sd_factor: 0.1
+    no_compress: false
+
+dataloader:
+  args:
+    batch_size: 1
+    shuffle: true
+    num_workers: 1
+    pin_memory: false
+
+optimizer:
+  module: lion_pytorch.Lion
+  args:
+    lr: !!float 8e-6
+    weight_decay: !!float 1e-6
+    betas: [0.95, 0.98]
+
+#optimizer:
+#  module: sophia.sophia.SophiaG
+#  args:
+#    lr: !!float 2e-5
+#    rho: 0.03
+#    betas: [ 0.9, 0.99 ]
+
+scheduler:
+  module: torch.optim.lr_scheduler.LinearLR
+  enabled: false
+  args:
+    total_iters: 10
+    start_factor: 1.0
+    end_factor: 0.25
+
+aux_optimizer:
+  module: torch.optim.AdamW
+  args:
+    lr: !!float 1e-4
+
+aux_scheduler:
+  module: torch.optim.lr_scheduler.CosineAnnealingLR
+  enabled: false
+  args:
+    eta_min: 0.0005
+    T_max: 200
+
+loss:
+  module: src.losses.l1_ssim.L1SSIM
+  args:
+    alpha: 0
+
+rd_loss:
+  enabled: true
+  lambda: !!float 1e-2
+
+epochs: 400
+log_frequency: 100
+accumulation_steps: 16
+
+aux_optimizer_delay: 0
+
+dataset_split_ratio: 0.7
+
+output:
+  model:
+    name: SWIN-B-IC
+    version: 0.3.6
+
+project_name: INZ
+task_name: v0.3.6 SWIN-B Transformer Autoencoder based Image Compression
+comment: |

@@ -4,6 +4,7 @@ from compressai.entropy_models import EntropyBottleneck
 from compressai.layers import GDN
 from timm.layers import DropPath
 from torch.nn import init
+from torch.utils.checkpoint import checkpoint
 from torchvision.models import swin_v2_t, swin_v2_s, swin_v2_b, Swin_V2_T_Weights
 from torch import nn, Tensor
 from torchvision.models.swin_transformer import ShiftedWindowAttentionV2
@@ -35,7 +36,8 @@ class SwinTransformerDecoder(nn.Module):
             windows_sizes,
             mlp_ratios,
             depths,
-            sd_factor
+            sd_factor,
+            checkpointing,
         ):
         super().__init__()
         self.num_stages = n = len(num_heads)
@@ -52,6 +54,7 @@ class SwinTransformerDecoder(nn.Module):
                     sd_factor=sd_factor,
                     blocks_remaining=blocks_remaining[i],
                     blocks_total=blocks_total,
+                    checkpointing=checkpointing
                 )
                for i in range(n)
         ]
@@ -78,7 +81,8 @@ class SwinTransformerDecoderStage(nn.Module):
         depth,
         sd_factor,
         blocks_remaining,
-        blocks_total
+        blocks_total,
+        checkpointing,
     ):
         super().__init__()
         self.depth = depth
@@ -95,20 +99,27 @@ class SwinTransformerDecoderStage(nn.Module):
             ) for i_block in range(depth)]
         )
         self.norms = nn.ModuleList([nn.LayerNorm(in_dim) for _ in range(depth)])
-        self.norm = nn.LayerNorm(in_dim)
+        self.norm_1 = nn.LayerNorm(in_dim)
+        self.norm_2 = nn.LayerNorm(out_dim)
         self.pixel_shuffle = nn.PixelShuffle(upscale_factor=2)
+        self.checkpointing = checkpointing
 
 
     def forward(self, x):
         residual = x
         for i in range(self.depth):
-            x = self.blocks[i](x)
+            if self.checkpointing:
+                x = checkpoint(self.blocks[i], x, use_reentrant=False)
+            else:
+                x = self.blocks[i](x)
+            x = self.norms[i](x)
         x = x + residual
-        x = self.norm(x)
+        x = self.norm_1(x)
         x = self.linear(x)
         x = x.permute(0, 3, 1, 2)
         x = self.pixel_shuffle(x)
         x = x.permute(0, 2, 3, 1)
+        x = self.norm_2(x)
         return x
 
 
@@ -140,6 +151,6 @@ class SwinTransformerDecoderBlock(nn.Module):
         # mlp = self.mlp(x)
         # x = x + self.stochastic_depth(self.norm2(0.5 * cnn + 0.5 * mlp))
         # return x
-        x = x + self.stochastic_depth(self.norm1(self.attn(x)))
-        x = x + self.stochastic_depth(self.norm2(self.mlp(x)))
+        x = x + self.stochastic_depth(self.attn(self.norm1(x)))
+        x = x + self.stochastic_depth(self.mlp(self.norm2(x)))
         return x

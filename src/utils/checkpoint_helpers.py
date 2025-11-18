@@ -1,4 +1,5 @@
 import gc
+import re
 
 import torch
 import os
@@ -44,7 +45,10 @@ def load_training_state_with_clearml_from_file(local_path, model, optimizer, aux
     torch.cuda.empty_cache()
     gc.collect()
 
-    print("[INFO] Loading model state_dict...")
+    # filtered_state_dict = {
+    #     k: v for k, v in state['model'].items() if 'latent_codec' not in k
+    # }
+
     model.load_state_dict(state['model'])
     print("[INFO] Model state_dict loaded.")
     del state['model']
@@ -53,6 +57,16 @@ def load_training_state_with_clearml_from_file(local_path, model, optimizer, aux
 
     if optimizer and 'optimizer' in state and state['optimizer']:
         print("[INFO] Loading optimizer state_dict...")
+
+        # old_state_dict = state['optimizer']
+        # old_param_names = {name: state for name, state in
+        #                    zip(model.state_dict().keys(), old_state_dict['state'].values())}
+        # for group in optimizer.param_groups:
+        #     for i, p in enumerate(group['params']):
+        #         name = [n for n, param in model.parameters(named=True) if param is p][0]
+        #         if name in old_param_names:
+        #             optimizer.state[p] = old_param_names[name]
+
         optimizer.load_state_dict(state['optimizer'])
         print("[INFO] Optimizer state_dict loaded.")
         del state['optimizer']
