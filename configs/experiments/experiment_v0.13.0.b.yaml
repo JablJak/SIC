@@ -82,7 +82,7 @@ model:
 
 dataloader:
   args:
-    batch_size: 8
+    batch_size: 16
     shuffle: true
     num_workers: 4
     pin_memory: false
@@ -90,11 +90,11 @@ dataloader:
 optimizer:
   module: torch.optim.AdamW
   args:
-    lr: !!float 5e-5
-  first_lr: !!float 5e-5
-  second_lr: !!float 5e-5
-  third_lr: !!float 5e-5
-  fourth_lr: !!float 5e-5
+    lr: !!float 1e-4
+  first_lr: !!float 1e-4
+  second_lr: !!float 1e-4
+  third_lr: !!float 1e-4
+  fourth_lr: !!float 1e-4
 
 scheduler:
   module: torch.optim.lr_scheduler.LinearLR

@@ -16,7 +16,7 @@ from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMe
 from torchvision.transforms.v2.functional import to_pil_image
 
 from src.data.transforms import YCBCR_IMAGENET_MEAN, YCBCR_IMAGENET_STD, \
-    RGB_IMAGENET_MEAN, RGB_IMAGENET_STD, YCbCrDecompression, RGBDecompression
+    RGB_IMAGENET_MEAN, RGB_IMAGENET_STD, YCbCrDecompression, RGBDecompression, RGB_COCO_MEAN, RGB_COCO_STD
 from src.losses.l1_ssim import L1SSIM
 from src.losses.mse_ssim import MSESSIM
 from src.losses.rdloss import RDLoss
@@ -78,6 +78,7 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                 optimize_bpp = True
             global_step += 1
             x_in, x = x_in.to(device), x.to(device)
+            x_in_denorm = denormalize(x_in, RGB_COCO_MEAN, RGB_COCO_STD)
             # with autocast(device_type="cuda"):
             output = model(x_in)
             try:

@@ -46,16 +46,15 @@ class RGBCompression(nn.Module):
         self.normalize = normalize
         self.crop = RandomCrop(self.crop_size, pad_if_needed=True)
 
-    def forward(self, img: Tensor) -> Tensor:
+    def forward(self, img: Tensor) -> Tuple[Tensor, Tensor]:
         if not self.noresize:
             # img = functional.resize(img, self.resize_size, interpolation=self.interpolation, antialias=self.antialias)
             img = self.crop(img)
         if not isinstance(img, Tensor):
             img = functional.pil_to_tensor(img)
         img = functional.convert_image_dtype(img, torch.float)
-        if self.normalize:
-            img = functional.normalize(img, mean=list(self.mean), std=list(self.std))
-        return img
+        norm_img = functional.normalize(img, mean=list(self.mean), std=list(self.std))
+        return norm_img, img
 
 
 class RGBDecompression(nn.Module):

@@ -53,9 +53,7 @@ class BaseDataset(ImageFolder):
         """
         path, _ = self.samples[index]
         orig_sample = self.loader(path)
-        sample = self.transform(orig_sample)
-        target = self.target_transform(orig_sample)
-
+        sample, target = self.transform(orig_sample)
         return sample, target
 
 

@@ -25,6 +25,6 @@ class RDLoss(nn.Module):
             bpp_loss = total_bits / num_pixels
         else:
             bpp_loss = torch.tensor(0,device=input.device, dtype=input.dtype)
-        loss = distortion + self.l * (bpp_loss if optimize_bpp else 0)
+        loss = self.l * distortion + (bpp_loss if optimize_bpp else 0)
 
         return loss, bpp_loss

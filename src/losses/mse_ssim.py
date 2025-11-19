@@ -35,6 +35,6 @@ class MSESSIM(torch.nn.Module):
             torch.Tensor: The calculated loss value.
         """
 
-        mse_loss = self.mse(pred, target)
+        mse_loss = self.mse(pred, target) * 255 ** 2
         ms_ssim_loss = ms_ssim(pred, target, data_range=1.0) if self.alpha != 0 else 0
         return self.alpha * (1 - ms_ssim_loss) + (1 - self.alpha) * mse_loss
