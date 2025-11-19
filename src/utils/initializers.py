@@ -159,10 +159,10 @@ def dataloader_from_config(dataset: BaseDataset, config: dict[str, Any]) -> Data
         }
         dataloader = init_dataloader(dataset, config)
     """
-    if dataset.train:
-        return DataLoader(dataset=dataset, collate_fn=flatten_collate, **config['args'])
-    else:
-        return DataLoader(dataset=dataset, **config['args'])
+    # if dataset.train:
+    #     return DataLoader(dataset=dataset, collate_fn=flatten_collate, **config['args'])
+    # else:
+    return DataLoader(dataset=dataset, **config['args'])
 
 
 def model_from_config(config: dict[str, Any]) -> Module:

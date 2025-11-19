@@ -52,8 +52,8 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
     optimize_bpp = False
     max_norm_value = 2
     checkpoint_frequency = 10000
-    eval_frequency = 200
-    test_frequency = 300
+    eval_frequency = 500
+    test_frequency = 1000
     start_lambda = 0.1
     lambda_scale_iters = 30
     scale_start_epoch = aux_optimizer_delay

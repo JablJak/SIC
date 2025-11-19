@@ -6,18 +6,20 @@ train_dataset:
         mean: [0.470, 0.447, 0.408]
         std: [0.270, 0.266, 0.281]
         normalize: true
-        crop_size: [ 384, 384 ]
+        crop_size: [256, 256]
   target_transform:
     - module: src.data.transforms.RGBCompression
       args:
         mean: [ 0.470, 0.447, 0.408 ]
         std: [ 0.270, 0.266, 0.281 ]
-        normalize: false
-        crop_size: [ 384, 384 ]
+        normalize: true
+        crop_size: [256, 256]
   args:
     variant: train
     subset_classes: 25
     subset_samples: 131072
+    patch_sizes: [[256, 256]]
+    train: false
 
 val_dataset:
   module: src.data.div2k_dataset.DIV2KDataset
@@ -34,11 +36,12 @@ val_dataset:
         mean: [ 0.470, 0.447, 0.408 ]
         std: [ 0.270, 0.266, 0.281 ]
         crop_size: [256, 256]
-        normalize: false
+        normalize: true
   args:
     variant: val
     subset_classes: 1
     subset_samples: 1024
+    train: false
 
 test_dataset:
   module: src.data.kodak_dataset.KodakDataset
@@ -54,7 +57,7 @@ test_dataset:
       args:
         mean: [ 0.470, 0.447, 0.408 ]
         std: [ 0.270, 0.266, 0.281 ]
-        normalize: false
+        normalize: true
         crop_size: [512, 512]
   args:
     train: false
@@ -77,13 +80,13 @@ model:
     decoder_window_size: [ [ 10, 10 ], [ 10, 10 ], [ 10, 10 ] ]
     decoder_mlp_ratio: [ 4, 4, 4 ]
     decoder_sd_factor: 0.05
-    bottleneck_dim: 512
+    bottleneck_dim: 384
     no_compress: false
     checkpointing: true
 
 dataloader:
   args:
-    batch_size: 2
+    batch_size: 8
     shuffle: true
     num_workers: 4
     pin_memory: false
@@ -124,7 +127,7 @@ loss:
 
 rd_loss:
   enabled: true
-  lambda: !!float 1e-3
+  lambda: !!float 1e-5
 
 epochs: 5000
 log_frequency: 100
@@ -137,10 +140,10 @@ dataset_split_ratio: 0.7
 output:
   model:
     name: SWIN-B-IC
-    version: 0.12.0
+    version: 0.12.3
 
 project_name: INZ
-task_name: v0.12.0 SWIN-B Transformer Autoencoder based Image Compression
+task_name: v0.12.3 SWIN-B Transformer Autoencoder based Image Compression
 comment: |
   - convolution after patch splitting
   - remove redundant norms

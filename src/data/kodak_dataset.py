@@ -15,5 +15,4 @@ class KodakDataset(BaseDataset):
             transforms.ConvertImageDtype(torch.float),
             Swin_V2_T_Weights.DEFAULT.transforms()
         ]), target_transform=None,  patch_sizes=((256, 384), (384, 256)), train=False):
-        super().__init__(root_dir=f"{PROJECT_ROOT}/data/kodak", transform=transform, target_transform=target_transform,
-                         patch_sizes=patch_sizes, train=train)
+        super().__init__(root_dir=f"{PROJECT_ROOT}/data/kodak", transform=transform, target_transform=target_transform)

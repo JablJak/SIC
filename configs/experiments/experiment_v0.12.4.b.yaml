@@ -6,14 +6,14 @@ train_dataset:
         mean: [0.470, 0.447, 0.408]
         std: [0.270, 0.266, 0.281]
         normalize: true
-        crop_size: [ 384, 384 ]
+        crop_size: [256, 256]
   target_transform:
     - module: src.data.transforms.RGBCompression
       args:
         mean: [ 0.470, 0.447, 0.408 ]
         std: [ 0.270, 0.266, 0.281 ]
         normalize: false
-        crop_size: [ 384, 384 ]
+        crop_size: [256, 256]
   args:
     variant: train
     subset_classes: 25
@@ -56,8 +56,7 @@ test_dataset:
         std: [ 0.270, 0.266, 0.281 ]
         normalize: false
         crop_size: [512, 512]
-  args:
-    train: false
+  args: {}
 
 model:
   module: src.models.swin_compression.SwinTransformerCompressionAutoencoder
@@ -77,13 +76,13 @@ model:
     decoder_window_size: [ [ 10, 10 ], [ 10, 10 ], [ 10, 10 ] ]
     decoder_mlp_ratio: [ 4, 4, 4 ]
     decoder_sd_factor: 0.05
-    bottleneck_dim: 512
+    bottleneck_dim: 384
     no_compress: false
     checkpointing: true
 
 dataloader:
   args:
-    batch_size: 2
+    batch_size: 8
     shuffle: true
     num_workers: 4
     pin_memory: false
@@ -91,11 +90,11 @@ dataloader:
 optimizer:
   module: torch.optim.AdamW
   args:
-    lr: !!float 5e-4
-  first_lr: !!float 5e-4
-  second_lr: !!float 5e-4
-  third_lr: !!float 5e-4
-  fourth_lr: !!float 5e-4
+    lr: !!float 1e-4
+  first_lr: !!float 1e-4
+  second_lr: !!float 1e-4
+  third_lr: !!float 1e-4
+  fourth_lr: !!float 1e-4
 
 scheduler:
   module: torch.optim.lr_scheduler.LinearLR
@@ -124,7 +123,7 @@ loss:
 
 rd_loss:
   enabled: true
-  lambda: !!float 1e-3
+  lambda: !!float 1e-5
 
 epochs: 5000
 log_frequency: 100
@@ -137,10 +136,10 @@ dataset_split_ratio: 0.7
 output:
   model:
     name: SWIN-B-IC
-    version: 0.12.0
+    version: 0.12.4
 
 project_name: INZ
-task_name: v0.12.0 SWIN-B Transformer Autoencoder based Image Compression
+task_name: v0.12.4 SWIN-B Transformer Autoencoder based Image Compression
 comment: |
   - convolution after patch splitting
   - remove redundant norms
