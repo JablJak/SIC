@@ -44,7 +44,7 @@ class Experiment:
             else:
                 default_group_keys.append(param)
 
-        param_groups = [
+        self.param_groups = [
             {
                 'params': first_group_keys,
                 'lr': self.config['optimizer']['first_lr']
@@ -66,13 +66,13 @@ class Experiment:
                 'lr': self.config['optimizer']['args']['lr']
             }
         ]
-        self.optimizer = initializers.optimizer_from_config(param_groups, self.config['optimizer'])
+        self.optimizer = initializers.optimizer_from_config(self.param_groups, self.config['optimizer'])
         # for i, param_group in enumerate(self.optimizer.param_groups):
         #     param_group['initial_lr'] = 1e-4
         # for i, param_group in enumerate(self.optimizer.param_groups):
         #     param_group['lr'] = 1e-4
         self.scheduler = initializers.scheduler_from_config(self.optimizer, self.config['scheduler'])
-
+        self.aux_lr = self.config['aux_optimizer']['args']['lr']
         self.aux_optimizer = (
             initializers.optimizer_from_config(self.model.parameters(aux=True), self.config['aux_optimizer'])
             if not self.model.no_compress else None

@@ -51,16 +51,17 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
     alpha_scheduler = LinearScheduler(total_steps=100, initial_value=1.0, final_value=1.0)
     optimize_bpp = False
     max_norm_value = 2
-    checkpoint_frequency = 10000
+    temp_checkpoint_frequency = 1000
+    persist_checkpoint_frequency = 5000
     eval_frequency = 500
     test_frequency = 1000
     start_lambda = 0.1
     lambda_scale_iters = 30
     scale_start_epoch = aux_optimizer_delay
     torch.cuda.empty_cache()
+    interval_loss = 0
+    interval_bpp = 0
     for epoch in range(start_epoch, num_epochs):
-        interval_loss = 0
-        interval_bpp = 0
         accumulated_loss = 0
         accumulated_bpp = 0
         psnr_metric = PeakSignalNoiseRatio(data_range=(0.0, 1.0), reduction='elementwise_mean', dim=(2, 3)).to(device)
@@ -149,12 +150,26 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                 psnr_metric.reset()
                 ssim_metric.reset()
 
-            if global_step % checkpoint_frequency == 0:
+            if global_step % temp_checkpoint_frequency == 0:
                 save_training_state_with_clearml(
                     task=task,
                     model=model,
                     optimizer=optimizer,
-                    aux_optimizer=None,
+                    aux_optimizer=aux_optimizer,
+                    scheduler=scheduler,
+                    aux_scheduler=aux_scheduler,
+                    scaler=scaler,
+                    current_epoch=epoch,
+                    current_step=global_step,
+                    save_path=f"{MODEL_CHECKPOINT_PATH}/last_checkpoint.pth"
+                )
+
+            if global_step % persist_checkpoint_frequency == 0:
+                save_training_state_with_clearml(
+                    task=task,
+                    model=model,
+                    optimizer=optimizer,
+                    aux_optimizer=aux_optimizer,
                     scheduler=scheduler,
                     aux_scheduler=aux_scheduler,
                     scaler=scaler,
@@ -286,6 +301,12 @@ def update_on_cpu(model):
     torch.cuda.empty_cache()
     model.to("cuda")
 
+
+def overwrite_lrs(optimizer, aux_optimizer, experiment):
+    for group, config_group in zip(optimizer.param_groups, experiment.param_groups):
+        group['lr'] = config_group['lr']
+    aux_optimizer.param_groups[0]['lr'] = experiment.aux_lr
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Train a model using ClearML.")
     parser.add_argument(
@@ -381,7 +402,7 @@ if __name__ == '__main__':
         task, start_epoch, start_step = load_training_state_with_clearml_from_file(
             args.resume_checkpoint,
             model,
-            None,
+            optimizer,
             aux_optimizer,
             None,
             aux_scheduler,
@@ -395,7 +416,7 @@ if __name__ == '__main__':
     #     param_group['initial_lr'] = 1e-4
     # for i, param_group in enumerate(optimizer.param_groups):
     #     param_group['lr'] = 1e-4
-
+    overwrite_lrs(optimizer, aux_optimizer, experiment)
     scheduler = initializers.scheduler_from_config(optimizer, experiment_config['scheduler'])
     # state_dict = torch.load("/run/media/jakub/Dane/Studia/INZ/models/SWIN-S-IC_0.73.2.pth", map_location=device)
     #

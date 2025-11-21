@@ -91,11 +91,11 @@ dataloader:
 optimizer:
   module: torch.optim.AdamW
   args:
-    lr: !!float 1e-4
-  first_lr: !!float 1e-4
-  second_lr: !!float 1e-4
-  third_lr: !!float 1e-4
-  fourth_lr: !!float 1e-4
+    lr: !!float 1e-5
+  first_lr: !!float 1e-5
+  second_lr: !!float 1e-5
+  third_lr: !!float 1e-5
+  fourth_lr: !!float 1e-5
 
 scheduler:
   module: torch.optim.lr_scheduler.LinearLR
@@ -108,7 +108,7 @@ scheduler:
 aux_optimizer:
   module: lion_pytorch.Lion
   args:
-    lr: !!float 5e-4
+    lr: !!float 1e-4
 
 aux_scheduler:
   module: torch.optim.lr_scheduler.CosineAnnealingLR
@@ -128,7 +128,7 @@ rd_loss:
 
 epochs: 5000
 log_frequency: 100
-accumulation_steps: 2
+accumulation_steps: 1
 
 aux_optimizer_delay: 0
 
