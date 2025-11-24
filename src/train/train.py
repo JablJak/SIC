@@ -178,6 +178,12 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                     save_path=f"{MODEL_CHECKPOINT_PATH}/checkpoint_{global_step}.pth"
                 )
 
+            if scheduler is not None:
+                scheduler.step()
+
+            if aux_scheduler is not None and epoch > aux_optimizer_delay and aux_optimizer is not None:
+                aux_scheduler.step()
+
             if global_step % eval_frequency == 0:
                 # Eval
                 model.eval()
@@ -238,12 +244,6 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                     print(message)
                 gc.collect()
                 torch.cuda.empty_cache()
-
-            if scheduler is not None:
-                scheduler.step()
-
-            if aux_scheduler is not None and epoch > aux_optimizer_delay and aux_optimizer is not None:
-                aux_scheduler.step()
 
             alpha_scheduler.step()
             for module in model.modules():
