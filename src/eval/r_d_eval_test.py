@@ -369,7 +369,7 @@ if __name__ == '__main__':
     models = [
         # ("SWIN-S-IC_0.20.3", "gdn_swin_v2_s"),
         # ("SWIN-S-IC-BASE_0.58.0", "gdn_swin_v2_s"),
-        ("SWIN-B-IC_0.14.0", "gdn_swin_v2_b"),
+        ("SWIN-B-IC_0.16.0", "gdn_swin_v2_b"),
         # ("SWIN-S-IC_0.3.1_100", "swin_v2_s")
         # "SWIN-T-IC_0.12.0-150of400",
         # "SWIN-T-IC_0.9.4-210of400"
@@ -416,7 +416,7 @@ if __name__ == '__main__':
                 }
             }))
         # state = torch.load("D:\\Studia\\INZ\\checkpoint\\last_checkpoint.pth", map_location='cpu')
-        state = torch.load("/run/media/jakub/Dane/Studia/INZ/checkpoint/checkpoint_245000.pth", map_location='cpu')
+        state = torch.load("/run/media/jakub/Dane/Studia/INZ/checkpoint/checkpoint_421000.pth", map_location='cpu')
         model.load_state_dict(state['model'])
         print(state['model'].keys())
         model.eval()
@@ -436,9 +436,9 @@ if __name__ == '__main__':
         # verify_cdf_values(model)
         # test_symbol_values(model)
         # analyze_forward_pass(model)
-        params: typing.Iterator[Parameter]  = model.g_s.reconstruction.activation.parameters()
-        for param in params:
-            print(param.data)
+        # params: typing.Iterator[Parameter]  = model.g_s.reconstruction.activation.parameters()
+        # for param in params:
+        #     print(param.data)
         torch.save(model.state_dict(), f"../../models/{m[0]}.pth")
         print(sum(param.numel() for param in model.parameters() if param.requires_grad))
         for iteration in range(pic_num):

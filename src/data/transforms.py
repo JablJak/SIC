@@ -1,10 +1,11 @@
+import random
 from typing import Tuple, Optional
 
 import torch
 import torch.nn as nn
 from torch import Tensor
 from torchvision.transforms import InterpolationMode, functional
-from torchvision.transforms.v2 import RandomCrop
+from torchvision.transforms.v2 import functional as f, RandomCrop
 
 RGB_IMAGENET_MEAN = (0.485, 0.456, 0.406)
 RGB_IMAGENET_STD = (0.229, 0.224, 0.225)

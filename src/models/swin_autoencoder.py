@@ -1,5 +1,6 @@
 from functools import partial
 
+import torch
 from compressai.entropy_models import EntropyBottleneck
 from compressai.layers import GDN
 from timm.layers import DropPath
@@ -19,12 +20,13 @@ class PatchReconstruction(nn.Module):
     def __init__(self, dim):
         super().__init__()
         self.conv_trans_48 = nn.ConvTranspose2d(dim, 3, kernel_size=2, stride=2, padding=0)
-        self.activation = LearnableTempScaledTanh()
+
 
     def forward(self, x):
         x = x.permute(0, 3, 1, 2)
         x = self.conv_trans_48(x)
-        x = self.activation(x)
+        if not self.training:
+            x = torch.clamp(x, 0, 1)
         return x
 
 
@@ -101,7 +103,6 @@ class SwinTransformerDecoderStage(nn.Module):
         self.norms = nn.ModuleList([nn.LayerNorm(in_dim) for _ in range(depth)])
         self.pre_split_norm = nn.LayerNorm(in_dim)
         self.pixel_shuffle = nn.PixelShuffle(upscale_factor=2)
-        self.conv = nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1)
         self.checkpointing = checkpointing
 
 
@@ -117,7 +118,6 @@ class SwinTransformerDecoderStage(nn.Module):
         x = self.linear(x)
         x = x.permute(0, 3, 1, 2)
         x = self.pixel_shuffle(x)
-        x = self.conv(x)
         x = x.permute(0, 2, 3, 1)
         return x
 

@@ -61,7 +61,12 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
     torch.cuda.empty_cache()
     interval_loss = 0
     interval_bpp = 0
+    interval_aux_loss = 0
+    optimizer_stepped = False
+    aux_optimizer_stepped = False
     for epoch in range(start_epoch, num_epochs):
+        optimizer.zero_grad()
+        aux_optimizer.zero_grad()
         accumulated_loss = 0
         accumulated_bpp = 0
         psnr_metric = PeakSignalNoiseRatio(data_range=(0.0, 1.0), reduction='elementwise_mean', dim=(2, 3)).to(device)
@@ -79,8 +84,6 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                 optimize_bpp = True
             global_step += 1
             x_in, x = x_in.to(device), x.to(device)
-            x_in_denorm = denormalize(x_in, RGB_COCO_MEAN, RGB_COCO_STD)
-            # with autocast(device_type="cuda"):
             output = model(x_in)
             try:
                 x_hat, likelihoods = output['x_hat'], output['likelihoods']
@@ -92,10 +95,14 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                 loss = criterion(x_hat, x)
                 bpp = torch.tensor(0.0)
 
-            loss.backward(retain_graph=True)
+            loss_scaled = loss / accumulation_steps
+            loss_scaled.backward()
+            
             if global_step > aux_optimizer_delay and aux_optimizer is not None:
-                aux_loss = model.aux_loss() / accumulation_steps
-                aux_loss.backward()
+                aux_loss = model.aux_loss()
+                scaled_aux_loss = aux_loss / accumulation_steps
+                scaled_aux_loss.backward()
+                interval_aux_loss += aux_loss.item()
 
             # scaler.scale(total_loss).backward()
             interval_loss += loss.item()
@@ -109,32 +116,31 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_norm_value)
                 # scaler.step(optimizer)
                 optimizer.step()
+                optimizer_stepped = True
                 if global_step > aux_optimizer_delay and aux_optimizer is not None:
                     torch.nn.utils.clip_grad_norm_(model.parameters(aux=True), max_norm=max_norm_value/2)
                     # scaler.step(aux_optimizer)
                     aux_optimizer.step()
+                    aux_optimizer_stepped = True
                 # scaler.update()
                 optimizer.zero_grad()
                 if aux_optimizer is not None:
                     aux_optimizer.zero_grad()
-
-                del loss, output, x_hat, likelihoods, x_in, x
-                gc.collect()
-                torch.cuda.empty_cache()
-
             if global_step % log_frequency == 0:
                 avg_interval_loss = interval_loss / log_frequency
+                avg_interval_aux_loss = interval_aux_loss / log_frequency
                 avg_interval_bpp = interval_bpp / log_frequency
                 avg_interval_psnr = psnr_metric.compute()
                 avg_interval_ssim = ssim_metric.compute()
                 lrs = str.join(", ", [f'lr{i}: {pg['lr']:4g}' for i, pg in enumerate(optimizer.param_groups)])
                 message = f"{datetime.datetime.now().strftime('%H:%M:%S')} [TRAIN] Epoch {epoch}/{num_epochs}, Step: {global_step}, Loss: {avg_interval_loss:.5f}, PSNR: {avg_interval_psnr:.4f}, " \
-                    f"SSIM: {avg_interval_ssim:.4f}, bpp: {avg_interval_bpp:.4f}, {lrs}, aux_lr: {aux_optimizer.param_groups[0]['lr']:4g}, " \
+                    f"SSIM: {avg_interval_ssim:.4f}, bpp: {avg_interval_bpp:.4f}, Aux loss: {avg_interval_aux_loss:.5f}, {lrs}, aux_lr: {aux_optimizer.param_groups[0]['lr']:4g}, " \
                     f"alpha: {alpha_set.pop() if len(alpha_set) == 1 else 'N/A'}"
                 if logger is not None:
                     try:
                         logger.report_text(message)
                         logger.report_scalar(title="Loss", series="train", value=avg_interval_loss, iteration=global_step)
+                        logger.report_scalar(title="Aux loss", series="train", value=avg_interval_aux_loss, iteration=global_step)
                         logger.report_scalar(title="PSNR", series="train", value=avg_interval_psnr, iteration=global_step)
                         logger.report_scalar(title="SSIM", series="train", value=avg_interval_ssim, iteration=global_step)
                         logger.report_scalar(title="LR", series="train", value=optimizer.param_groups[3]['lr'], iteration=global_step)
@@ -147,6 +153,7 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                     print(message)
                 interval_bpp = 0
                 interval_loss = 0
+                interval_aux_loss = 0
                 psnr_metric.reset()
                 ssim_metric.reset()
 
@@ -178,10 +185,10 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                     save_path=f"{MODEL_CHECKPOINT_PATH}/checkpoint_{global_step}.pth"
                 )
 
-            if scheduler is not None:
+            if scheduler is not None and optimizer_stepped:
                 scheduler.step()
 
-            if aux_scheduler is not None and epoch > aux_optimizer_delay and aux_optimizer is not None:
+            if aux_scheduler is not None and epoch > aux_optimizer_delay and aux_optimizer is not None and aux_optimizer_stepped:
                 aux_scheduler.step()
 
             if global_step % eval_frequency == 0:
@@ -193,6 +200,7 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                 eval_psnr = 0
                 eval_ssim = 0
                 eval_bpp = 0
+                eval_aux_loss = 0
 
                 with torch.no_grad():
                     for x_val_in, x_val in val_dataloader:
@@ -211,6 +219,10 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                             loss_val = criterion(x_hat_val, x_val)
                         eval_loss += loss_val.item()
 
+                        if global_step > aux_optimizer_delay and aux_optimizer is not None:
+                            aux_loss_val = model.aux_loss()
+                            eval_aux_loss += aux_loss_val.item()
+
                         psnr_metric_val.update(x_hat_val, x_val)
                         # eval_psnr += psnr_metric_val.compute().item()
 
@@ -222,6 +234,7 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
 
                 avg_eval_loss = eval_loss / len(val_dataloader)
                 avg_eval_bpp = eval_bpp / len(val_dataloader)
+                avg_eval_aux_loss = eval_aux_loss / len(val_dataloader)
 
                 del loss_val, output, x_hat_val, likelihoods_val, x_val_in, x_val
                 gc.collect()
@@ -229,13 +242,14 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
 
                 message = f"{datetime.datetime.now().strftime('%H:%M:%S')} [VAL] Epoch {epoch}/{num_epochs}, Step: {global_step}, " \
                       f"Loss: {avg_eval_loss:.4f}, PSNR: {avg_eval_psnr:.4f}, SSIM: {avg_eval_ssim:.4f}, " \
-                      f"bpp: {avg_eval_bpp:.4f}"
+                      f"bpp: {avg_eval_bpp:.4f}, Aux loss: {avg_eval_aux_loss:.4f}"
                 if logger is not None:
                     try:
                         logger.report_text(message)
                         logger.report_scalar(title="PSNR", series="eval", value=avg_eval_psnr, iteration=global_step)
                         logger.report_scalar(title="SSIM", series="eval", value=avg_eval_ssim, iteration=global_step)
                         logger.report_scalar(title="Loss", series="eval", value=avg_eval_loss, iteration=global_step)
+                        logger.report_scalar(title="Aux loss", series="eval", value=avg_eval_aux_loss, iteration=global_step)
                         if avg_eval_bpp != 0:
                             logger.report_scalar(title="bpp", series="eval", value=avg_eval_bpp, iteration=global_step)
                     except Exception as e:
@@ -297,7 +311,7 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
 
 def update_on_cpu(model):
     model.to("cpu")
-    model.update(force=True, update_quantiles=True)
+    model.update(force=True)
     torch.cuda.empty_cache()
     model.to("cuda")
 
@@ -362,7 +376,8 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     # ==============================
-
+    torch.backends.cudnn.benchmark = True
+    torch.set_float32_matmul_precision('high')
     device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
     print("Device:", device)
     # assert torch.cuda.is_available(), "CUDA is not available."
@@ -402,7 +417,7 @@ if __name__ == '__main__':
         task, start_epoch, start_step = load_training_state_with_clearml_from_file(
             args.resume_checkpoint,
             model,
-            optimizer,
+            None,
             aux_optimizer,
             None,
             aux_scheduler,
@@ -494,6 +509,7 @@ if __name__ == '__main__':
     # model.g_a.downsamplers[1].to("cpu")
     # loss.distortion_loss = MSESSIM(alpha=0.2)
     # with open(f"logs/{datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')}.log", "a") as log_file:
+
     trained_model = _train(
         model=model,
         train_dataloader=train_dataloader,
