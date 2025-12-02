@@ -7,7 +7,7 @@ from src.data.base_dataset import BaseDataset
 from src.utils.const import PROJECT_ROOT
 
 
-class DIV2KDataset(BaseDataset):
+class MixedLICDataset(BaseDataset):
     def __init__(self, variant: str | None, transform: nn.Module = transforms.Compose(
         [
             transforms.PILToTensor(),

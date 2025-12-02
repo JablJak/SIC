@@ -11,6 +11,7 @@ from torchvision.models.swin_transformer import PatchMergingV2, SwinTransformerB
     _patch_merging_pad, ShiftedWindowAttentionV2, SwinTransformerBlock, Swin_V2_S_Weights, Swin_V2_B_Weights
 from torchvision.ops import Permute, MLP
 
+from src.models.swin_autoencoder import SwinTransformerDecoder
 from src.utils.initializers import initialize_weights
 
 
@@ -76,15 +77,8 @@ class SwinTransformerBlockMixed(SwinTransformerBlock):
             norm_layer=norm_layer,
             attn_layer=attn_layer,
         )
-        # self.norm3 = norm_layer(dim)
-        # self.cnn_post_attn = CNNPostAttn(dim)
 
     def forward(self, x: Tensor):
-        # x = x + self.stochastic_depth(self.norm1(self.attn(x)))
-        # cnn = self.cnn_inv_post_attn(x)
-        # mlp = self.mlp(x)
-        # x = x + self.stochastic_depth(self.norm2(0.5 * cnn + 0.5 * mlp))
-        # return x
         x = x + self.stochastic_depth(self.norm1(self.attn(x)))
         x = x + self.stochastic_depth(self.norm2(self.mlp(x)))
         return x
@@ -103,7 +97,8 @@ class GDNSwinTransformer(nn.Module):
         attention_dropout: float = 0.1,
         stochastic_depth_prob: float = 0.1,
         checkpointing: bool = False,
-        block = SwinTransformerBlockMixed,
+        bottleneck_dim: int = 384,
+        block = SwinTransformerBlockV2,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         downsample_layer: Callable[..., nn.Module] = VariableDepthPatchMerging,
     ):
@@ -122,7 +117,8 @@ class GDNSwinTransformer(nn.Module):
 
         self.stages = nn.ModuleList()
         self.downsamplers = nn.ModuleList()
-        self.residual_norms = nn.ModuleList()
+        self.gdns = nn.ModuleList()
+        self.a_proj = nn.Conv2d(stage_dims[-1], bottleneck_dim, kernel_size=1)
 
         total_stage_blocks = sum(depths)
         stage_block_id = 0
@@ -142,7 +138,11 @@ class GDNSwinTransformer(nn.Module):
                 stage_block_id += 1
 
             self.stages.append(nn.Sequential(*stage_module_list))
-            self.residual_norms.append(norm_layer(dim))
+            self.gdns.append(nn.Sequential(
+                Permute([0, 3, 1, 2]),
+                GDN1(stage_dims[i_stage + 1] if i_stage + 1 < len(depths) else stage_dims[i_stage]),
+                Permute([0, 2, 3, 1])
+            ))
 
             if i_stage < (len(depths) - 1):
                 next_dim = stage_dims[i_stage+1]
@@ -156,16 +156,17 @@ class GDNSwinTransformer(nn.Module):
 
         for i in range(len(self.stages)):
             x = x.to(next(self.stages[i].parameters()).device)
-            residual = x
             if self.checkpointing:
                 x = checkpoint_sequential(self.stages[i], int(len(cast(nn.Sequential, self.stages[i]))), x, use_reentrant=False)
             else:
                 x = self.stages[i](x)
-            x = x + residual
-            x = self.residual_norms[i](x)
             if i < len(self.downsamplers):
                 x = self.downsamplers[i](x)
+            x = self.gdns[i](x)
 
+        x = x.permute(0, 3, 1, 2)
+        x = self.a_proj(x)
+        x = x.permute(0, 2, 3, 1)
         return x
 
 
@@ -210,10 +211,13 @@ def gdn_swin_v2_b(
         stage_dims=[128, 256, 512, 1024],
         depths=[2, 2, 18, 2],
         num_heads=[4, 8, 16, 32],
-        window_size=[7, 7],
+        window_size=[8, 8],
         stochastic_depth_prob=0.3,
         mlp_ratio=4.0,
         checkpointing=False,
+        bottleneck_dim=384,
+        dropout=0,
+        attention_dropout=0,
         progress: bool = True, **kwargs: Any) -> GDNSwinTransformer:
     weights = Swin_V2_B_Weights.verify(weights)
 
@@ -226,11 +230,14 @@ def gdn_swin_v2_b(
         window_size=window_size,
         stochastic_depth_prob=stochastic_depth_prob,
         mlp_ratio=mlp_ratio,
+        dropout=dropout,
+        attention_dropout=attention_dropout,
         weights=weights,
         progress=progress,
         block=SwinTransformerBlockV2,
         downsample_layer=VariableDepthPatchMerging,
         checkpointing=checkpointing,
+        bottleneck_dim=bottleneck_dim,
         **kwargs,
     )
 
@@ -243,9 +250,12 @@ def _gdn_swin_transformer(
     window_size: list[int],
     stochastic_depth_prob: float,
     mlp_ratio: float,
+    dropout: float,
+    attention_dropout: float,
     weights: Optional[WeightsEnum],
     progress: bool,
     checkpointing: bool,
+    bottleneck_dim: int,
     **kwargs: Any,
 ) -> GDNSwinTransformer:
 
@@ -258,7 +268,10 @@ def _gdn_swin_transformer(
         stochastic_depth_prob=stochastic_depth_prob,
         stage_dims=stage_dims,
         mlp_ratio=mlp_ratio,
+        dropout=dropout,
+        attention_dropout=attention_dropout,
         checkpointing=checkpointing,
+        bottleneck_dim=bottleneck_dim,
         **kwargs,
     )
 

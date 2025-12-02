@@ -6,18 +6,18 @@ train_dataset:
         mean: [0.448, 0.429, 0.392]
         std: [0.240, 0.230, 0.242]
         normalize: true
-        crop_size: [256, 256]
+        crop_size: [384, 384]
   target_transform:
     - module: src.data.transforms.RGBCompression
       args:
         mean: [0.448, 0.429, 0.392]
         std: [0.240, 0.230, 0.242]
         normalize: false
-        crop_size: [256, 256]
+        crop_size: [384, 384]
   args:
     variant: train
     subset_classes: 25
-    subset_samples: 16
+    subset_samples: 131072
 
 val_dataset:
   module: src.data.mixed_lic_dataset.MixedLICDataset
@@ -27,13 +27,13 @@ val_dataset:
         mean: [0.448, 0.429, 0.392]
         std: [0.240, 0.230, 0.242]
         normalize: true
-        crop_size: [256, 256]
+        crop_size: [384, 384]
   target_transform:
     - module: src.data.transforms.RGBCompression
       args:
         mean: [0.448, 0.429, 0.392]
         std: [0.240, 0.230, 0.242]
-        crop_size: [256, 256]
+        crop_size: [384, 384]
         normalize: false
   args:
     variant: val
@@ -63,24 +63,24 @@ model:
   args:
     pretrained_encoder: false
     encoder_type: gdn_swin_v2_b
-    encoder_embed_dim: 64
-    encoder_dims: [ 64, 128, 256 ]
-    encoder_depths: [ 2, 2, 2 ]
+    encoder_embed_dim: 128
+    encoder_dims: [ 128, 256, 512 ]
+    encoder_depths: [ 2, 6, 24 ]
     encoder_num_heads: [ 4, 8, 16 ]
     encoder_window_size: [8, 8]
-    encoder_sd_factor: 0.1
-    encoder_mlp_ratio: 1
+    encoder_sd_factor: 0.05
+    encoder_mlp_ratio: 4
     encoder_dropout: 0
     encoder_attention_dropout: 0
-    decoder_depths: [ 2, 2, 2 ]
-    decoder_dims: [ 256, 256, 128, 64 ]
+    decoder_depths: [ 24, 6, 2 ]
+    decoder_dims: [ 512, 512, 256, 128 ]
     decoder_num_heads: [ 16, 8, 4 ]
     decoder_window_size: [ [8, 8], [8, 8], [8, 8] ]
-    decoder_mlp_ratio: [ 1, 1, 1 ]
-    decoder_sd_factor: 0.05
+    decoder_mlp_ratio: [ 4, 4, 4 ]
+    decoder_sd_factor: 0.03
     decoder_dropout: 0
     decoder_attention_dropout: 0
-    bottleneck_dim: 196
+    bottleneck_dim: 384
     no_compress: false
     checkpointing: true
 
@@ -147,4 +147,11 @@ output:
 project_name: INZ
 task_name: v0.17.0 SWIN-B Transformer Autoencoder based Image Compression
 comment: |
-  - remove conv after upscaling and change output activation to clamp
+  - introduced gdn
+  - upscaling before block in decoder
+  - residuals removed
+  - conv in the end reconstruction replaced with pixel shuffle
+  - hyperprior cut by half
+  - dropouts set to 0
+  - stats based on the actual dataset
+  - 384x384 from start

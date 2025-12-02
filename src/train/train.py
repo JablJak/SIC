@@ -430,8 +430,8 @@ if __name__ == '__main__':
     #     param_group['initial_lr'] = 1e-4
     # for i, param_group in enumerate(optimizer.param_groups):
     #     param_group['lr'] = 1e-4
-    overwrite_lrs(optimizer, aux_optimizer, experiment)
-    scheduler = initializers.scheduler_from_config(optimizer, experiment_config['scheduler'])
+    # overwrite_lrs(optimizer, aux_optimizer, experiment)
+    # scheduler = initializers.scheduler_from_config(optimizer, experiment_config['scheduler'])
     # state_dict = torch.load("/run/media/jakub/Dane/Studia/INZ/models/SWIN-S-IC_0.73.2.pth", map_location=device)
     #
     #

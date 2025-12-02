@@ -54,7 +54,10 @@ class BaseDataset(ImageFolder):
         path, _ = self.samples[index]
         orig_sample = self.loader(path)
         if self.transform is not None:
-            sample, target = self.transform(orig_sample)
+            try:
+                sample, target = self.transform(orig_sample)
+            except ValueError:
+                sample = target = self.transform(orig_sample)
         else:
             sample, target = orig_sample, orig_sample
         return sample, target
