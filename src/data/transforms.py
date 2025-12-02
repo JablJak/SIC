@@ -27,8 +27,8 @@ YCBCR_TO_RGB_MAT = [
 class RGBCompression(nn.Module):
     def __init__(
             self,
-            mean: Tuple[float, ...] = RGB_IMAGENET_MEAN,
-            std: Tuple[float, ...] = RGB_IMAGENET_STD,
+            mean: Tuple[float, ...] = RGB_COCO_MEAN,
+            std: Tuple[float, ...] = RGB_COCO_STD,
             interpolation: InterpolationMode = InterpolationMode.BICUBIC,
             crop_size: list[int] = [256],
             resize_size: list[int] = [256],

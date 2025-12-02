@@ -53,9 +53,11 @@ class BaseDataset(ImageFolder):
         """
         path, _ = self.samples[index]
         orig_sample = self.loader(path)
-        sample, target = self.transform(orig_sample)
+        if self.transform is not None:
+            sample, target = self.transform(orig_sample)
+        else:
+            sample, target = orig_sample, orig_sample
         return sample, target
-
 
     @classmethod
     def validation_set(cls, transform: nn.Module | None) -> "BaseDataset":

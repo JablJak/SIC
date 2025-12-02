@@ -60,7 +60,7 @@ test_dataset:
 
 model:
   module: src.models.swin_compression.SwinTransformerCompressionAutoencoder
-  weights: SWIN-B-IC_0.16.0
+  weights: SWIN-B-IC_0.16.0.7
   args:
     pretrained_encoder: false
     encoder_type: gdn_swin_v2_b
@@ -109,7 +109,7 @@ scheduler:
 aux_optimizer:
   module: torch.optim.Adam
   args:
-    lr: !!float 1e-3
+    lr: !!float 5e-4
 
 aux_scheduler:
   module: torch.optim.lr_scheduler.CosineAnnealingLR
@@ -125,7 +125,7 @@ loss:
 
 rd_loss:
   enabled: true
-  lambda: !!float 0.06
+  lambda: !!float 0.18
 
 epochs: 5000
 log_frequency: 100
@@ -138,9 +138,9 @@ dataset_split_ratio: 0.7
 output:
   model:
     name: SWIN-B-IC
-    version: 0.16.0
+    version: 0.16.0.8
 
 project_name: INZ
-task_name: v0.16.0 SWIN-B Transformer Autoencoder based Image Compression
+task_name: v0.16.0.8 SWIN-B Transformer Autoencoder based Image Compression
 comment: |
   - remove conv after upscaling and change output activation to clamp

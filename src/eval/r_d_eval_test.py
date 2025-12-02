@@ -369,7 +369,7 @@ if __name__ == '__main__':
     models = [
         # ("SWIN-S-IC_0.20.3", "gdn_swin_v2_s"),
         # ("SWIN-S-IC-BASE_0.58.0", "gdn_swin_v2_s"),
-        ("SWIN-B-IC_0.16.0", "gdn_swin_v2_b"),
+        ("SWIN-B-IC_0.16.0.5", "gdn_swin_v2_b"),
         # ("SWIN-S-IC_0.3.1_100", "swin_v2_s")
         # "SWIN-T-IC_0.12.0-150of400",
         # "SWIN-T-IC_0.9.4-210of400"
@@ -416,7 +416,7 @@ if __name__ == '__main__':
                 }
             }))
         # state = torch.load("D:\\Studia\\INZ\\checkpoint\\last_checkpoint.pth", map_location='cpu')
-        state = torch.load("/run/media/jakub/Dane/Studia/INZ/checkpoint/checkpoint_421000.pth", map_location='cpu')
+        state = torch.load("/run/media/jakub/Dane/Studia/INZ/checkpoint/checkpoint032.pth", map_location='cpu')
         model.load_state_dict(state['model'])
         print(state['model'].keys())
         model.eval()

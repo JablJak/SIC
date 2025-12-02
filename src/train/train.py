@@ -272,7 +272,6 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, scaler, aux
                 with torch.no_grad():
                     for x_test_in, x_test in test_dataloader:
                         x_test_in, x_test = x_test_in.to(device).detach(), x_test.to(device).detach()
-                        # with autocast(device_type="cuda", enabled=False):
                         compress_output = model.compress(x_test_in)
                         b_repr, shape = compress_output['strings'], compress_output['shape']
                         x_hat_test = model.decompress(b_repr, shape)['x_hat']
