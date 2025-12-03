@@ -14,7 +14,6 @@ from torchmetrics.functional.image import peak_signal_noise_ratio as torch_psnr
 from src.data.base_dataset import BaseDataset
 from src.data.kodak_dataset import KodakDataset
 from src.data.transforms import RGBCompression
-from src.models.swin_compression import SwinTransformerCompressionAutoencoder
 from src.utils.initializers import model_from_config
 
 
@@ -168,10 +167,9 @@ swin_test_dataset = KodakDataset(RGBCompression(noresize=True, normalize=True),N
 for codec in codecs:
     if isinstance(codec, PILCodec):
         codec.eval_codec(pil_test_dataset)
-        plt.plot(codec.bpp, codec.psnr, label=codec.label, marker='o')
-    else:
-        pass
-        # codec.eval_codec(pil_test_dataset)
+    # elif isinstance(codec, SwinLicCodec):
+    #     codec.eval_codec(swin_test_dataset)
+    plt.plot(codec.bpp, codec.psnr, label=codec.label, marker='o')
 
 plt.grid(True)
 plt.legend()
