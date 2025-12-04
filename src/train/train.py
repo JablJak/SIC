@@ -416,7 +416,7 @@ if __name__ == '__main__':
         task, start_epoch, start_step = load_training_state_with_clearml_from_file(
             args.resume_checkpoint,
             model,
-            None,
+            optimizer,
             aux_optimizer,
             None,
             aux_scheduler,
@@ -425,7 +425,7 @@ if __name__ == '__main__':
         )
 
     logger = task.get_logger() if task is not None else None
-
+    overwrite_lrs(optimizer, aux_optimizer, experiment)
     # for i, param_group in enumerate(optimizer.param_groups):
     #     param_group['initial_lr'] = 1e-4
     # for i, param_group in enumerate(optimizer.param_groups):

@@ -103,7 +103,7 @@ optimizer:
 
 scheduler:
   module: torch.optim.lr_scheduler.LinearLR
-  enabled: true
+  enabled: false
   args:
     total_iters: 5000
     start_factor: 0.001
@@ -113,7 +113,7 @@ scheduler:
 aux_optimizer:
   module: torch.optim.Adam
   args:
-    lr: !!float 1e-3
+    lr: !!float 3e-3
 
 aux_scheduler:
   module: torch.optim.lr_scheduler.CosineAnnealingLR
