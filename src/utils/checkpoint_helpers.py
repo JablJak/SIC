@@ -8,7 +8,7 @@ from clearml import Task
 
 
 def save_training_state_with_clearml(task, model, optimizer, aux_optimizer,
-                                     scheduler, aux_scheduler, scaler, current_epoch: int,
+                                     scheduler, aux_scheduler, current_epoch: int,
                                      current_step: int, save_path: str):
     state_dict = {
         'model': model.state_dict(),
@@ -16,7 +16,6 @@ def save_training_state_with_clearml(task, model, optimizer, aux_optimizer,
         'aux_optimizer': aux_optimizer.state_dict() if aux_optimizer else None,
         'scheduler': scheduler.state_dict() if scheduler else None,
         'aux_scheduler': aux_scheduler.state_dict() if aux_scheduler else None,
-        'scaler': scaler.state_dict() if scaler else None,
         'epoch': current_epoch,
         'step': current_step,
         'clearml_task_id': task.id if task is not None else None,
@@ -28,7 +27,7 @@ def save_training_state_with_clearml(task, model, optimizer, aux_optimizer,
         print(f"[INFO] Saved training state (ClearML task ID: {task.id}) to {save_path}")
 
 def load_training_state_with_clearml_from_file(local_path, model, optimizer, aux_optimizer,
-                                     scheduler, aux_scheduler, scaler, device):
+                                     scheduler, aux_scheduler, device):
 
     print(f"[INFO] Loading checkpoint from {local_path} to CPU first...")
 
@@ -36,18 +35,12 @@ def load_training_state_with_clearml_from_file(local_path, model, optimizer, aux
     print("[INFO] Checkpoint loaded to CPU.")
 
     task_id = state.get("clearml_task_id")
-    # if not task_id:
-    #     raise ValueError("'clearml_task_id' not found in checkpoint")
 
     model.to(device)
     print(f"[INFO] Model moved to {device}.")
 
     torch.cuda.empty_cache()
     gc.collect()
-
-    # filtered_state_dict = {
-    #     k: v for k, v in state['model'].items() if 'latent_codec' not in k
-    # }
 
     model.load_state_dict(state['model'])
     print("[INFO] Model state_dict loaded.")
@@ -57,15 +50,6 @@ def load_training_state_with_clearml_from_file(local_path, model, optimizer, aux
 
     if optimizer and 'optimizer' in state and state['optimizer']:
         print("[INFO] Loading optimizer state_dict...")
-
-        # old_state_dict = state['optimizer']
-        # old_param_names = {name: state for name, state in
-        #                    zip(model.state_dict().keys(), old_state_dict['state'].values())}
-        # for group in optimizer.param_groups:
-        #     for i, p in enumerate(group['params']):
-        #         name = [n for n, param in model.parameters(named=True) if param is p][0]
-        #         if name in old_param_names:
-        #             optimizer.state[p] = old_param_names[name]
 
         optimizer.load_state_dict(state['optimizer'])
         print("[INFO] Optimizer state_dict loaded.")
@@ -95,13 +79,6 @@ def load_training_state_with_clearml_from_file(local_path, model, optimizer, aux
         aux_scheduler.load_state_dict(state['aux_scheduler'])
         del state['aux_scheduler']
         print("[INFO] Aux_scheduler state_dict loaded.")
-
-    if scaler and 'scaler' in state and state['scaler']:
-        print("[INFO] Loading scaler state_dict...")
-        scaler.load_state_dict(state['scaler'])
-        print("[INFO] Scaler state_dict loaded.")
-        del state['scaler']
-        gc.collect()
 
     start_epoch = state['epoch'] + 1
     start_step = state['step']

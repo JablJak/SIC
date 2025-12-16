@@ -13,8 +13,9 @@ from torchvision.transforms.v2.functional import to_pil_image
 from src.data.coco_dataset import CocoDataset
 from src.data.imagenet_dataset import ImageNetDataset
 from src.data.kodak_dataset import KodakDataset
+from src.data.mixed_lic_dataset import MixedLICDataset
 from src.data.transforms import YCbCrCompression, YCbCrDecompression, RGBDecompression, RGBCompression, denormalize, \
-    RGB_IMAGENET_MEAN, RGB_IMAGENET_STD
+    RGB_IMAGENET_MEAN, RGB_IMAGENET_STD, RGB_MIXED_LIC_MEAN, RGB_MIXED_LIC_STD
 from src.models.swin_compression import SwinTransformerCompressionAutoencoder
 from src.utils.checkpoint_helpers import load_training_state_with_clearml_from_file
 from src.utils.const import ARTIFACTS_PATH
@@ -369,27 +370,27 @@ if __name__ == '__main__':
     models = [
         # ("SWIN-S-IC_0.20.3", "gdn_swin_v2_s"),
         # ("SWIN-S-IC-BASE_0.58.0", "gdn_swin_v2_s"),
-        ("SWIN-B-IC_0.16.0.5", "gdn_swin_v2_b"),
+        ("SWIN-B-IC_0.17.0-test", "gdn_swin_v2_b"),
         # ("SWIN-S-IC_0.3.1_100", "swin_v2_s")
         # "SWIN-T-IC_0.12.0-150of400",
         # "SWIN-T-IC_0.9.4-210of400"
     ]
 
-    transform = RGBCompression(noresize=True, normalize=True, mean=(0.470, 0.447, 0.408), std=(0.270, 0.266, 0.281))
-    target_transform = RGBCompression(normalize=False, noresize=True, mean=(0.470, 0.447, 0.408), std=(
-        0.270, 0.266, 0.281))
+    transform = RGBCompression(crop_size=[384, 384], normalize=True, mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD)
+    target_transform = RGBCompression(crop_size=[384, 384], mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD)
     # transform = RGBCompression(crop_size=256, resize_size=256)
 
+    # dataset = MixedLICDataset(variant="val", transform=transform, target_transform=target_transform)
     dataset = KodakDataset(transform=transform, target_transform=target_transform)
 
 
-    pic_num = 20
+    pic_num = 24
 
     for m in models:
         psnr_sum = 0
         bpp_sum = 0
         ssim_sum = 0
-        dataloader_iter = iter(torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0, pin_memory=False))
+        dataloader_iter = iter(torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=False))
         model: SwinTransformerCompressionAutoencoder = typing.cast(SwinTransformerCompressionAutoencoder, model_from_config(
             {
                 "module": "src.models.swin_compression.SwinTransformerCompressionAutoencoder",
@@ -402,21 +403,25 @@ if __name__ == '__main__':
                     "encoder_depths": [2, 6, 24],
                     "encoder_num_heads": [4, 8, 16],
                     "encoder_window_size": [8, 8],
-                    "encoder_sd_factor": 0.1,
+                    "encoder_sd_factor": 0.05,
                     "encoder_mlp_ratio": 4,
+                    "encoder_dropout": 0,
+                    "encoder_attention_dropout": 0,
                     "decoder_depths": [24, 6, 2],
-                    "decoder_dims": [512, 256, 128, 64],
+                    "decoder_dims": [512, 512, 256, 128],
                     "decoder_num_heads": [16, 8, 4],
-                    "decoder_window_size": [[8, 8], [8, 8], [8, 8], [8, 8]],
-                    "decoder_mlp_ratio": [4, 4, 4, 4],
-                    "decoder_sd_factor": 0.05,
+                    "decoder_window_size": [[8, 8], [8, 8], [8, 8]],
+                    "decoder_mlp_ratio": [4, 4, 4],
+                    "decoder_sd_factor": 0.03,
+                    "decoder_dropout": 0,
+                    "decoder_attention_dropout": 0,
                     "bottleneck_dim": 384,
                     "no_compress": False,
                     "checkpointing": False,
                 }
             }))
         # state = torch.load("D:\\Studia\\INZ\\checkpoint\\last_checkpoint.pth", map_location='cpu')
-        state = torch.load("/run/media/jakub/Dane/Studia/INZ/checkpoint/checkpoint032.pth", map_location='cpu')
+        state = torch.load("/run/media/jakub/Dane/Studia/INZ/checkpoint/checkpoint_366000.pth", map_location='cpu')
         model.load_state_dict(state['model'])
         print(state['model'].keys())
         model.eval()
@@ -439,7 +444,7 @@ if __name__ == '__main__':
         # params: typing.Iterator[Parameter]  = model.g_s.reconstruction.activation.parameters()
         # for param in params:
         #     print(param.data)
-        torch.save(model.state_dict(), f"../../models/{m[0]}.pth")
+        # torch.save(model.state_dict(), f"../../models/{m[0]}.pth")
         print(sum(param.numel() for param in model.parameters() if param.requires_grad))
         for iteration in range(pic_num):
             x_batch, _ = next(dataloader_iter)
@@ -452,8 +457,7 @@ if __name__ == '__main__':
                 # output = model(x_batch)
                 # x_recon, y_likelihoods = output['x_hat'], None
 
-            output_transform = RGBDecompression(denorm=True, mean=(0.470, 0.447, 0.408), std=(0.270, 0.266,
-                                                                                              0.281)).to(x_batch.device)
+            output_transform = RGBDecompression(denorm=True, mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD).to(x_batch.device)
 
             in_img: PIL.Image.Image = output_transform(x_batch)[0] # TODO: Examine
             out_img: PIL.Image.Image = to_pil_image(x_recon[0])
