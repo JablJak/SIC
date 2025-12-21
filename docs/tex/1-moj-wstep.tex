@@ -1,0 +1,47 @@
+\clearpage
+\section{Wstęp}
+\subsection{Motywacja}
+Obrazy są bardzo popularnym i lubianym medium informacji w cyfrowym świecie. Według prognoz w 2025 roku ludzie zrobią ponad 2 biliony zdjęć, a ponad 14 bilionów do tej pory zostało wykonane. Ponadto 14 miliardów obrazów przesyłają codziennie użytkownicy mediów społecznościowych. Biorąc pod uwagę fakt, że standardem w fotografii mobilnej stały się zdjęcia o rozdzielczości co najmniej 12 megapikseli, to jedno takie zdjęcie, nie poddane żadnej kompresji, zajmowałoby 34 megabajty pamięci.
+
+Przechowywanie tak wielu zdjęć o tak dużym rozmiarze stanowiłby ogromne wyzwanie i koszty dla wszystkich aktorów w internecie – od wielkich korporacji technologicznych przechowujących gigantyczne ilości danych swoich użytkowników na swoich, poprzez mniejsze podmioty, na przykład serwujące strony internetowe, aż po użytkowników końcowych, którzy zapisują te zdjęcia na swoich urządzeniach elektronicznych.  
+
+Przesyłanie tych zdjęć byłoby jeszcze trudniejsze niż przechowywanie. Przepustowość połączeń sieciowych wciąż jest wąskim gardłem współczesnej technologii informacji. Choć kolejne zdobycze techniki w dziedzinie telekomunikacji pozwalają użytkownikom cieszyć się coraz szybszym i drożniejszym połączeniem z internetem, wciąż szybkość przesyłu przez sieć jest rzędy wielkości niższy niż choćby komunikacja z dyskiem, a bajt magazynu na serwerze dostępnym w internecie o rzędy wielkości droższy od bajta pamięci osobistej. 
+
+Wymienione problemy są motywacją do szukania efektywnych metod kompresji danych, w tym obrazów. Kompresja danych to proces zmniejszania ilości danych potrzebnych do przeniesienia określonej porcji informacji. Dane nie są tożsame z informacją --- są środkiem, za pomocą którego przekazywana jest informacja. Typem informacji, której poświęcona jest ta praca, jest obraz. 
+
+\subsection{Wprowadzenie do kompresji obrazów}
+Prekursorem teorii kompresji obrazów był Claude Shannon, którego odkrycia w dziedzinie teorii informacji na przełomie lat 40. i 50 XX wieku pozwoliły na stworzenie pół wieku później najbardziej przełomowego kodeka kompresującego jakim jest JPEG. W 2025 jest to wciąż najpowszechniejszy format przechowywania obrazów o ograniczonym rozmiarze. Za jego sukcesem stoi przede wszystkim szybkość kodowania i odkodowania przy niewielkiej utracie jakości percepcyjnej, oraz standaryzacja, która przyczyniła się do szybkiego upowszechniania kodeka po jego opracowaniu. 
+
+Po ponad 30 latach od wejścia kodeka JPEG do powszechnego użytku, mimo tego, że powyższe stwierdzenia wciąż są prawdziwe, to jednak jego możliwości kompresji przestają przystawać do współczesnych potrzeb. Choć utrata jakości percepcyjnej jest niewielka, to jednak zauważalna i w skompresowanych obrazach pojawiają się artefakty. Przykładowo, w przypadku fragmentów obrazów z płynnym gradientem kolorów powstają jednolite bloki z nagłymi przejściami, a fragmenty o wysokiej częstotliwości, o dużym zagęszczeniu krawędzi, zostają odtworzone. Oczywiście obecnie istnieje wiele kodeków do kompresji obrazów poza JPEG, a wśród zyskujących popularność należy wymienić przede wszystkim WebP i AVIF, które przewyższają omawiany wcześniej pod względem jakości rekonstrukcji. Wszystkie mają jednak to ograniczenie, że opierają się na ustalonych liniowych transformacjach, co zmniejsza możliwość do modelowania zależności na obrazie. 
+
+Odpowiedzią na to ograniczenie okazały się być sieci neuronowe z nieliniowymi aktywacjami, które mają większą zdolność do modelowania zależności między pikselami. Wysokiej klasy modele neuronowe przeważnie osiągają wyższą jakość rekonstrukcji przy zadanych stopniach kompresji od klasycznych metod.  Rozwiązania te są w stanie efektywniej dekorelować informacje na obrazie na etapie analizy oraz kodować wynik tej analizy poprzez dokładniejsze szacowanie prawdopodobieństw. 
+
+Najpopularniejsze sieci kompresujące obrazy przeważnie składają się z wielu warstw splotowych lub rekurencyjnych. Te pierwsze w szczególności zdominowały zadania wizji komputerowej, ponieważ są zaprojektowane do przetwarzania danych w formie dwuwymiarowej siatki. Samo działanie splotu jest podstawą wielu wizyjnych operacji znanych od dekad, od wygładzania i detekcji krawędzi, po np. detektor cech SIFT. Jednak i sieci splotowe mają swoje ograniczenia, w tym niewyczerpujące możliwości modelowania zależności długodystansowych, wynikające przede wszystkim z faktu, że obliczenia wykonywane są w ograniczonych polach recepcyjnych. Sieci rekurencyjne pomagają pokonać ograniczenia splotu, ponieważ są zdolne do modelowania zależności między odległymi elementami sekwencji. Niestety fakt, że relacje w tej architekturze obliczane są sekwencyjnie (krok po kroku, element po elemencie), stanowi jej kluczowe ograniczenie, ponieważ znacząco obniża to wydajność analizy.
+
+\subsection{Cel pracy}
+W niniejszej pracy odpowiedzią na te problemy być próba oparcia modelu analizy wejściowego obrazu na architekturze transformera wizyjnego z oknem przesuwnym, nazwanym przez twórców Swin Transformer. Założeniem transformera jest obliczanie zależności wszystkich tokenów w sekwencji w jednym kroku, niezależnie od ich pozycji, ale z ich uwzględnieniem. W praktyce Swin Transformer również nie poddaje analizie całego obrazu naraz – jest to bardzo kosztowne obliczeniowo. Części obrazu, które są przekazywane do mechanizmu uwagi są ograniczane oknami, choć obejmują one znacznie większy obszar niż pojedyncze pole recepcyjne w sieci splotowej. Dodatkowo zastosowany jest mechanizm okna przesuwnego, który powiększa obszar analizy, aby zwiększyć liczbę elementów wchodzących w interakcję na poziomie jednego etapu. Co więcej, na kolejnych etapach zmniejsza się wymiar przestrzenny przy stałej wielkości okna uwagi, co wzmacnia efekt globalności transformacji. Te cechy spowodowały, że podjęto się zbadania wdrożenia transformera wizyjnego w architekturze modelu kompresji obrazów. 
+
+Celem niniejszej pracy jest udowodnienie, że warstwy splotowe mogą być w znacznej mierze zastąpione przez transformer wizyjny bez spadku jakości kompresji. Należy w tym celu zdefiniować kryteria oceny. Przyjęto, że najważniejszym z nich będzie jakość rekonstrukcji obrazu zdekompresowanego względem wejściowego, mierzona jako maksymalny stosunek sygnału do szumu (ang. peak signal-to-noise ratio, PSNR), wyznaczany na podstawie błędu średniokwadrateowego (ang. mean squared error, MSE):
+
+\begin{equation}
+	\text{MSE} = \frac{1}{N} \sum_{i=1}^{N} (y_i - \hat{y}_i)^2
+\end{equation}
+gdzie:
+\begin{itemize}
+	\item $y_i$ -- oryginalna wartość $i$-tego piksela
+	\item $\hat{y}_i$ -- zrekonstruowana wartość $i$-tego piksela
+	\item $N$ -- liczba pikseli w obrazie
+\end{itemize}
+
+\begin{equation}
+	\text{PSNR} = 10 \cdot \log_{10} \left( \frac{\text{MAX}_I^2}{\text{MSE}} \right)
+\end{equation}
+gdzie:
+\begin{itemize}
+	\item $x_{ij}$ -- wartość piksela $(i, j)$ w obrazie oryginalnym,
+	\item $y_{ij}$ -- wartość piksela $(i, j)$ w obrazie zrekonstruowanym,
+	\item $m, n$ -- liczba wierszy i kolumn obrazu,
+	\item $\mathrm{MAX}_I$ -- maksymalna możliwa wartość piksela (np. 255 dla obrazów 8-bitowych).
+\end{itemize}
+
+Należy też zaznaczyć, że w celu uzyskania wiarygodnej oceny porównywane wyniki PSNR powinny zostać wyznaczone dla tego samego poziomu kompresji, określonego przez szybkość bitową, mierzoną liczbą bitów potrzebnych do zakodowania jednego piksela.

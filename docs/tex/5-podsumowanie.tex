@@ -1,0 +1,10 @@
+\clearpage
+\section{Podsumowanie}
+W ramach badania przygotowano model uczonej kompresji stratnej obrazów, adaptując do tego zadania architekturę transformera wizyjnego z oknem przesuwnym, który balansuje kompromis pomiędzy globalną zdolnością analizy obrazu a oszczędnością obliczeniową. Do realizacji sieci neuronowej wykorzystano otwartoźródłowy framework PyTorch, oferujący narzędzia do tworzenia rozwiązań opartych na głębokim uczeniu maszynowym. Zastosowanie go zwiększyło elastyczność projektowania architektury oraz zapewniło stabilną i wydajną platformę do wykonywania obliczeń, z wykorzystaniem akceleracji GPU. Wykorzystano mieszany zbiór treningowy zawierający obrazy o wysokiej rozdzielczości, przechowywanych w formacie bezstratnym. Takie podejście pozwoliło stroić wagi na podstawie naturalnych cech obrazów a nie artefaktów kompresji stratnej, wprowadzonych przez inne kodeki. Przeprowadzono kilkadziesiąt eksperymentów w celu znalezienia optymalnej architektury, hiperparametrów oraz technik uczenia maszynowego, doprowadzając do uzyskania finalnego modelu. Otrzymano kodek zdolny do konkurowania z ugruntowanymi, klasycznymi metodami kompresji.
+\subsection{Wnioski z badania}
+Pojawiają się artefakty w postaci kostek - jaki wniosek?
+Odchudzenie architektury nie przeszkodziło a wręcz pomogło w balansowaniu pomiędzy jakością kompresji
+Transformer wizyjny przy odpowiedniej konfiguracji może dorównać architekturom splotowym a nawet je przewyższać
+Uczenie modeli kompresji jest wrażliwe na dane 
+W przypadku, gdy nie trenujemy modelu variable rate to najlepsze jest wytrenowanie bogatego modelu a następnie schodzenie z bitratem w dół. 
+\subsection{Możliwe usprawnienia}

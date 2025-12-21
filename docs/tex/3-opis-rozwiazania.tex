@@ -1,0 +1,152 @@
+\clearpage
+
+
+\section{Opis rozwiązania}
+W niniejszym rozdziale opisano realizację sieci neuronowej oraz, szerzej, projektu programistycznego, który zawiera implementację sieci, pętli treningowej z monitoringiem, walidacji sieci oraz innych technik wykorzystywanych w uczeniu maszynowym lub specyficznych dla tego zadania. Ponadto przedstawiono wybory projektowe, testowane warianty realizacji, kryteria doboru parametrów, które wpłynęły na efektywność modelu, a także charakterystykę wykorzystanych danych.
+
+\subsection{Architektura modelu}
+Poniżej przedstawiono ogólny opis architektury oraz kluczowe decyzje projektowe. Dalsze podsekcje dostarczają szczegółów realizacji poszczególnych aspektów projektu.
+
+\subsubsection{Ogólna koncepcja i typ sieci}
+Opisywany model bazuje na opracowanych przez ostatnią dekadę badań rozwiązaniach, które zostały opisane w poprzednim rozdziale. Wykorzystano autoenkoder wariacyjny z koderem entropijnym wspomaganym przez model kontekstowy oraz model hiperpriora, ze względu na potwierdzoną skuteczność tego rozwiązania w eksperymentach. Praca koncentruje się na ocenie efektywności podejścia z użyciem transformerów, stąd zarówno główny koder jak i główny dekoder są sieciami transformerowymi. Są one w istocie, dostosowanymi na potrzeby rozwiązania, wariantami sieci Swin Transformer. Z kolei model kontekstowy i model hiperpriora składają się z warstw splotowych. Model entropijny odwzorowuje koncepcję zaprezentowaną na konferencji CVPR w 2021 roku\cite{he2021checkerboardcontextmodelefficient}. Reprezentacja ukryta jest kwantowana przez zaokrąglanie do najbliższej liczby całkowitej i, przy wsparciu modelu entropijnego, jest kodowana arytmetycznie do strumienia binarnego. Zakodowany ciąg bajtów zawiera całą informację skompresowanego obrazu, gotową do odkodowania w symetrycznym dekoderze.
+
+\subsubsection{Budowa sieci}
+W niniejszej sekcji znajduje się techniczny opis przygotowanej architektury sieci neuronowej, której schemat i kierunek przepływu danych przedstawia rysunek \ref{fig:schemat-architektury}.
+\begin{itemize}
+	\item \textbf{Warstwa wejściowa:} Przyjmuje dane wejściowe w postaci tensora o wymiarach \( \left(B, 3, H, W\right) \), gdzie \( B \) to rozmiar wsadu, \( H \) to wysokość, a \( W \) to szerokość. Zastosowano w tym miejscu strukturę splotową o jądrze rozmiaru \( 4 \times 4 \) pikseli, ze skokiem o 4 piksele, w celu uzyskania siatki łatek o wymiarze przestrzennym \( \frac{H}{4} \times \frac{W}{4} \). Warstwa zawiera 128 filtrów, co definiuje długość wektora cech pojedynczej łatki. W rezultacie wynikowy tensor z warstwy wejściowej ma wymiary \( \left(B, C=128, \nicefrac{H}{4}, \nicefrac{W}{4} \right) \)
+	\item \textbf{Warstwy ukryte kodera:} Po warstwie wejściowej następuje blok transformera Swin złożony z:
+	\begin{itemize}
+		\item wejściowej normalizacji warstwowej
+		\item bloku samoatencji z rozmiarem wektora cech równym 128 i z czterema głowicami, z której każda otrzymuje fragment wektora cech o długości 32
+		\item drugiej warstwy normalizacji
+		\item dwuwarstwowego perceptrona, gdzie warstwa ukryta jest 4 razy głębsza od warstwy wejściowej i wyjściowej
+	\end{itemize}
+	Warstwa wejściowa i blok transformera tworzą razem pierwszy z czterech etapów kodera. Kolejne dwa etapy są zbliżone, a różnią się wymiarem wektora cech i liczbą głów: odpowiednio 256 i 8 oraz 512 i 16. Drugą różnicą jest obecność bloku łączącego łaty w miejscu warstwy splotowej, przed blokiem. Sąsiadujące łatki są w nim grupowane, po cztery na grupę, zmieniając wymiary tensora do \( \left(B, \nicefrac{H}{2}, \nicefrac{W}{2}, 4C \right) \), a następnie poddawane liniowej projekcji do głębokości 2C. To oznacza, że w drugim etapie ma miejsce projekcja z 512 do 256, a w trzecim z 1024 do 512. Ponadto, przed drugim i trzecim etapem zastosowano operację GDN. Ostatnim etapem kodera jest warstwa liniowa dokonująca projekcji z 512 do 384 wymiarów, również poprzedzona normalizacją GDN. Tensor wynikowy po operacjach kodera ma wymiar \( \left(B, 384, \nicefrac{H}{16}, \nicefrac{W}{16} \right) \)
+	\item \textbf{Kodek reprezentacji ukrytej:}
+	\begin{itemize}
+		\item \textbf{Operacja kwantyzacji:} Reprezentacja ukryta jest kwantowana w celu kontrolowanej redukcji entropii, co skutkuje zmniejszeniem liczby bitów potrzebnych do jej zakodowania. Na etapie wnioskowania odbywa się to za pomocą zaokrąglania do najbliższej liczby całkowitej i najbliższej liczby parzystej dla wartości leżących w połowie między dwoma liczbami całkowitymi. W fazie treningu, w celu zachowania różniczkowalności operacji, użyto przybliżenia błędu kwantyzacji za pomocą jednorodnego szumu addytywnego z przedziału \( \left[-0,5; 0,5\right] \).
+		\item \textbf{Model hiperpriora:} Skwantowana reprezentacja trafia do małej sieci splotowej składającej się z hiperkodera, wąskiego gardła i hiperdekodera. Hiperkoder zbudowany jest z pięciu warstw splotowych o jądrze \( 3 \times 3 \) i 192 kanałach, z czego trzecia i piąta warstwa przesuwają filtr co drugi piksel. Ostatnia warstwa hiperkodera zmniejsza liczbę kanałów dwukrotnie, w celu osiągnięcia mniejszego strumienia bitowego. W efekcie tensor wyjściowy hiperkodera ma wymiary \( \left(B, 192, \nicefrac{H}{64}, \nicefrac{W}{64} \right) \). Drugi element, wąskie gardło, następnie kwantuje tę reprezentację i koduje arytmetycznie stosując dla każdego z elementów niezależny, przygotowany w trakcie treningu rozkład. Dekoder, na podstawie tego samego rozkładu, odbudowuje reprezentację ze strumienia binarnego i przekazuje do sieci splotowej. Podobnie jak w koderze, zbudowana jest z pięciu warstw splotowych, lecz jej zadaniem nie jest odtworzenie reprezentacji z wejścia kodera, tylko parametrów rozkładów każdego z jej elementów, dlatego liczba wyjściowych kanałów jest dwukrotnie większa niż liczba kanałów na wejściu (dla średnich i odchyleń standardowych). Wynikowy tensor dekodera ma wymiary \( \left(B, 768, \nicefrac{H}{16}, \nicefrac{W}{16} \right) \).
+		\item \textbf{Model kontekstowy:} To wariacja modelowania autoregresyjnego, opisywanego w poprzednim rozdziale, zrealizowana z użyciem wartstwy splotowej o jądrze \( 5 \times 5 \), która jednak nie maskuje kolejnych pikseli sekwencyjnie, a co drugi w wierszu i co drugi w kolumnie. Maska tworzy wzór szachownicy, czyli dwóch nienachodzących na siebie siatek (poglądowo można je nazwać czarną i białą). Parametry rozkładu elementów jednej siatki (poglądowo: białej) wyznaczane są równolegle i bez kontekstu przestrzennego, a dla drugiej siatki (poglądowo: czarnej) w kontekście już zakodowanych elementów siatki pierwszej. W celu uzyskania dwóch parametrów dla każdego elementu, warstwa ma dwa razy więcej kanałów wyjściowych, niż wejściowych, a wynikowy tensor ma wymiary \( \left(B, 768, \nicefrac{H}{32}, \nicefrac{W}{32} \right) \).
+		\item \textbf{Model parametrów rozkładów:} Predykcje z modelu hiperpriora i modelu kontekstowego są łączone poprzez konkatenację, co prowadzi do uzyskania tensora o wymiarze \( \left(B, 4096, \nicefrac{H}{32}, \nicefrac{W}{32} \right) \). Przekazuje się go do modelu entropijnego złożonego z trzech warstw splotowych o jądrze  \( 1 \times 1 \), co efektywnie czyni je warstwami liniowymi. Ich wymiary przestrzenne pozostają niezmienne, tj. \( \left( \nicefrac{H}{32}, \nicefrac{W}{32} \right) \), zaś liczba kanałów skaluje się kolejno z 4N do  \( \frac{10N}{3} \), z  \( \frac{10N}{3} \) do  \( \frac{8N}{3} \) i z  \( \frac{8N}{3} \) do 2N.
+		\item \textbf{Koder arytmetyczny:} Mając wiedzę jakie są parametry rozkładu Gaussa z przygotowanej a priori tabeli wybierane są skumulowane prawdopodobieństwa dla skwantowanych symboli i podanych parametrów, przeskalowane do 16-bitowej liczby całkowitej. Z tych danych koder arytmetyczny, koduje symbole do strumienia bitów.
+	\end{itemize}
+	\item \textbf{Warstwy ukryte dekodera:} Główny dekoder sieci także składa się z trzech etapów transformera o wymiarach wektora cech i liczbie głów odpowiednio: 512 i 16, 256 i 8, oraz 128 i 4. Poprzedzone są one blokiem odwracającym operacje w koderze --- odwrotną normalizacją GDN oraz projekcją liniową z 384 do 512 kanałów. Na początkach etapów nie są obecne operacje łączenia łat, a zostały zastąpione odwrotną operacją dzielenia łat, z wyjątkiem pierwszego etapu, dla zachowania zgodności wymiarów odpowiadającym etapom kodera. Zrealizowano ją poprzez projekcję liniową tensora \( \left(B, H_{k}, W_{k}, N_{k} \right) \) do \( \left(B, H_{k}, W_{k}, 2N_{k} \right) \), gdzie \(k \in \{ 1, 2, 3 \} \), a \( N \in \{ 512, 256, 128 \} \). Następnie dla każdego indeksu z siatki elementy z czterech kolejnych kanałów układane są przestrzennie, prowadząc do uzyskania tensora \( \left(B, 2H_{k}, 2W_{k}, \nicefrac{N_{k}}{2} \right) \). Ponadto, każdy z pozostałych trzech etapów jest poprzedzony odwrotną normalizacją.
+	\item \textbf{Warstwa wyjściowa:} Na końcu sieci także znajduje się liniowa transformacja ze 128 do 48 kanałów (odpowiadającym kanałom RGB dla 16 pikseli). Następnie wartości z kanałów dla każdego elementu są układane w tensor \( 4 \times 4 \) pikseli o głębokości trzech kanałów, co stanowi wynikowy obraz sieci. W fazie inferencji wartości te są przycinane do przedziału. W fazie treningu sieć adaptuje swoje wagi tak, aby ograniczyć wyjścia do przedziału \( \left[ 0, 1 \right] \), ponieważ jego przekroczenie zwiększa błąd --- referencyjne dane wejściowe, względem których obliczany jest błąd, znajdują się w tym zakresie. Nie zastosowano jednak żadnej aktywacji wymuszającej taki zakres dla danych wyjściowych, więc przekroczenie jest technicznie możliwe, dlatego w fazie wnioskowania wyjście z sieci jest dla pewności obcinane do przedziału \( \left[ 0, 1 \right] \).
+\end{itemize}
+
+\begin{figure}[h!]
+	\centering
+	\includesvg[width=\linewidth]{architektura-sieci}
+	\caption{Schemat architektury sieci neuronowej}
+	\label{fig:schemat-architektury}
+\end{figure}
+
+\subsubsection{Zastosowane funkcje aktywacji}
+W blokach samouwagi, jak i w perceptronach po nich następujących, zachowano funkcje aktywacji, proponowane przez twórców sieci transformera Swin, czyli następująco: softmax i GELU. Również pomiędzy warstwami splotowymi w modelach parametrów rozkładów zastosowano aktywację GELU, a wybór oparto na wynikach eksperymentów twórców tego rozwiązania, w których modele z aktywacjami GELU osiągały lepsze wyniki od modeli z ReLU\cite{hendrycks2023gaussianerrorlinearunits}.
+
+\subsection{Implementacja sieci neuronowej}
+W poniższych sekcjach zostaną przybliżone programistyczne aspekty implementacji sieci neuronowej.
+
+\subsubsection{Wykorzystane technologie i biblioteki}
+Kluczowe narzędzia programistyczne wykorzystane do pracy:
+\begin{itemize}
+	\item \textbf{Język programowania:} Python (wersja 3.12).
+	\item \textbf{Platforma akceleracji GPU:} CUDA.
+	\item \textbf{Framework do uczenia maszynowego:} PyTorch (wersja 2.7.0).
+	\item \textbf{Biblioteka do tworzenia modeli kompresji:} CompressAI (wersja 1.2.8) --- zawiera implementacje kodera arytmetycznego, modeli entropijnych oraz szkieletu modelu kompresji\cite{begaint2020compressaipytorchlibraryevaluation}.
+	\item \textbf{Narzędzia wspierające proces uczenia maszynowego:} ClearML (wersja 2.0.2) --- wspomaga monitorowanie treningów, dokumentowanie konfiguracji, wersjonowanie modeli, itp.
+\end{itemize}
+
+\subsubsection{Przygotowanie i przetwarzanie danych}
+Modele były trenowane z użyciem sumy czterech zbiorów obrazów:
+\begin{itemize}
+	\item{\textbf{DIV2K}} --- popularny zbiór obrazów wysokiej jakości (2K) do zadań superrozdzielczości, rekonstrukcji i kompresji obrazu --- 800 obrazów.
+	\item{\textbf{Flickr2K}} --- zbiór obrazów 2K z serwisu Flickr, często używany do rozszerzania danych ze zbioru DIV2K --- 2650 obrazów.
+	\item{\textbf{CLIC}} --- zestaw wysokiej jakości zdjęć wykorzystywany w konkursach kompresji obrazu --- 585 obrazów.
+	\item{\textbf{LSDIR}} --- duży zbiór obrazów przeznaczony do ogólnych zadań rekonstrukcji obrazu. --- 5000 obrazów.
+\end{itemize}
+Powszechnie stosowanych w zadaniach kompresji oraz innych polegających na rekonstrukcji obrazów, np. w superrozdzielczości. Charakteryzują się dużą różnorodnością tekstur i struktur, wysoką jakością, a także dość dużą rozdzielczością, w szczególności w zestawieniu z wieloma popularnymi w głębokim uczeniu zbiorami, np. ImageNet, MS COCO, czy Google Open Images. Cechy ta pozwalają sieciom na budowanie wzorców różnorodnych struktur, w tym takich o złożonej szczegółowości. Do sieci przekazywano obrazy o rozmiarze \( 384 \times 384 \) pikseli, dlatego każdy obraz przed wprowadzeniem do sieci kadrowano w losowym miejscu do tego rozmiaru. Użyty zbiór treningowy liczy łącznie 9035 obrazów. W istocie łączna liczba próbek treningowych jest o rzędy wielkości większa, co wynika z zastosowanego dla każdego wejściowego obrazu kadrowania w losowym punkcie, co przekłada się na niemal nieograniczoną liczbę różnych wycinków.
+
+Aby uniknąć problemu dużej rozpiętości gradientów, w zależności od wartości w danych wejściowych, obrazy skalowano z zakresu \( \left[ 0; 255 \right]\) do zakresu \( \left[ 0; 1 \right]\). Ponadto, zgodnie z dobrą praktyką, wartości są standaryzowane, co zapewnia stabilniejsze gradienty i szybszą konwergencję\cite{ioffe2015batchnormalizationacceleratingdeep}.
+
+\subsubsection{Struktura kodu źródłowego}
+Katalog projektu gromadzi wiele plików, m.in. pliki źródłowe czy konfiguracje treningów, dlatego zostały one umieszczone w strukturze podkatalogów:
+\begin{itemize}
+	\item \texttt{src}: Katalog zawierający skrypty z implementacją sieci neuronowej oraz pozostałych modułów odpowiedzialnych za trenowanie i ewaluację modelu. Znajdują się w nim podkatalogi:
+	\begin{itemize}
+		\item \texttt{data}: Implementacje klas wczytujących i przechowujących zbiory obrazów na potrzeby treningu, walidacji i testu, a także operacji do ich wstępnego przetworzenia.
+		\item \texttt{eval}: Skrypty dokonujące ewaluacji modeli.
+		\item \texttt{losses}: Moduły, zawierające klasy z modyfikacją implementacji funkcji błędu rekonstrukcji, tj. MSE oraz L1, umożliwiające dodanie składnika dodatkowego błędu rekonstrukcji MS-SSIM. Tak zdefiniowana funkcja błędu rekonstrukcji staje się jednym składnikiem pełnej funkcji błędu, a drugim jest funkcja błędu przybliżonego kosztu bitowego potrzebnego do zakodowania reprezentacji ukrytej.
+		\item \texttt{models}: Klasy, zawierające implementację sieci neuronowej.
+		\item \texttt{train}: Skrypt z pętlą treningową oraz pozostałe skrypty z funkcjami i strukturami wspomagającymi przeprowadzanie eksperymentów.
+		\item \texttt{utils}: Skrypty zawierające implementacje nie klasyfikujące się do powyższych kategorii.
+	\end{itemize}
+	\item \texttt{models}: Katalog, w którym zapisywane są pliki zawierające wagi wytrenowanych modeli.
+	\item \texttt{data}: Katalog gromadzący podkatalogi ze zbiorami obrazów.
+	\item \texttt{configs}: Katalog przechowujący pliki konfiguracyjne (w formacie YAML), zawierające wartości wartości dla parametrów poszczególnych treningów.
+	\begin{sloppypar}
+	\item \texttt{checkpoints}: Katalog zawierający pliki zserializowanych obiektów programu w języku Python, przechowujące informacje o stanie treningu, niezbędne do wznowienia przerwanego treningu.
+	\end{sloppypar}
+	\item \texttt{artifacts}: Katalog zawierający pozostałe pliki, powstałe podczas przeprowadzania eksperymentów i ewaluacji modeli, nie mieszczących się do powyższych kategorii.
+\end{itemize}
+
+\subsection{Realizacja treningu sieci}
+
+\subsubsection{Konfiguracje eksperymentów}
+Ze względu na mnogość przeprowadzonych eksperymentów, już we wczesnej fazie projektu narosła potrzeba utrwalania parametrów konfiguracyjnych oraz hiperparametrów sieci dla każdego z nich w postaci plików konfiguracyjnych na systemie plików, a przemawia za tym kilka powodów. Ewolucja projektu wymuszała niewielkie, lecz częste zmiany kierunków badań, dlatego uznano za wskazane, aby parametry konfiguracyjne odseparować od warstwy implementacji sieci i programu trenującego. Z kolei ich liczba została uznana za zbyt dużą, aby mogła być efektywnie dostarczona poprzez argumenty wiersza poleceń, w efekcie czego wskazuje się w ten sposób jedynie ścieżkę do pliku konfiguracyjnego i pliku ze stanem treningu umożliwiającym wznowienie przerwanego procesu. Dodatkowo zapisywanie wersjonowanych konfiguracji w systemie plików ułatwiło odwoływanie się do już przeprowadzonych prób.
+
+Oto wybrane parametry zapisywane w plikach konfiguracyjnych:
+\begin{itemize}
+	\item konfiguracje klas wskazujących na zastosowany zbiór treningowy, walidacyjny i testowy, optymalizator, harmonogram współczynnika szybkości uczenia, typ funkcji straty
+	\item wartość współczynnika \( \lambda \)
+	\item współczynniki szybkości uczenia oraz pozostałe parametry optymalizatora
+	\item rozmiar wsadu w pojedynczym kroku treningowym
+	\item przekształcenia danych wejściowych
+	\item wartości hiperparametrów modelu takie jak rozmiar wektora cech, liczba etapów, liczba głów mechanizmu uwagi, rozmiar okna przesuwnego
+	\item metadane eksperymentu: tytuł, wersja
+\end{itemize}
+
+\subsubsection{Funkcja straty i optymalizator}
+\begin{sloppypar}
+Celem optymalizacji wskazanej sieci neuronowej jest optymalizacja kompromisu pomiędzy zniekształceniem, a liczbą bitów potrzebnych do zakodowania skompresowanej reprezentacji, którą powszechnie definiuje się następująco\cite{arezki2024universalendtoendneuralnetwork}:
+\end{sloppypar}
+\begin{equation}
+	\mathcal{L} = \mathbb{E}_{\mathbf{x} \sim P_{\text{data}},\, \mathbf{u} \sim \mathcal{U}}
+		\left[ -\log_{2} \tilde{p}\!\left(f(\mathbf{x}) + \mathbf{u}\right) + \lambda\, \rho\! \left( 
+			\mathbf{x},\, g(f(\mathbf{x}) + \mathbf{u})
+		\right)
+	\right],
+\end{equation}
+\noindent gdzie:
+\begin{itemize}
+	\item $f : \mathcal{X} \to \mathbb{R}^d$ — funkcja kodująca enkoder,
+	\item $\mathbf{u} \sim \mathcal{U}(-\frac{1}{2}, \frac{1}{2})^{d}$ — szum w przestrzeni ukrytej,
+	\item $g : \mathbb{R}^d \to \mathcal{X}$ — funkcja dekodująca,
+	\item $\rho(\cdot,\cdot)$ — funkcja błędu rekonstrukcji,
+	\item $\lambda > 0$ — współczynnik kontrolujący kompromis między średnią bitową a zniekształceniem.
+\end{itemize}
+
+Błąd rekonstrukcji może być wyznaczony na różne sposoby. Najprostszym jest obliczenie różnicy pomiędzy wartościami pikselami obrazu oryginalnego i zrekonstruowanego, wyrażonego najczęściej w postaci MSE i PSNR wprowadzonych w pierwszym rozdziale. Miary te są wygodne w kontekście optymalizacji celu w sieciach neuronowych --- są proste do wyliczenia oraz różniczkowalne, co pozytywnie wpływa na wydajność i konwergencję. Ponadto duże różnice są silnie karane, ze względu na kwadrat, co pełni rolę regularyzacji. Z powodu wskazanych zalet w niniejszej pracy zastosowano MSE jako składnik funkcji celu. 
+
+Wadą MSE jest to, że niewystarczająco odwzorowuje percepcję obrazów przez ludzi, co powoduje, że rekonstrukcje z niskim błędem mogą być subiektywnie postrzegane jako gorsze niż inne rekonstrukcje o wyższym błędzie\cite{girod1993whatswrongmse}. W odpowiedzi na ten problem opracowano miary SSIM\cite{wang2004ssim} i MS-SSIM\cite{1292216}, które porównują luminancję, kontrast i strukturę obrazu, co w znacznie większym stopniu odpowiada ludzkiej percepcji. Ponadto te techniki analizują obrazy w oknach \( 11 \times 11 \) pikseli, co pomaga wykrywać lokalne artefakty. Mając na uwadze powyższe, w niniejszej pracy przyjęto funkcję błędu rekonstrukcji będącą sumą ważoną MSE i MS-SSIM w proporcji 9:1.
+
+Do optymalizacji powyższego kompromisu w części eksperymentów użyto optymalizatora Lion, który wykazuje zbliżoną do powszechnie stosowanego optymalizatora Adam wydajność, a pozwala zredukować koszt pamięciowy\cite{chen2023symbolicdiscoveryoptimizationalgorithms}, co przełożyło się na możliwość trenowania modelu na większych obrazach w środowisku z ograniczonymi zasobami sprzętowymi. Przeprowadzono także kilka eksperymentów z optymalizatorem SophiaG, który charakteryzuje się skutecznością w trenowaniu architektur transformerowych\cite{liu2024sophiascalablestochasticsecondorder}. Jednak w większości treningów sięgnięto po optymalizator AdamW, który jest ewolucją Adam wspomnianego wcześniej i zasłużył na miano domyślnego optymalizatora w nowoczesnych rozwiązaniach, ponieważ ze względu na jego zdolność do szybkiej i stabilnej konwergencji\cite{cornell_opt_wiki_adamw}.
+
+\subsubsection{Metryki oceny i monitorowanie treningu}
+\begin{sloppypar}
+W procesie treningu celem przeważnie jest uzyskanie modelu o najlepszych właściwościach w jakimś mierzalnym zadaniu. Ponadto, niepożądanym byłoby uzyskiwać informację o wynikach dopiero na końcu procesu, bowiem ten często bywa bardzo czasochłonny. Przykładowo, czas wytrenowania pojedynczego modelu w niniejszej pracy to kilka-kilkanaście dni. Implikuje to także potrzebę monitorowania procesu uczenia, co pozwala na jego wczesne przerwanie, gdy wyniki nie przybliżają się do pożądanych.
+\end{sloppypar}
+
+Jako fundamentalną miarę postępu procesu przyjęto monitorowanie wartości funkcji straty z określonej liczby ostatnich próbek. Minimalizowanie tej wartości jest zadaniem nadrzędnym, toteż jest to najbardziej bezpośredni wskaźnik, informujący o tym czy model się poprawia. Wzrost tej wartości był sygnałem o fundamentalnym problemie konfiguracji danego eksperymentu, lub wprowadzonych w architekturze zmian. Z kolei brak istotnej redukcji bez wzrostu, w szczególności w dalszej fazie uczenia, przeważnie wskazywał na konieczność obniżenia kroku uczenia. Wartość funkcji straty uzupełniają miary błędu rekonstrukcji --- PSNR i SSIM --- które pozwalają na obiektywną ocenę zdolności odtwarzania oryginalnych obrazów bez ich oglądania, ponieważ wolumen jest zbyt duży, a różnice zbyt subtelne, aby możliwa była szybka i obiektywna ocena wzrokowa. Drugi element funkcji celu w kompresji obrazów to średnia bitowa, która jest monitorowana poprzez liczbę bitów na piksel. W procesie uczenia monitoruje się wartość przybliżoną, obliczoną w oparciu o wyznaczone rozkłady elementów reprezentacji ukrytej.
+
+Ze względu na różnice między aproksymacją kwantyzacji w trakcie treningu a rzeczywistym kodowaniem, same metryki walidacyjne są niewystarczające. Z tego powodu już w fazie treningu przeprowadzano test kompresji na zbiorze Kodak, w oryginalnych rozmiarach wejściowych obrazów. Procedurę testową uruchamiano w ustalonych interwałach epok. Takie rozwiązanie pozwala na weryfikację faktycznych zdolności generalizacyjnych sieci na zbiorze odbiegającym od zbioru treningowego i walidacyjnego oraz ocenę ostatecznych wartości PSNR z zastosowaniem faktycznego kodowania do strumienia bitowego.
+
+Wymienione wyżej wskaźniki są wypisywane na standardowe wyjście programu, a także zapisywane w zewnętrznym serwisie ClearML, który gromadzi dane z eksperymentów, a te pochodzące z monitorowanych metryk, przedstawia w postaci wykresów. Są one nieocenione do wizualizacji przebiegu procesu, a także umożliwiają porównywanie z poprzednimi eksperymentami.
+
+\subsubsection{Środowisko obliczeniowe} \label{srodowisko-obliczeniowe}
+\begin{itemize}
+	\item \textbf{Procesor (CPU):} AMD Ryzen 9 7940HS.
+	\item \textbf{Karta graficzna (GPU):} NVIDIA GeForce RTX 4070 8 GB.
+	\item \textbf{Pamięć RAM:} 16 GB.
+	\item \textbf{System operacyjny:} Fedora Linux 42.
+\end{itemize}

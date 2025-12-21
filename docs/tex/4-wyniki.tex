@@ -1,0 +1,197 @@
+\clearpage
+\section{Wyniki}
+\subsection{Cel i plan eksperymentów}
+Celem przeprowadzonych eksperymentów było opracowanie oraz ewaluacja modeli stratnej kompresji obrazów opartych na architekturze transformera wizyjnego z mechanizmem okien przesuwnych, opisanej w poprzednim rozdziale. Dążono w nich do osiągnięcia jakości kompresji lepszej od powszechnie stosowanych kodeków, takich jak JPEG, WebP czy AVIF i zbliżenie się lub przekroczenie poziomów wyznaczonych przez wybrane modele kompresji neuronowej. Jako punkt odniesienia w tej materii przyjęto opracowania, stanowiące aktualny stan wiedzy: Ballé i in. (2018), Minnen i in. (2018), Cheng i in. (2020), He i in. (2022). Zarówno wspomniane metody klasyczne, jak i korzystające z sieci neuronowych, operują na krzywej kompromisu R-D, celem było przygotowanie kilku modeli oferujących różne poziomy kompresji, tworzących krzywą dla rozwiązania, będącego tematem niniejszej pracy.
+
+Plan eksperymentów zakładał ewolucyjne dostrajanie architektury oraz parametrów i technik treningowych, które pozwoliły na stworzenie modelu z minimalnym dla danej szybkości bitowej poziomem zniekształcenia, a następnie przesuwanie się po krzywej kompromisu w kilku dodatkowych iteracjach eksperymentu, poprzez manipulowanie parametrem \( \lambda \) w funkcji straty. Sieć trenowano z wykorzystaniem technik inżynierii uczenia maszynowego do momentu konwergencji funkcji celu. Tak przygotowane modele ostatecznie poddawano ewaluacji końcowej na referencyjnym zbiorze Kodak, który jest jednym ze standardowych punktów odniesienia w testowaniu kodeków stratnej kompresji obrazów, co pozwoliło na weryfikację uzyskanych wyników z wymienionymi wcześniej rozwiązaniami.
+
+\begin{sloppypar}
+Do oceny jakości rekonstrukcji przyjęto użycie dwóch powszechnie stosowanych w ewaluacji kompresji obrazów miar --- wspominany wcześniej w pracy PSNR oraz miarę MS-SSIM\cite{wangmsssim}. Ta druga jest pochodną, także opisywanego wcześniej, indeksu SSIM, ale uznawana jest za bardziej zbliżoną do subiektywnej oceny obrazu przez człowieka, ponieważ symuluje obserwację obrazu z różnych odległości od medium. W praktyce osiąga się to poprzez obliczanie SSIM na różnych skalach, uzyskiwanych przy pomocy skalowania obrazu w dół. Wyniki z różnych skal są uśrednione, dając końcowy wynik indeksu MS-SSIM, również w zakresie \( \left[ 0, 1 \right] \).
+\end{sloppypar}
+\subsection{Przebieg eksperymentów}
+W poniższym podrozdziale opisano proces uzyskiwania modelu kompresji obrazów dla opisanej w poprzednim rozdziale architektury sieci. Ze względu na konieczność wykonania ogromnej ilości obliczeń, jest to proces mozolny i energochłonny. Ponadto niewielkie zmiany w architekturze czy metodach uczenia maszynowego mogą spowodować, że pojedynczy eksperyment przestaje prowadzić do oczekiwanych wyników i wymaga modyfikacji w trakcie, a często także przerwania. 
+
+\subsubsection{Analiza procesu uczenia}
+We wczesnej fazie eksperymentów koncentrowano się na iteracyjnej eksploracji przestrzeni hiperparametrów, poszukiwaniu optymalnego zestawu danych oraz adaptacji procesu treningowego do zadania i zastosowanej architektury. Zaobserwowano wtedy problem eksplozji gradientów dla zbyt dużych kroków uczenia i osiągania nieoptymalnego minimum lokalnego dla niższych. Jako środek naprawczy zastosowano optymalizację w strategii normalizacji oraz zrezygnowano z niestandardowych optymalizatorów na rzecz AdamW, dostępnego w ramach frameworku PyTorch, co minimalizuje ryzyko nieoptymalnej implementacji. Wdrożono także przycinanie gradientu oraz zrezygnowano z korzystania ze zmniejszonej precyzji liczb zmiennoprzecinkowych, co odbiło się negatywnie na złożoności procesu, ale przyniosło poprawę konwergencji sieci w późnych fazach treningu.
+
+Drugim dużym wyzwaniem okazało się znalezienie kompromisów pomiędzy rozmiarem sieci (głębokością i liczbą parametrów) i przestrzeni ukrytej, a pojemnością modelu i jego zdolnością do generalizacji, przy jednoczesnym zachowaniu ograniczonych zasobów obliczeniowych. Początkowe założenie, że im większy wariant transformera Swin zostanie użyty, tym lepsza będzie zdolność kompresji, okazało się błędne. Szczególnie przejście z wariantu Small do wariantu Base pozwoliło z jednej strony na lepszą analizę i rekonstrukcję obrazu, jednocześnie zwiększając rozmiar przestrzeni ukrytej z 768 do 1024 kanałów, przy zmniejszeniu obu wymiarów przestrzennych trzydziestodwukrotnie w obu przypadkach. W efekcie powstała przestrzeń ukryta była bardzo głęboka i mała przestrzennie, w zderzeniu z przykładowo pracą Cheng et al., gdzie twórcy zaprojektowali przestrzeń ukrytą na 128 i 192 kanały przy szesnastokrotnym zmniejszeniu obu wymiarów przestrzennych. Podjęto decyzję o usunięciu najgłębszych etapów transformerów, tj. ostatniego w koderze i pierwszego w dekoderze, co wyeliminowało także ostatnią operację łączenia łat, zostawiając przestrzeń ukrytą o 512 kanałach, zmniejszoną szesnastokrotnie na wysokości i szerokości. W celu dalszej redukcji głębokości wprowadzono warstwę liniową do 384 kanałów. Wymienione usprawnienia pozwoliły na odzyskanie dużej części pamięci, co przełożyło się na możliwość trenowania obrazów o wymiarach \(384 \times 384\) pikseli we wsadach po 8 obrazów, w porównaniu do wsadu z jednym obrazem uprzednio.
+
+Wraz z kolejnymi usprawnieniami model zaczął zbiegać w sposób coraz bardziej stabilny. Po wyznaczeniu optymalnych konfiguracji i finalnej implementacji, przebieg uczenia charakteryzował się wciąż wolną, lecz konsekwentną zbieżnością, z jedynie niewielkim poziomem. Trening kontynuowano średnio przed około 300–500 tysięcy iteracji, Powyżej tego momentu, dalszy trening przestawał być uzasadniony z uwagi na rosnące koszty czasowe, obliczeniowe i energetyczne w odniesieniu do niewielkich przyrostów jakości na dostępnym środowisku obliczeniowym. W warunkach domowego laboratorium opisanego w sekcji~\ref{srodowisko-obliczeniowe}, wymaga to bowiem co najmniej kilka dni nieprzerwanych obliczeń z użyciem GPU. Rysunek \ref{fig:przebieg-treningu} przedstawia zmianę wartości funkcji straty oraz wskaźników PSNR, SSIM i szybkości bitowej dla jednego z ostatnich eksperymentów. Wizualizacja ta potwierdza stabilność treningu i stopniową poprawę metryk z kolejnymi iteracjami, a jedyne zaburzenie wynikło ze zwiększenia rozdzielczości obrazów podawanych do sieci około 300 tysięcznej iteracji.
+\begin{figure}[h!]
+	\centering
+	\begin{subfigure}{0.495\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{loss\_0.17.0\_b.png}
+		\caption{Wykres funkcji celu}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}{0.495\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{bpp\_0.17.0\_b.png}
+		\caption{Wykres szybkości bitowej [bity na piksel]}
+	\end{subfigure}
+	
+	\vspace{0.5em}
+
+	\begin{subfigure}{0.495\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{psnr\_0.17.0\_b.png}
+		\caption{Wykres PSNR [dB]}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}{0.495\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{ssim\_0.17.0\_b.png}
+		\caption{Wykres SSIM}
+	\end{subfigure}
+	
+	\caption{Wizualizacja przebiegu przykładowego treningu na podstawie wartości metryk}
+	\label{fig:przebieg-treningu}
+\end{figure}
+\subsubsection{Wpływ hiperparametrów i strategia ich doboru}
+Jednym z najistotniejszych dla procesu treningowego hiperparametrów jest współczynnik uczenia. W pierwszych iteracjach implementacji sieć neuronowa była na niego bardzo wrażliwa. Zbyt niski współczynnik uczenia (rzędu \( 10^{-6} \)) powodował zakończenie konwergencji już po kilku tysiącach kroków w bardzo nieoptymalnym minimum lokalnym. Z kolei większy (powyżej \( 10^{-4} \)) powodował nagłe eksplozje gradientu. Po podjęciu stabilizujących działań naprawczych trenowano sieć przez około 200 tysięcy kroków ze współczynnikiem uczenia wynoszącym \( 10^{-4} \), aby umożliwić eksplorację przestrzeni rozwiązań, a następnie stopniowo obniżano do \( 10^{-5} \), co pozwalało na eksploatację lokalnego minimum. Ponadto, zastosowano rozgrzewkowe liniowe zwiększanie współczynnika uczenia od \( 10^{-7} \) do \( 10^{-4} \) przez pierwsze 5000 kroków, zgodnie z zaleceniami trenowania transformerów\cite{Popel_2018} co ma na celu zapobiegnięcie dywergencji sieci.
+
+Zaadaptowana architektura sieci transformera z oknem przesuwnym pierwotnie zawierała niewielki dropout, co wynikało z jej oryginalnego przeznaczenia jako ekstraktora cech w klasyfikatorze. Jednakże specyfika uczonej kompresji różni się znacząco od klasyfikacji. Dropout, mający pełnić funkcję regularyzatora, zapobiegającemu przeuczeniu, w zadaniu uczonej kompresji jest nadmiarowy, ponieważ rolę silnej regularyzacji pełni szum kwantyzacji. Ponadto zbiór danych wejściowych jest w praktyce bardzo duży, ze względu liczbę losowych wycinków z oryginalnego obrazu przekazywanych do wejścia sieci, co powoduje, że ta w praktyce nie jest w stanie przeuczyć się do danych treningowych. Dlatego wzorując się na najlepszych w dziedzinie implementacjach, zrezygnowano z użycia warstw dropout, co przyniosło poprawę o ok 1\% w teście PSNR na zbiorze Kodak.
+
+Istotnym dla stabilności i szybkości konwergencji hiperparametrem jest rozmiar wsadu, czyli liczba próbek zbioru treningowego możliwych do przetworzenia, obliczenia błędu i gradientów w jednym przebiegu sieci. Rozmiar wsadu wpływa bezpośrednio na zajętość pamięci, z której korzysta jednostka przetwarzająca. Dlatego zmniejszenie rozmiaru sieci umożliwiło zwiększenie wsadu i ustabilizowanie treningu. Dodatkowo większy wsad pozwala na uzyskanie bardziej reprezentatywnego oszacowania gradientu, co ogranicza jego wahania między kolejnymi iteracjami. W praktyce przekłada się to na płynniejszy przebieg procesu optymalizacji oraz zmniejsza szanse na wpadnięcie modelu w nieoptymalne lokalne minimum czy wystąpienia niestabilności numerycznej. W efekcie w żadnym eksperymencie z rozmiarem wsadu równym 8 próbek nie odnotowano eksplozji gradientu. Aby dodatkowo wzbogacić informacje o gradiencie funkcji straty w optymalizatorze zastosowano uśrednioną akumulację gradientu z 2--4 wsadów przed krokiem optymalizatora.
+
+Ostatnim z istotnych hiperparametrów jest wspomniany w poprzednich rozdziałach parametr \( \lambda \). Jest to szczególny hiperparametr ponieważ nie wpływa on bezpośrednio na to, czy jeden model znajdzie w bardziej optymalnym punkcie od drugiego. Strojenie tego parametru przesuwa punkt kompromis albo na rzecz jakości rekonstrukcji, albo na rzecz mniejszego rozmiaru danych. I tak sterowano wartością parametru \( \lambda \) w przedziale \( \left[ 0,001; 0,2 \right] \), gdzie wyższy współczynnik oznacza większy rozmiar strumienia bitowego.
+\subsubsection{Zastosowane przekształcenia}
+W pracy skupiono się na zachowaniu informacji o rozkładzie pikseli w oryginalnych obrazach, dlatego zrezygnowano z różnorodnych przekształceń danych wejściowych, powszechnych w wielu zadaniach uczonej wizji komputerowej. Nie zastosowano zmian jasności i nasycenia, oraz innych transformacji wpływających na dystrybucję pikseli, ani takich, które wymagałyby interpolacji lub próbkowania, czyli przekształceń zmniejszania, powiększania i rotacji. W praktyce zastosowano jedynie losowe wycinanie próbek z obrazów treningowych oraz ich standaryzację przed wejściem do sieci.
+
+\subsection{Ewaluacja modelu}
+Ewaluację modeli przeprowadzono za pomocą krzywej jakości rekonstrukcji, w stosunku do liczby bitów użytych do zakodowania piksela. Do oceny wykorzystano standardowy zbiór Kodak, powszechnie stosowany w badaniach nad kompresją obrazów, ze względu na wysoką jakość referencyjnych obrazów. Charakteryzują się one różnorodnością tekstur, kolorów oraz poziomów szczegółowości. Podejście to pozwala na porównanie kodeków w sposób obiektywny i powtarzalny.
+
+Do oceny jakości rekonstrukcji użyto miary PSNR, która wyznacza zgodność obrazu zdekompresowanego, względem obrazu referencyjnego, na poziomie pojedynczych pikseli. Dla poszerzenia analizy porównawczej użyto także drugiej miary jakości --- SSIM --- która lepiej oddaje percepcję jakości obrazu przez ludzki system wzrokowy.
+
+Na wykresach \ref{fig:krzywa-rd-psnr} i \ref{fig:krzywa-rd-ms-ssim} zestawiono krzywe, utworzone przy użyciu przygotowanego modelu, z krzywymi dla trzech najpopularniejszych kodeków kompresji stratnej, nie wykorzystujących technik uczenia maszynowego: JPEG, WebP oraz AVIF. Opracowany model nazwano SwinLIC (\textbf{Swin} (Transformer) \textbf{L}earned \textbf{I}mage \textbf{C}ompression).
+
+Na podstawie pierwszego wykresu można wnioskować, że model ma solidną zdolność rekonstrukcji na poziomie pojedynczych pikseli w bardzo niskim budżecie bitowym, porównywalną do zaawansowanego kodeka AVIF. Z kolei w średnim budżecie bitowym odznacza się wynikiem zbliżonym do kodeka WebP. Niestety, w ogólności model nie wykazuje oczekiwanej zdolności do rekonstruowania referencyjnych obrazów, co widać w punktach leżących na dalszej części krzywej i jego możliwości słabną wraz ze wzrostem przepływności. Powyżej około 1,5 bita na piksel (nie został przygotowany model dla tego punktu, obserwacja ta jest oparta na empirycznej ekstrapolacji krzywej) kodek JPEG przewyższa go jakością rekonstrukcji.
+
+W teście jakości strukturalnej, którego wyniki przedstawiono na drugim wykresie, opracowany model przewyższa kodeki JPEG oraz WebP w każdym zmierzonym punkcie szybkości bitowej. W porównaniu z kodekiem AVIF osiąga niższą jakość poniżej 0,6 bita na piksel, natomiast powyżej tej wartości krzywe się pokrywają.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth]{rd\_psnr.png}
+	\caption{Porównanie wyniku PSNR względem przepływności utworzonego modelu z wybranymi metodami kompresji na zbiorze Kodak}
+	\label{fig:krzywa-rd-psnr}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth]{rd\_ms\_ssim.png}
+	\caption{Porównanie wyniku MS-SSIM względem przepływności utworzonego modelu z wybranymi metodami kompresji na zbiorze Kodak}
+	\label{fig:krzywa-rd-ms-ssim}
+\end{figure}
+
+\subsection{Wizualna ocena jakości rekonstrukcji}
+Na rysunkach \ref{fig:wizualna-ocena-03-kobieta}, \ref{fig:wizualna-ocena-03-ponton} i \ref{fig:wizualna-ocena-02-latarnia} przedstawiono porównanie obrazów skompresowanych i zdekompresowanych przez, wspomniane wcześniej, klasyczne metody kompresji do obrazu referencyjnego. W porównaniu zastosowano względnie wysoki stopień kompresji (ok. 0,2--0,3 bita na piksel), aby różnice na pełnych, lecz pomniejszonych obrazach, były wyraźnie widoczne. Dla zwiększenia czytelności zrezygnowano z przedstawienia wyników JPEG --- dla zadanej szybkości bitowej jakość rekonstrukcji jest poniżej progu powszechnej użyteczności, ze względu na dużą utratę szczegółów, bardzo wyraźne artefakty blokowe i zniekształcenia zarówno lokalnych jak i globalnych statystyk jasności i barw pikseli.
+
+W subiektywnej ocenie wizualnej potwierdzają się wyniki ewaluacji z użyciem miar jakości. Najwyższą wierność rekonstrukcji zachował format AVIF --- nie zniekształcił jasności i barw, odtworzył detale bardzo szczegółowo, oraz nie spowodował powstania rzucających się w oczy artefaktów. Wadą jego rekonstrukcji jest za to duże rozmycie w obszarach o niskiej częstotliwości, co widać na przykładzie skóry kobiety, mimo braku rozmycia na fragmentach o dużej częstotliwości, jak włosy czy tekstura kapelusza. Znacznie mniejszą wiernością w odtwarzaniu szczegółów charakteryzują się obrazy kompresowane z użyciem WebP, co widać gołym okiem na teksturze elewacji latarni czy twarzach flisaków. Wyraźne są także artefakty blokowe na gładkich obszarach.
+
+Ocena wizualna zaproponowanego modelu SwinLIC plasuje się pomiędzy dwoma wspomnianymi wcześniej. Zdolność do rekonstruowania szczegółów jest wysoka, co widać na elewacji latarni, lornetce obok niej stojącej czy teksturze fal. Z drugiej strony, pewne szczegóły sprawiają większą trudność. Na przedstawionych obrazach są to np. trawa, włosy. Widoczne są także artefakty blokowe, dostrzegalne najbardziej na gładkich obszarach, takich jak niebo, w przeciwieństwie do tych produkowanych przez WebP, które pojawiają się na całym obrazie. Różnic jest więcej --- są regularne, w postaci siatki bloków o rozmiarze \( 32 \times 32 \) pikseli oraz nie powodują destrukcji barwowej (w przypadku WebP --- posteryzacji) spowodowanej podpróbkowaniem chrominancji. Niestety statystyki barwowe dla SwinLIC również są uszkodzone, w dodatku globalnie a nie lokalnie, z powodu czego można dostrzec odcień bieli, przesunięty bardziej w kierunku na czerwonego niż żółtego na chmurach na ostatnim zdjęciu czy nieznacznie zniekształcony kolor skóry i ust na obrazie pierwszym, w stosunku do obrazów referencyjnych oraz skompresowanych z użyciem konkurencyjnych formatów.
+
+\begin{figure}[p]
+	\begin{minipage}[c][0.9\textheight][c]{\linewidth}
+		\centering
+		\begin{subfigure}{0.495\textwidth}
+			\centering
+			\caption{Obraz referencyjny}
+			\includegraphics[width=\linewidth]{ref\_1.png}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}{0.495\textwidth}
+			\centering
+			\caption{WebP [0,343 bpp]}
+			\includegraphics[width=\linewidth]{webp\_03\_bpp\_1.png}
+	
+		\end{subfigure}
+		
+		\vspace{0.5em}
+		
+		\begin{subfigure}{0.495\textwidth}
+			\centering
+			\includegraphics[width=\linewidth]{avif\_03\_bpp\_1.png}
+			\caption{AVIF [0,340 bpp]}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}{0.495\textwidth}
+			\centering
+			\includegraphics[width=\linewidth]{swin\_lic\_03\_bpp\_1.png}
+			\caption{SwinLIC [0,341 bpp]}
+		\end{subfigure}
+		
+		\caption{Porównanie rekonstrukcji obrazu kobiety w przepływności na poziomie ok. 0,34 bpp}
+		\label{fig:wizualna-ocena-03-kobieta}
+	\end{minipage}
+\end{figure}
+
+\begin{figure}[h!]
+	\centering
+	\begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{ref\_2.png}
+		\caption{Obraz referencyjny}
+	\end{subfigure}
+	
+	\vspace{0.5em}
+	
+	\begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{webp\_03\_bpp\_2.png}
+		\caption{WebP [0,284 bpp]}
+	\end{subfigure}
+	
+\end{figure}
+\begin{figure}
+	\ContinuedFloat
+	\begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{avif\_03\_bpp\_2.png}
+		\caption{AVIF [0,282 bpp]}
+	\end{subfigure}
+	
+	\vspace{0.5em}
+	
+	\begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{swin\_lic\_03\_bpp\_2.png}
+		\caption{SwinLIC [0,284 bpp]}
+	\end{subfigure}
+	\caption{Porównanie rekonstrukcji obrazu flisaków na pontonie w przepływności na poziomie ok. 0,28 bpp}
+	\label{fig:wizualna-ocena-03-ponton}
+\end{figure}
+
+\begin{figure}[p]
+	\begin{minipage}[c][0.9\textheight][c]{\linewidth}
+		\centering
+		\begin{subfigure}{0.495\textwidth}
+			\centering
+			\includegraphics[width=\linewidth]{ref\_3.png}
+			\caption{Obraz referencyjny}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}{0.495\textwidth}
+			\centering
+			\includegraphics[width=\linewidth]{webp\_02\_bpp\_3.png}
+			\caption{WebP [0,195 bpp]}
+		\end{subfigure}
+			\vspace{0.5em}
+		\begin{subfigure}{0.495\textwidth}
+			\centering
+			\includegraphics[width=\linewidth]{avif\_02\_bpp\_3.png}
+			\caption{AVIF [0,196 bpp]}
+		\end{subfigure}
+			\hfill
+		\begin{subfigure}{0.495\textwidth}
+			\centering
+			\includegraphics[width=\linewidth]{swin\_lic\_02\_bpp\_3.png}
+			\caption{SwinLIC [0,196 bpp]}
+		\end{subfigure}
+		\caption{Porównanie rekonstrukcji obrazu latarni morskiej w przepływności na poziomie ok. 0,2 bpp}
+		\label{fig:wizualna-ocena-02-latarnia}
+	\end{minipage}
+\end{figure}
+
+\subsection{Mocne i słabe strony}
+Uzyskany model ma swoje wady i zalety, ujawniające się na różnych poziomach przepływności bitowej. W niskich zakresach dostrzegalne są zniekształcenia barwowe oraz artefakty, takie jak artefakty blokowe i efekt dzwonienia w pobliżu niektórych krawędzi, ale są nieporównywalnie słabsze niż w przypadku JPEG. Dwa z wymienionych problemów znikają w wyższych zakresów przepływności bitowej, natomiast nasilenie bloków maleje, ale nie znika całkowicie i jest jednym z głównych czynników hamujących uzyskanie wysokiego wyniku zgodności na poziomie pojedynczych pikseli, mierzonego przez błąd średniokwadratowy. W ogólności model nie oferuje wysokiej zdolności rekonstrukcji szczegółów dla najmniejszych stopni kompresji, przez co mimo osiągania wysokiej jakości percepcyjnej, co objawia się bardzo dobrym wynikiem miary MS-SSIM, krzywa R-D z miarą jakości w postaci PSNR wypłaszcza się z każdym kolejnym punktem, bardziej niż dla innych metod kompresji.

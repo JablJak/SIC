@@ -1,0 +1,174 @@
+%-----------------------------------------------
+%  Engineer's & Master's Thesis Template
+%  Copyleft by Artur M. Brodzki & Piotr Woźniak
+%  Warsaw University of Technology, 2019-2022
+%-----------------------------------------------
+
+\documentclass[
+bindingoffset=5mm,  % Binding offset
+footnoteindent=3mm, % Footnote indent
+hyphenation=true    % Hyphenation turn on/off
+]{src/wut-thesis}
+\usepackage[backend=biber]{biblatex}
+\usepackage{nicefrac, xfrac}
+\usepackage{amsfonts}
+\usepackage{svg}
+\usepackage{graphicx}
+\usepackage{subcaption} % dla subfigure
+\graphicspath{
+	{tex/img/}
+	{tex/img/comparisons}
+} % Katalog z obrazkami.
+\addbibresource{bibliografia.bib} % Plik .bib z bibliografią
+
+%-------------------------------------------------------------
+% Wybór wydziału:
+%  \facultyeiti: Wydział Elektroniki i Technik Informacyjnych
+%  \facultymeil: Wydział Mechaniczny Energetyki i Lotnictwa
+% --
+% Rodzaj pracy: \EngineerThesis, \MasterThesis
+% --
+% Wybór języka: \langpol, \langeng
+%-------------------------------------------------------------
+\facultyeiti    % Wydział Elektroniki i Technik Informacyjnych
+\EngineerThesis % Praca inżynierska
+\langpol % Praca w języku polskim
+
+\begin{document}
+	
+	%------------------
+	% Strona tytułowa
+	%------------------
+	\instytut{Informatyki}
+	\kierunek{Informatyka}
+	\specjalnosc{Sztuczna Inteligencja}
+	\title{
+		Kompresja obrazów z użyciem sieci neuronowych i transformerów
+	}
+	% Title in English for English theses
+	% In English theses, you may remove this command
+	\engtitle{
+		Image Compression with Neural Networks and Transformers
+	}
+	
+	\author{Jakub Jabłoński}
+	\album{310705}
+	\promotor{Grzegorz Pastuszak}
+	\date{\the\year}
+	\maketitle
+	
+	%-------------------------------------
+	% Streszczenie po polsku dla \langpol
+	% English abstract if \langeng is set
+	%-------------------------------------
+	\cleardoublepage % Zaczynamy od nieparzystej strony
+	\abstract{
+		Celem pracy jest zbadanie możliwości zastosowania sztucznej sieci neuronowej opartej na architekturze transformera wizyjnego w zadaniu kompresji obrazów. Większość najnowocześniejszych modeli opiera się na architekturze składającej się z kodera, kodeka reprezentacji ukrytej oraz dekodera. W wielu z nich te komponenty są zbudowane przy użyciu warstw splotowych. Uwarunkowane jest to tym, że warstwy te są niezwykle efektywne w przetwarzaniu obrazów, co ugruntowało ich pozycję w zadaniach związanych z wizją komputerową. Znane są jednak ich ograniczenia, w tym wąski obszar w pojedynczym kroku analizy, zwany polem recepcyjnym. Motywacją do eksplorowania tematu były doniesienia naukowe o zdolności transformerów do modelowania zależności między składowymi obrazu zarówno krótko, jak i długodystansowych, co może pozwolić na pokonanie tego ograniczenia. Na podstawie architektury Swin Transformera został opracowany autoenkoder wariacyjny z kodekiem reprezentacji utajonej, wzbogacony o model entropii oparty na hiperenkoderze, do estymacji globalnych parametrów rozkładu oraz kontekście autoregresywnym, do uchwycenia lokalnych zależności przestrzennych, co pozwala na precyzyjne modelowanie statystyk reprezentacji ukrytej. Do przeniesienia reprezentacji z przestrzeni liczb rzeczywistych do całkowitych, celem wprowadzenia kontrolowanej utraty precyzji, zastosowano jednolitą kwantyzację z zaokrąglaniem do najbliższej wartości całkowitej oraz jej przybliżenie poprzez dodanie jednolitego szumu z przedziału \( \left[ -0,5; 0,5 \right] \). Trening modeli opiera się na optymalizacji kompromisu pomiędzy liczbą bitów potrzebnych do zakodowania reprezentacji, a poziomem zniekształcenia pomiędzy obrazem oryginalnym i zdekompresowanym. Wytrenowano osiem modeli o różnych stopniach kompresji, poprzez sterowanie ww. kompromisem za pomocą hiperparametru \( \lambda \) w funkcji straty \( L = R + \lambda D \), gdzie \(R\) to liczba bitów, a \(D\) to poziom zniekształcenia. Z przeprowadzonych eksperymentów wynika, że opracowane rozwiązanie nie osiągnęło poziomu najlepszych na dziś uczonych modeli, ale przekroczyło poziom kodeków JPEG oraz WebP.
+	}    
+	\keywords stratna kompresja obrazów, uczona kompresja obrazów, autoenkoder wariacyjny, transformer wizyjny
+	
+	%----------------------------------------
+	% Streszczenie po angielsku dla \langpol
+	% Polish abstract if \langeng is set
+	%----------------------------------------
+	\clearpage
+	\secondabstract{
+		The objective of this study is to examine the potential application of artificial neural network based on the vision transformer architecture for the task of image compression. Most of state-of-the-art models consist of an encoder, a latent representation codec, and a decoder. In many of these models, the components are implemented using convolutional layers. This is due to they are highly effective in image processing, which has established their position in computer vision tasks. However, their limitations are well known, including the narrow receptive field that restricts the spatial context captured in a single operation. The motivation for exploring this topic arised from scientific reports on the ability of transfromers to model both short- and long-range dependencies among image components, which may enable overcoming this limitation. On the foundation of Swin Transformer architecture, a variational autoencoder with a latent representation codec was developed, enhanced with an entropy model composed of a hyperprior for estimating global distribution parameters and an autoregressive context for capturing local spatial dependencies. This design enables precise modeling of the statistics of the latent representation. To map the representation from real-valued space to integers, allowing controlled precision loss, uniform quantization with rounding to the nearest integer was applied, along with its approximation through the addition of uniform noise in the range \( \left[ -0.5, 0.5 \right] \). Model training was based on optimizing the trade-off between the number of bits required to encode the representation and the distortion level between the original and decompressed images. Eight models with varying compression rates were trained by controlling this trade-off via the hyperparameter \( \lambda \) in the loss function  \( L = R + \lambda D \), where \(R\) denotes the number of bits and \(D\) denotes the distortion level. The conducted experiments indicate that the developed solution did not reach the performance of the best-known models to date but exceeded that of the JPEG and WebP codecs.
+	}
+	\secondkeywords lossy image compression, learned image compression, variational autoencoder, vision transformer
+	
+	\pagestyle{plain}
+	
+	%--------------
+	% Spis treści
+	%--------------
+	\cleardoublepage % Zaczynamy od nieparzystej strony
+	\tableofcontents
+	
+	%------------
+	% Rozdziały
+	%------------
+	\cleardoublepage % Zaczynamy od nieparzystej strony
+	\pagestyle{headings}
+	
+	\input{tex/1-moj-wstep}         % Wygodnie jest trzymać każdy rozdział w osobnym pliku.
+	\input{tex/2-przeglad-literatury-i-podstawy-teoretyczne}    % Umożliwia to również łatwą migrację do nowej wersji szablonu:
+	\input{tex/3-opis-rozwiazania}
+	\input{tex/4-wyniki}
+	\input{tex/5-podsumowanie}
+	% \input{tex/3-code-listings} % zazwyczaj wystarczy podmienić plik src/wut-thesis.cls
+	
+	% Można też pisać rozdziały w jednym pliku.
+	% \clearpage % Zawsze zaczynamy rozdział od nowej strony
+	% \section{Summatio}
+	% \lipsum[4-10]
+	
+	%---------------
+	% Bibliografia
+	%---------------
+	\cleardoublepage % Zaczynamy od nieparzystej strony
+	\begin{sloppypar}
+	\printbibliography
+	\end{sloppypar}
+	% \clearpage
+
+	% % Wykaz symboli i skrótów.
+	% % Pamiętaj, żeby posortować symbole alfabetycznie
+	% % we własnym zakresie. Makro \acronymlist
+	% % generuje właściwy tytuł sekcji, w zależności od języka.
+	% % Makro \acronym dodaje skrót/symbol do listy,
+	% % zapewniając podstawowe formatowanie.
+	% \acronymlist
+	% \acronym{EiTI}{Wydział Elektroniki i Technik Informacyjnych}
+	% \acronym{PW}{Politechnika Warszawska}
+	% \acronym{WEIRD}{ang. \emph{Western, Educated, Industrialized, Rich and Democratic}}
+	% \vspace{0.8cm}
+	
+	% %--------------------------------------
+	% % Spisy: rysunków, tabel, załączników
+	% %--------------------------------------
+	 \pagestyle{plain}
+	
+	 \listoffigurestoc    % Spis rysunków.
+	 \vspace{1cm}         % vertical space
+	% \listoftablestoc     % Spis tabel.
+	% \vspace{1cm}         % vertical space
+	% \listofappendicestoc % Spis załączników
+	
+	% %-------------
+	% % Załączniki
+	% %-------------
+	
+	% % Obrazki i tabele w załącznikach nie trafiają do spisów
+	% \captionsetup[figure]{list=no}
+	% \captionsetup[table]{list=no}
+	
+	% % Załącznik 1
+	% \clearpage
+	% \appendix{Nazwa załącznika 1}
+	% \lipsum[1-3]
+	% \begin{figure}[!h]
+		% 	\centering \includegraphics[width=0.5\linewidth]{logopw2.png}
+		% 	\caption{Obrazek w załączniku.}
+		% \end{figure}
+	% \lipsum[4-7]
+	
+	% % Załącznik 2
+	% \clearpage
+	% \appendix{Nazwa załącznika 2}
+	% \lipsum[1-2]
+	% \begin{table}[!h] \centering
+		%     \caption{Tabela w załączniku.}
+		%     \begin{tabular} {| c | c | r |} \hline
+			%         Kolumna 1       & Kolumna 2 & Liczba \\ \hline\hline
+			%         cell1           & cell2     & 60     \\ \hline
+			%         \multicolumn{2}{|r|}{Suma:} & 123,45 \\ \hline
+			%     \end{tabular}
+		% \end{table}
+	% \lipsum[3-4]
+	
+	% % Używając powyższych spisów jako szablonu,
+	% % możesz dodać również swój własny wykaz,
+	% % np. spis algorytmów.
+	
+\end{document} % Dobranoc.

@@ -1,0 +1,49 @@
+\babel@toc {polish}{}\relax 
+\contentsline {section}{\numberline {1\relax .\enspace }Wst\k ep}{7}{section.1}%
+\contentsline {subsection}{\numberline {1.1\relax .\enspace }Motywacja}{7}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2\relax .\enspace }Wprowadzenie do kompresji obraz\'ow}{7}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3\relax .\enspace }Cel pracy}{8}{subsection.1.3}%
+\contentsline {section}{\numberline {2\relax .\enspace }Podstawy teoretyczne i przegl\k ad literatury}{10}{section.2}%
+\contentsline {subsection}{\numberline {2.1\relax .\enspace }Sztuczne sieci neuronowe}{10}{subsection.2.1}%
+\contentsline {subsubsection}{\numberline {2.1.1\relax .\enspace }Warstwa w pe\IeC {\l }ni po\IeC {\l }\k aczona}{10}{subsubsection.2.1.1}%
+\contentsline {subsubsection}{\numberline {2.1.2\relax .\enspace }Perceptron wielowarstwowy}{10}{subsubsection.2.1.2}%
+\contentsline {subsubsection}{\numberline {2.1.3\relax .\enspace }Warstwa splotowa}{11}{subsubsection.2.1.3}%
+\contentsline {subsubsection}{\numberline {2.1.4\relax .\enspace }Autoenkoder i autoenkoder wariacyjny}{11}{subsubsection.2.1.4}%
+\contentsline {subsubsection}{\numberline {2.1.5\relax .\enspace }Transformer}{12}{subsubsection.2.1.5}%
+\contentsline {subsubsection}{\numberline {2.1.6\relax .\enspace }Transformer wizyjny z przesuwnym oknem}{14}{subsubsection.2.1.6}%
+\contentsline {subsubsection}{\numberline {2.1.7\relax .\enspace }Funkcje aktywacji}{15}{subsubsection.2.1.7}%
+\contentsline {subsection}{\numberline {2.2\relax .\enspace }Kompresja danych}{15}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3\relax .\enspace }Klasyczne metody kompresji}{16}{subsection.2.3}%
+\contentsline {subsubsection}{\numberline {2.3.1\relax .\enspace }JPEG}{16}{subsubsection.2.3.1}%
+\contentsline {subsubsection}{\numberline {2.3.2\relax .\enspace }JPEG 2000}{18}{subsubsection.2.3.2}%
+\contentsline {subsubsection}{\numberline {2.3.3\relax .\enspace }WebP}{18}{subsubsection.2.3.3}%
+\contentsline {subsubsection}{\numberline {2.3.4\relax .\enspace }BPG}{20}{subsubsection.2.3.4}%
+\contentsline {subsection}{\numberline {2.4\relax .\enspace }Kompresja obraz\'ow oparta na uczeniu maszynowym}{21}{subsection.2.4}%
+\contentsline {section}{\numberline {3\relax .\enspace }Opis rozwi\k azania}{25}{section.3}%
+\contentsline {subsection}{\numberline {3.1\relax .\enspace }Architektura modelu}{25}{subsection.3.1}%
+\contentsline {subsubsection}{\numberline {3.1.1\relax .\enspace }Og\'olna koncepcja i typ sieci}{25}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.2\relax .\enspace }Budowa sieci}{25}{subsubsection.3.1.2}%
+\contentsline {subsubsection}{\numberline {3.1.3\relax .\enspace }Zastosowane funkcje aktywacji}{27}{subsubsection.3.1.3}%
+\contentsline {subsection}{\numberline {3.2\relax .\enspace }Implementacja sieci neuronowej}{28}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1\relax .\enspace }Wykorzystane technologie i biblioteki}{28}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2\relax .\enspace }Przygotowanie i przetwarzanie danych}{28}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3\relax .\enspace }Struktura kodu \'zr\'od\IeC {\l }owego}{29}{subsubsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.3\relax .\enspace }Realizacja treningu sieci}{30}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1\relax .\enspace }Konfiguracje eksperyment\'ow}{30}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.2\relax .\enspace }Funkcja straty i optymalizator}{30}{subsubsection.3.3.2}%
+\contentsline {subsubsection}{\numberline {3.3.3\relax .\enspace }Metryki oceny i monitorowanie treningu}{31}{subsubsection.3.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.4\relax .\enspace }\'Srodowisko obliczeniowe}{32}{subsubsection.3.3.4}%
+\contentsline {section}{\numberline {4\relax .\enspace }Wyniki}{33}{section.4}%
+\contentsline {subsection}{\numberline {4.1\relax .\enspace }Cel i plan eksperyment\'ow}{33}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2\relax .\enspace }Przebieg eksperyment\'ow}{33}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1\relax .\enspace }Analiza procesu uczenia}{34}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2\relax .\enspace }Wp\IeC {\l }yw hiperparametr\'ow i strategia ich doboru}{35}{subsubsection.4.2.2}%
+\contentsline {subsubsection}{\numberline {4.2.3\relax .\enspace }Zastosowane przekszta\IeC {\l }cenia}{36}{subsubsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.3\relax .\enspace }Ewaluacja modelu}{36}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4\relax .\enspace }Wizualna ocena jako\'sci rekonstrukcji}{38}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5\relax .\enspace }Mocne i s\IeC {\l }abe strony}{39}{subsection.4.5}%
+\contentsline {section}{\numberline {5\relax .\enspace }Podsumowanie}{44}{section.5}%
+\contentsline {subsection}{\numberline {5.1\relax .\enspace }Wnioski z badania}{44}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2\relax .\enspace }Mo\.zliwe usprawnienia}{44}{subsection.5.2}%
+\contentsline {section}{Bibliografia}{45}{section*.9}%
+\contentsline {section}{Spis rysunk\'ow}{46}{section*.9}%
