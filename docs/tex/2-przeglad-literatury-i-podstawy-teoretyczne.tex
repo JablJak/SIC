@@ -96,23 +96,46 @@ również swoje ograniczenia:
 \subsubsection{JPEG 2000}
 Po opublikowaniu kodeka grupa JPEG podjęła działania w celu stworzenia bezstratnego odpowiednika --- JPEG LS. Swój wkład postanowili dołożyć badacze z japońskiej firmy Ricoh przysyłając zespołowi standaryzującemu autorski algorytm CREW (\textbf{C}ompression with \textbf{R}eversible \textbf{E}mbedded \textbf{W}avelets). Choć w pracach nad standardem bezstratnym to rozwiązanie zostało odrzucone na rzecz algorytmu LOCO-I (\textbf{Lo}w \textbf{Co}mplexity \textbf{Lo}ssless \textbf{Co}mpression for \textbf{I}mages), dostrzeżono jego potencjał i uruchomiono prace nad nowym kodekiem w 1997 roku. Przyjęto szereg warunków jakie miał spełniać\cite{Taubman2002}:
 \begin{enumerate}
-	\item Wysoka jakość w niskim budżecie bitowym.
-	\item Obsługa obrazów w szerokim zakresie głębi bitowej (od 1 do 16 bitów na składową piksela).
-	\item Progresywne strumieniowanie względem jakości i rozdzielczości obrazu.
-	\item Jednolita obsługa kompresji stratnej i bezstratnej w ramach jednego formatu.
-	\item Dostęp do dowolnego obszaru obrazu ze strumienia bitowego bez dekodowania całości.
-	\item Odporność na błędy bitowe w transmisji.
+	\item \label{jakosc-bitrate} Wysoka jakość w niskim budżecie bitowym.
+	\item \label{glebia} Obsługa obrazów w szerokim zakresie głębi bitowej (od 1 do 16 bitów na składową piksela).
+	\item \label{progresja} Progresywne strumieniowanie względem jakości i rozdzielczości obrazu.
+	\item \label{stratna-bezstratna} Jednolita obsługa kompresji stratnej i bezstratnej w ramach jednego formatu.
+	\item \label{swobodny-dostep} Dostęp do dowolnego obszaru obrazu ze strumienia bitowego bez dekodowania całości.
+	\item \label{odpornosc} Odporność na błędy bitowe w transmisji.
 \end{enumerate}
-JPEG 2000 spełnia te warunki za sprawą przemyślanych technik w nim zastosowanych. Podstawą algorytmu jest zastąpienie transformacji kosinusowej transformacją falkową --- DWT (Discrete Wavelet Transform). Z falek uzyskuje się dwa rodzaje jednowymiarowych filtrów --- dolno- i górnoprzepustowy. Pojedynczą jednostkę kodowania poddaje się filtrowaniu w sześciu krokach:
+JPEG 2000 spełnia te warunki za sprawą przemyślanych technik w nim zastosowanych. Podstawą algorytmu jest zastąpienie transformacji kosinusowej transformacją falkową --- DWT (Discrete Wavelet Transform). Falka, w przeciwieństwie do fal sinusowych w DCT, oscyluje w skończonym przedziale czasowy. Znacznie lepiej nadaje się do analizowania lokalnych zmian w obrazach od funkcji sinusowych, które oscylują w każdym punkcie dziedziny czasu. Kodek JPEG 2000 wykorzystuje dwa rodzaje:
+\begin{itemize}
+	\item \textbf{Falka 9/7 Daubechies} --- 9 wag filtru dolnoprzepustowego i 7 górnoprzepustowego, które są liczbami rzeczywistymi, co otwiera drogę do redukowania precyzji w kwantzacji --- wykorzystywana w trybie stratnym.
+	\item \textbf{Falka 5/3 LeGall} --- 5 wag filtru dolnoprzepustowego i 3 górnoprzepustowego, które są liczbami całkowitymi --- wykorzystywana w trybie bezstratnym.
+\end{itemize}
+
+Oryginalny obraz, przed poddaniem DWT, jest rozkładany na składowe --- każdy kanał jest poddawany analizie z osobna --- a każda ze składowych dzielona na części, tzw. kafelki. Standard oferuje w tej materii dużą dowolność, bowiem rozmiar kafelka nie jest narzucony z góry i w praktyce jeden kafelek może obejmować rozmiar całego obrazu. Pojedynczą jednostkę kodowania poddaje się filtrowaniu w sześciu krokach:
 \begin{enumerate}
-	\item Filtrem dolnoprzepustowym wzdłuż wierszy, odrzucając co drugą kolumnę --- otrzymując macierz współczynników L.
+	\item Filtrem dolnoprzepustowym wzdłuż wierszy, odrzucając co drumgą kolumnę --- otrzymując macierz współczynników L.
 	\item Filtrem górnoprzepustowym wzdłuż wierszy, odrzucając co drugą kolumnę --- otrzymując macierz współczynników H.
-	\item Macierz L filtrem górnoprzepustowym wzdłuż kolumn, odrzucając co drugi wiersz --- otrzymując macierz współczynników LL.
-	\item Macierz L filtrem dolnoprzepustowym wzdłuż kolumn, odrzucając co drugi wiersz --- otrzymując macierz współczynników LH.
-	\item Macierz H filtrem górnoprzepustowym wzdłuż kolumn, odrzucając co drugi wiersz --- otrzymując macierz współczynników HL.
+	\item Macierz L filtrem dolnoprzepustowym wzdłuż kolumn, odrzucając co drugi wiersz --- otrzymując macierz współczynników LL.
+	\item Macierz L filtrem górnoprzepustowym wzdłuż kolumn, odrzucając co drugi wiersz --- otrzymując macierz współczynników LH.
+	\item Macierz H filtrem dolnoprzepustowym wzdłuż kolumn, odrzucając co drugi wiersz --- otrzymując macierz współczynników HL.
 	\item Macierz H filtrem górnoprzepustowym wzdłuż kolumn, odrzucając co drugi wiersz --- otrzymując macierz współczynników HH.
 \end{enumerate}
-W efekcie powstają cztery macierze o dwukrotnie zmniejszonym wymiarze przestrzennym, z których LL zawiera ogólną, wygładzoną informację o obrazie, LH i HL dodają jej szczegółów, a informacja z HH to informacja o wysokiej częstotliwości --- detale, krawędzie, złożone tekstury. Innymi słowy dzięki DWT otrzymuje się podział obrazu na pasma o rosnącej częstotliwości. Dodatkowo transformacja falkowa w tym miejscu się nie kończy --- macierz LL poddaje się kolejnej transformacji, dzieląc ją na kolejne stopnie szczegółowości i umożliwiając kolejną iterację. Po kilku obiegach uzyskuje się hierarchiczną strukturę pozwalającą na budowanie obrazu od ogółu do szczegółu.
+W efekcie powstają cztery macierze o dwukrotnie zmniejszonym wymiarze przestrzennym, z których LL zawiera ogólną, wygładzoną informację o obrazie, LH i HL dodają jej szczegółów, a informacja z HH to informacja o wysokiej częstotliwości --- detale, krawędzie, złożone tekstury (LH wyodrębnia krawędzie poziome, HL krawędzie pionowe, a HH krawędzie ukośne). Innymi słowy dzięki DWT otrzymuje się podział obrazu na pasma o rosnącej częstotliwości. Dodatkowo transformacja falkowa w tym miejscu się nie kończy --- macierz LL poddaje się kolejnej transformacji, dzieląc ją na kolejne stopnie szczegółowości i umożliwiając kolejną iterację. Po kilku obiegach uzyskuje się hierarchiczną strukturę pozwalającą na budowanie obrazu od ogółu do szczegółu.
+
+W następnym kroku współczynniki falkowe w macierzach są kwantowane (z zadanym krokiem kwantyzacji w zależności od poziomu kompresji) i kodowane. W tym miejscu zastosowano drugie kreatywne rozwiązanie pozwalające na elastyczną kontrolę rozmiaru pliku i jakości rekonstrukcji. Zamiast kodować cały zestaw współczynników w podpasmach, JPEG 2000 dzieli je na bloki kodowe. Ich rozmiar może mieć od \(4 \times 4\) do \(1024 \times 1024\) wartości, ale typowo używa się \(32 \times 32\) lub \(64 \times 64\) --- mniejsze bloki pogarszają kompresję, a większe zwiększają złożoność obliczeniową. Kodowanie odbywa się w dwóch fazach. W fazie pierwszej w każdym z bloków wyznacza się najwyższą płaszczyznę bitową, czyli liczbę bitów potrzebną do zapisania największego współczynnika. Wtedy na każdej płaszczyźnie bitowej współczynniki są analizowane jako istotne lub nieistotne --- domyślnie każdy jest nieistotny, dopóki w zapisie tego współczynnika na danej płaszczyźnie nie pojawi się bit 1. Współczynniki istotne i nieistotne na danej płaszczyźnie, mogą być zakodowane taniej, ponieważ statystycznie wartości tej samej istotności sąsiadują ze sobą, więc można je grupować. Bity współczynników na danym planie, wraz z kontekstem sąsiadów, są przesyłane do kodera arytmetycznego, który wykorzystuje te statystyki do efektywnego zakodowania ich w strumieniu bitowym. W zależności od zadanego rozmiaru pliku strumień bitów jest obcinany w optymalnym punkcie w fazie drugiej. Odrzucane są wtedy najmniej znaczące bity, które dają najmniejszą poprawę jakości, w stosunku do kosztu, co efektywnie zmniejsza rozmiar pliku względem precyzji. Technika ta ma w ogólności na celu odrzucenie mniej istotnych dla rekonstrukcji bitów w celu dopasowania się do budżetu bitowego, niezależnie w każdym bloku kodowym, co realizuje założenie nr \ref{jakosc-bitrate}, zwiększa elastyczność kodowania i uodparnia na błędy bitowe w transmisji (izolacja bloków --- izolacja błędów) --- założenie \ref{odpornosc}.
+
+Powyższy opis przedstawia ogólne działanie kodeka z naciskiem techniki kompresji stratnej. Tryb bezstratny jest szczególnym przypadkiem, zawierającym trzy modyfikacje:
+\begin{itemize}
+	\item Filtr Daubechies 9/7 jest zastąpiony filtrem LeGall 5/3 --- tworzy współczynniki całkowitoliczbowe, które pozwalają na całkowite odwrócenie operacji bez błędów zaokrągleń.
+	\item Ponieważ współczynniki są całkowite, a celem jest zachowanie pełnej informacji, kwantyzacja w praktyce nie występuje --- krok kwantyzacji = 1.
+	\item Żadne bity ze strumienia kodowego nie są obcinane.
+\end{itemize}
+Za pomocą tych technik spełniono założenie \ref{stratna-bezstratna}.
+
+Należy dokonać jeszcze dodatkowych wyjaśnień dla pozostałych założeń wspomnianych na początku podrozdziału. Spełnienie punktu nr \ref{glebia} można wyjaśnić krótko. Przedstawiony powyżej opis działania kodeku nigdzie nie przyjmuje sztywnych wartości głębi ani nie narzuca ograniczeń --- transformacja falkowa, kwantyzacja czy kodowanie działają, w dużej mierze, w oderwaniu od liczby bitów. Choć kodek wykorzystuje tę informację, to w tak skrótowym opisie nie ma konieczności się nad tym pochylać.
+
+Uwaga do punktu nr \ref{progresja}. jest następująca: JPEG 2000 realizuje progresje rozdzielczości i jakości poprzez hierarchiczne upakowanie informacji w strumieniu bitowym w postaci pakietów. Ta struktura pozwala na wyodrębnienie poszczególnych podpasm oraz poszczególnych warstw jakości w postaci planów bitowych, umożliwiając zarówno uzyskanie miniatury obrazu, jak i obrazu o pełnej rozdzielczości, ale ograniczonym poziomie odwzorowania detali.
+
+Z kolei dla uzupełnienia punktu \ref{swobodny-dostep}. o swobodnym dostępnie należy dodać, że początek każdego z kafelków jest oznaczony w strumieniu bitowym markerami Start of Tile i Start of Data, co pozwala odkodować fragment obrazu bez odkodowania reszty. Istnieje także w JPEG 2000 mechanizm priorytetyzowania fragmentów obrazu, narzucając im wyższą precyzję kodowania. Realizuje się to za pomocą prostego zabiegu --- przesunięcia bitowego współczynników w bloku kodowym i zapisaniu liczby bitów tegoż przesunięcia w nagłówku obrazu. Zapobiega to obcięciu szczegółów w tym bloku kodowym.
+
 
 \subsubsection{WebP} \label{webp}
 
