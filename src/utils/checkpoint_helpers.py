@@ -67,7 +67,6 @@ def load_training_state_with_clearml_from_file(local_path, model, optimizer, aux
         gc.collect()
         aux_optimizer.zero_grad(set_to_none=True)
 
-
     if scheduler and 'scheduler' in state and state['scheduler']:
         print("[INFO] Loading scheduler state_dict...")
         scheduler.load_state_dict(state['scheduler'])

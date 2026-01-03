@@ -11,6 +11,7 @@ class PatchReconstruction(nn.Module):
     def __init__(self, dim):
         super().__init__()
         self.linear = nn.Linear(dim, 3 * 16)
+        self.leaky_clamp = LeakyClamp(0.0, 1.0, 0.01)
         self.pixel_shuffle = nn.PixelShuffle(upscale_factor=4)
 
     def forward(self, x):
@@ -19,7 +20,9 @@ class PatchReconstruction(nn.Module):
         x = x.permute(0, 3, 1, 2)
         x = self.pixel_shuffle(x)
 
-        if not self.training:
+        if self.training:
+            x = self.leaky_clamp(x)
+        else:
             x = torch.clamp(x, 0, 1)
         return x
 
@@ -158,4 +161,16 @@ class SwinTransformerDecoderBlock(nn.Module):
     def forward(self, x: Tensor):
         x = x + self.stochastic_depth(self.norm1(self.attn(x)))
         x = x + self.stochastic_depth(self.norm2(self.mlp(x)))
+        return x
+
+class LeakyClamp(nn.Module):
+    def __init__(self, min_value, max_value, eps=1e-3):
+        super().__init__()
+        self.min_val = min_value
+        self.max_val = max_value
+        self.eps = eps
+
+    def forward(self, x):
+        x = torch.where(x < self.min_val, self.eps * (x - self.min_val) + self.min_val, x)
+        x = torch.where(x > self.max_val, self.eps * (x - self.max_val) + self.max_val, x)
         return x

@@ -1,8 +1,8 @@
 \babel@toc {polish}{}\relax 
-\contentsline {figure}{\numberline {3.1}{\ignorespaces Schemat architektury sieci neuronowej\relax }}{28}{figure.caption.1}%
-\contentsline {figure}{\numberline {4.1}{\ignorespaces Wizualizacja przebiegu przyk\IeC {\l }adowego treningu na podstawie warto\'sci metryk\relax }}{35}{figure.caption.2}%
-\contentsline {figure}{\numberline {4.2}{\ignorespaces Por\'ownanie wyniku PSNR wzgl\k edem przep\IeC {\l }ywno\'sci utworzonego modelu z wybranymi metodami kompresji na zbiorze Kodak\relax }}{37}{figure.caption.3}%
-\contentsline {figure}{\numberline {4.3}{\ignorespaces Por\'ownanie wyniku MS-SSIM wzgl\k edem przep\IeC {\l }ywno\'sci utworzonego modelu z wybranymi metodami kompresji na zbiorze Kodak\relax }}{38}{figure.caption.4}%
-\contentsline {figure}{\numberline {4.4}{\ignorespaces Por\'ownanie rekonstrukcji obrazu kobiety w przep\IeC {\l }ywno\'sci na poziomie ok. 0,34 bpp\relax }}{40}{figure.caption.5}%
-\contentsline {figure}{\numberline {4.5}{\ignorespaces Por\'ownanie rekonstrukcji obrazu flisak\'ow na pontonie w przep\IeC {\l }ywno\'sci na poziomie ok. 0,28 bpp\relax }}{42}{figure.caption.7}%
-\contentsline {figure}{\numberline {4.6}{\ignorespaces Por\'ownanie rekonstrukcji obrazu latarni morskiej w przep\IeC {\l }ywno\'sci na poziomie ok. 0,2 bpp\relax }}{43}{figure.caption.8}%
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Schemat architektury sieci neuronowej\relax }}{34}{figure.caption.12}%
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Wizualizacja przebiegu przyk\IeC {\l }adowego treningu na podstawie warto\'sci metryk\relax }}{41}{figure.caption.13}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Por\'ownanie wyniku PSNR wzgl\k edem przep\IeC {\l }ywno\'sci utworzonego modelu z wybranymi metodami kompresji na zbiorze Kodak\relax }}{43}{figure.caption.14}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Por\'ownanie wyniku MS-SSIM wzgl\k edem przep\IeC {\l }ywno\'sci utworzonego modelu z wybranymi metodami kompresji na zbiorze Kodak\relax }}{44}{figure.caption.15}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Por\'ownanie rekonstrukcji obrazu kobiety w przep\IeC {\l }ywno\'sci na poziomie ok. 0,34 bpp\relax }}{46}{figure.caption.16}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces Por\'ownanie rekonstrukcji obrazu flisak\'ow na pontonie w przep\IeC {\l }ywno\'sci na poziomie ok. 0,28 bpp\relax }}{48}{figure.caption.18}%
+\contentsline {figure}{\numberline {4.6}{\ignorespaces Por\'ownanie rekonstrukcji obrazu latarni morskiej w przep\IeC {\l }ywno\'sci na poziomie ok. 0,2 bpp\relax }}{49}{figure.caption.19}%

@@ -19,6 +19,150 @@
 
 \refsection{0}
   \datalist[entry]{none/global//global/global}
+    \entry{Taubman2002}{inbook}{}
+      \name{author}{2}{}{%
+        {{hash=916c4541a847ea2fb875a986ae107886}{%
+           family={Taubman},
+           familyi={T\bibinitperiod},
+           given={David\bibnamedelima S.},
+           giveni={D\bibinitperiod\bibinitdelim S\bibinitperiod}}}%
+        {{hash=7aae99305e23c5e62985d715acb47240}{%
+           family={Marcellin},
+           familyi={M\bibinitperiod},
+           given={Michael\bibnamedelima W.},
+           giveni={M\bibinitperiod\bibinitdelim W\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Boston, MA}%
+      }
+      \list{publisher}{1}{%
+        {Springer US}%
+      }
+      \strng{namehash}{acf52bd327b2f18f84873a70aacef320}
+      \strng{fullhash}{acf52bd327b2f18f84873a70aacef320}
+      \strng{bibnamehash}{acf52bd327b2f18f84873a70aacef320}
+      \strng{authorbibnamehash}{acf52bd327b2f18f84873a70aacef320}
+      \strng{authornamehash}{acf52bd327b2f18f84873a70aacef320}
+      \strng{authorfullhash}{acf52bd327b2f18f84873a70aacef320}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{At the time of this writing, JPEG2000 is the newest international standard for still image compression. The JPEG acronym stands for ``Joint Photographic Experts Group.'' The ``Joint'' here signifies that JPEG2000 is published as an ISO/IEC standard, as well as an ITU-T Recommendation. The acronyms of the previous sentence stand for International Organization for Standardization/International Electrotechnical Commission, and International Telecommunications Union-Terminal Sector,1 respectively. The Joint Bi-level Imagery Experts Group (JBIG) has often worked closely together with the JPEG committee. In fact, the two committees typically meet in the same venues.}
+      \field{booktitle}{JPEG2000 Image Compression Fundamentals, Standards and Practice}
+      \field{isbn}{978-1-4615-0799-4}
+      \field{title}{Introduction to JPEG2000}
+      \field{year}{2002}
+      \field{pages}{399\bibrangedash 415}
+      \range{pages}{17}
+      \verb{doi}
+      \verb 10.1007/978-1-4615-0799-4_9
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1007/978-1-4615-0799-4_9
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1007/978-1-4615-0799-4_9
+      \endverb
+    \endentry
+    \entry{imagestatistics}{book}{}
+      \name{author}{3}{}{%
+        {{hash=5310d78794b17fd5b079565e6f389b64}{%
+           family={Hyvrinen},
+           familyi={H\bibinitperiod},
+           given={Aapo},
+           giveni={A\bibinitperiod}}}%
+        {{hash=3b98900e47298c8ee19eec5886e43117}{%
+           family={Hurri},
+           familyi={H\bibinitperiod},
+           given={Jarmo},
+           giveni={J\bibinitperiod}}}%
+        {{hash=d9cc1a5699c872ba4c6bd9e04e7232af}{%
+           family={Hoyer},
+           familyi={H\bibinitperiod},
+           given={Patrick\bibnamedelima O.},
+           giveni={P\bibinitperiod\bibinitdelim O\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Springer Publishing Company, Incorporated}%
+      }
+      \strng{namehash}{c7cbab67dbcc01efa0b29e141b956fe9}
+      \strng{fullhash}{c7cbab67dbcc01efa0b29e141b956fe9}
+      \strng{bibnamehash}{c7cbab67dbcc01efa0b29e141b956fe9}
+      \strng{authorbibnamehash}{c7cbab67dbcc01efa0b29e141b956fe9}
+      \strng{authornamehash}{c7cbab67dbcc01efa0b29e141b956fe9}
+      \strng{authorfullhash}{c7cbab67dbcc01efa0b29e141b956fe9}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{One of the most successful frameworks in computational neuroscience is modeling visual processing using the statistical structure of natural images. In this framework, the visual system of the brain constructs a model of the statistical regularities of the incoming visual data. This enables the visual system to perform efficient probabilistic inference. The same framework is also very useful in engineering applications such as image processing and computer vision. This book is the first comprehensive introduction to the multidisciplinary field of natural image statistics. The book starts with a review of background material in signal processing and neuroscience, which makes it accessible to a wide audience. The book then explains both the basic theory and the most recent advances in a coherent and user-friendly manner. This structure, together with the included exercises and computer assignments, also make it an excellent textbook. "Natural Image Statistics" is a timely and valuable resource for advanced students and researchers in any discipline related to vision, such as neuroscience, computer science, psychology, electrical engineering, cognitive science or statistics.}
+      \field{edition}{1st}
+      \field{isbn}{1848824904}
+      \field{title}{Natural Image Statistics: A Probabilistic Approach to Early Computational Vision.}
+      \field{year}{2009}
+    \endentry
+    \entry{doi:https://doi.org/10.1002/9781118711743.ch3}{inbook}{}
+      \list{publisher}{1}{%
+        {John Wiley & Sons, Ltd}%
+      }
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Summary This chapter traces the development of video coding from the early theoretical concepts, many of which were first proposed in the 1970s and 1980s, through the first industry standards, the emergence of mass-market applications, the rise of internet and mobile video, to the present day. It looks at when and how were the early concepts of video coding developed? and how did these concepts evolve into the well-known block-based video codec model? A video coding standard specifies a bitstream format for compressed video and a method of decoding the bitstream to produce a decoded video sequence. H.261 was the first of the industry standards for video coding to have an appreciable commercial impact. The chapter also looks at how did the video coding standards contribute to or influence the changing patterns of digital video usage, from television and DVDs to video streaming?}
+      \field{booktitle}{Coding Video}
+      \field{chapter}{3}
+      \field{isbn}{9781118711743}
+      \field{title}{A History of Video Coding and Video Coding Standards}
+      \field{year}{2024}
+      \field{pages}{43\bibrangedash 68}
+      \range{pages}{26}
+      \verb{doi}
+      \verb https://doi.org/10.1002/9781118711743.ch3
+      \endverb
+      \verb{eprint}
+      \verb https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781118711743.ch3
+      \endverb
+      \verb{urlraw}
+      \verb https://onlinelibrary.wiley.com/doi/abs/10.1002/9781118711743.ch3
+      \endverb
+      \verb{url}
+      \verb https://onlinelibrary.wiley.com/doi/abs/10.1002/9781118711743.ch3
+      \endverb
+      \keyw{bitstream format,digital video usage,mass-market applications,video coding,video coding standards}
+    \endentry
+    \entry{earlyaecompression}{article}{}
+      \name{author}{3}{}{%
+        {{hash=b2c816b9cde48822a4674168b0e134e2}{%
+           family={Cottrell},
+           familyi={C\bibinitperiod},
+           given={Garrison},
+           giveni={G\bibinitperiod}}}%
+        {{hash=6ec7fdaba9681d7bd9984c3db09fab6b}{%
+           family={Munro},
+           familyi={M\bibinitperiod},
+           given={Paul},
+           giveni={P\bibinitperiod}}}%
+        {{hash=97e849840775eb11c150164bbbd7cffe}{%
+           family={Zipser},
+           familyi={Z\bibinitperiod},
+           given={D.},
+           giveni={D\bibinitperiod}}}%
+      }
+      \strng{namehash}{286938fc0aba0424e3ba0155eecb9adc}
+      \strng{fullhash}{286938fc0aba0424e3ba0155eecb9adc}
+      \strng{bibnamehash}{286938fc0aba0424e3ba0155eecb9adc}
+      \strng{authorbibnamehash}{286938fc0aba0424e3ba0155eecb9adc}
+      \strng{authornamehash}{286938fc0aba0424e3ba0155eecb9adc}
+      \strng{authorfullhash}{286938fc0aba0424e3ba0155eecb9adc}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{month}{01}
+      \field{title}{Learning Internal Representations from Gray-Scale Images: An Example of Extensional Programming}
+      \field{year}{1987}
+    \endentry
     \entry{10.5555/38292.38295}{article}{}
       \name{author}{1}{}{%
         {{hash=3df1f0e2db27c956fc5e6fa9c20a020e}{%
@@ -39,8 +183,8 @@
       \strng{authorbibnamehash}{3df1f0e2db27c956fc5e6fa9c20a020e}
       \strng{authornamehash}{3df1f0e2db27c956fc5e6fa9c20a020e}
       \strng{authorfullhash}{3df1f0e2db27c956fc5e6fa9c20a020e}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{issn}{0888-3785}
@@ -52,6 +196,96 @@
       \field{year}{1987}
       \field{pages}{46\bibrangedash 52}
       \range{pages}{7}
+    \endentry
+    \entry{enwiki:1308010043}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=b6aea1a416c89509a7df1cbb69249cb6}{%
+           family={{Wikipedia contributors}},
+           familyi={W\bibinitperiod}}}%
+      }
+      \strng{namehash}{b6aea1a416c89509a7df1cbb69249cb6}
+      \strng{fullhash}{b6aea1a416c89509a7df1cbb69249cb6}
+      \strng{bibnamehash}{b6aea1a416c89509a7df1cbb69249cb6}
+      \strng{authorbibnamehash}{b6aea1a416c89509a7df1cbb69249cb6}
+      \strng{authornamehash}{b6aea1a416c89509a7df1cbb69249cb6}
+      \strng{authorfullhash}{b6aea1a416c89509a7df1cbb69249cb6}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{note}{[Online; accessed 23-December-2025]}
+      \field{title}{Nonlinear system --- {Wikipedia}{,} The Free Encyclopedia}
+      \field{year}{2025}
+      \verb{urlraw}
+      \verb https://en.wikipedia.org/w/index.php?title=Nonlinear_system&oldid=1308010043
+      \endverb
+      \verb{url}
+      \verb https://en.wikipedia.org/w/index.php?title=Nonlinear_system&oldid=1308010043
+      \endverb
+    \endentry
+    \entry{rectifier}{inproceedings}{}
+      \name{author}{3}{}{%
+        {{hash=0b3943c3bfdbb5867b3760f7c7d488c2}{%
+           family={Glorot},
+           familyi={G\bibinitperiod},
+           given={Xavier},
+           giveni={X\bibinitperiod}}}%
+        {{hash=f1733e10bf044cbd7be63e10e5689d78}{%
+           family={Bordes},
+           familyi={B\bibinitperiod},
+           given={Antoine},
+           giveni={A\bibinitperiod}}}%
+        {{hash=fafcb09a21e4cf9c0f1ad41b6475953f}{%
+           family={Yere},
+           familyi={Y\bibinitperiod},
+           given={Yere},
+           giveni={Y\bibinitperiod}}}%
+      }
+      \strng{namehash}{c7a04e84233544814a8e0a7a9a3dbf0c}
+      \strng{fullhash}{c7a04e84233544814a8e0a7a9a3dbf0c}
+      \strng{bibnamehash}{c7a04e84233544814a8e0a7a9a3dbf0c}
+      \strng{authorbibnamehash}{c7a04e84233544814a8e0a7a9a3dbf0c}
+      \strng{authornamehash}{c7a04e84233544814a8e0a7a9a3dbf0c}
+      \strng{authorfullhash}{c7a04e84233544814a8e0a7a9a3dbf0c}
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Journal of Machine Learning Research}
+      \field{month}{01}
+      \field{title}{Deep Sparse Rectifier Neural Networks}
+      \field{volume}{15}
+      \field{year}{2010}
+    \endentry
+    \entry{4082265}{article}{}
+      \name{author}{1}{}{%
+        {{hash=23d96062ed18321873ac4b8b6e2fc816}{%
+           family={Fukushima},
+           familyi={F\bibinitperiod},
+           given={Kunihiko},
+           giveni={K\bibinitperiod}}}%
+      }
+      \strng{namehash}{23d96062ed18321873ac4b8b6e2fc816}
+      \strng{fullhash}{23d96062ed18321873ac4b8b6e2fc816}
+      \strng{bibnamehash}{23d96062ed18321873ac4b8b6e2fc816}
+      \strng{authorbibnamehash}{23d96062ed18321873ac4b8b6e2fc816}
+      \strng{authornamehash}{23d96062ed18321873ac4b8b6e2fc816}
+      \strng{authorfullhash}{23d96062ed18321873ac4b8b6e2fc816}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{IEEE Transactions on Systems Science and Cybernetics}
+      \field{number}{4}
+      \field{title}{Visual Feature Extraction by a Multilayered Network of Analog Threshold Elements}
+      \field{volume}{5}
+      \field{year}{1969}
+      \field{pages}{322\bibrangedash 333}
+      \range{pages}{12}
+      \verb{doi}
+      \verb 10.1109/TSSC.1969.300225
+      \endverb
+      \keyw{Feature extraction;Network synthesis;Biological system modeling;Computational modeling;Computer simulation;Biology computing;Computer networks;Character recognition;Handwriting recognition;Biological systems}
     \endentry
     \entry{attentionisallyouneed2017}{inproceedings}{}
       \name{author}{8}{}{%
@@ -108,8 +342,8 @@
       \strng{authorbibnamehash}{7cc810834e9ba19dd5f8b0a37be3172d}
       \strng{authornamehash}{7cc810834e9ba19dd5f8b0a37be3172d}
       \strng{authorfullhash}{cb26e47f6b8133865271fc8483132297}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{abstract}{The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles, by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.0 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature.}
@@ -120,150 +354,6 @@
       \field{year}{2017}
       \field{pages}{6000\bibrangedash 6010}
       \range{pages}{11}
-    \endentry
-    \entry{Taubman2002}{inbook}{}
-      \name{author}{2}{}{%
-        {{hash=916c4541a847ea2fb875a986ae107886}{%
-           family={Taubman},
-           familyi={T\bibinitperiod},
-           given={David\bibnamedelima S.},
-           giveni={D\bibinitperiod\bibinitdelim S\bibinitperiod}}}%
-        {{hash=7aae99305e23c5e62985d715acb47240}{%
-           family={Marcellin},
-           familyi={M\bibinitperiod},
-           given={Michael\bibnamedelima W.},
-           giveni={M\bibinitperiod\bibinitdelim W\bibinitperiod}}}%
-      }
-      \list{location}{1}{%
-        {Boston, MA}%
-      }
-      \list{publisher}{1}{%
-        {Springer US}%
-      }
-      \strng{namehash}{acf52bd327b2f18f84873a70aacef320}
-      \strng{fullhash}{acf52bd327b2f18f84873a70aacef320}
-      \strng{bibnamehash}{acf52bd327b2f18f84873a70aacef320}
-      \strng{authorbibnamehash}{acf52bd327b2f18f84873a70aacef320}
-      \strng{authornamehash}{acf52bd327b2f18f84873a70aacef320}
-      \strng{authorfullhash}{acf52bd327b2f18f84873a70aacef320}
-      \field{sortinit}{3}
-      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{abstract}{At the time of this writing, JPEG2000 is the newest international standard for still image compression. The JPEG acronym stands for ``Joint Photographic Experts Group.'' The ``Joint'' here signifies that JPEG2000 is published as an ISO/IEC standard, as well as an ITU-T Recommendation. The acronyms of the previous sentence stand for International Organization for Standardization/International Electrotechnical Commission, and International Telecommunications Union-Terminal Sector,1 respectively. The Joint Bi-level Imagery Experts Group (JBIG) has often worked closely together with the JPEG committee. In fact, the two committees typically meet in the same venues.}
-      \field{booktitle}{JPEG2000 Image Compression Fundamentals, Standards and Practice}
-      \field{isbn}{978-1-4615-0799-4}
-      \field{title}{Introduction to JPEG2000}
-      \field{year}{2002}
-      \field{pages}{399\bibrangedash 415}
-      \range{pages}{17}
-      \verb{doi}
-      \verb 10.1007/978-1-4615-0799-4_9
-      \endverb
-      \verb{urlraw}
-      \verb https://doi.org/10.1007/978-1-4615-0799-4_9
-      \endverb
-      \verb{url}
-      \verb https://doi.org/10.1007/978-1-4615-0799-4_9
-      \endverb
-    \endentry
-    \entry{imagestatistics}{book}{}
-      \name{author}{3}{}{%
-        {{hash=5310d78794b17fd5b079565e6f389b64}{%
-           family={Hyvrinen},
-           familyi={H\bibinitperiod},
-           given={Aapo},
-           giveni={A\bibinitperiod}}}%
-        {{hash=3b98900e47298c8ee19eec5886e43117}{%
-           family={Hurri},
-           familyi={H\bibinitperiod},
-           given={Jarmo},
-           giveni={J\bibinitperiod}}}%
-        {{hash=d9cc1a5699c872ba4c6bd9e04e7232af}{%
-           family={Hoyer},
-           familyi={H\bibinitperiod},
-           given={Patrick\bibnamedelima O.},
-           giveni={P\bibinitperiod\bibinitdelim O\bibinitperiod}}}%
-      }
-      \list{publisher}{1}{%
-        {Springer Publishing Company, Incorporated}%
-      }
-      \strng{namehash}{c7cbab67dbcc01efa0b29e141b956fe9}
-      \strng{fullhash}{c7cbab67dbcc01efa0b29e141b956fe9}
-      \strng{bibnamehash}{c7cbab67dbcc01efa0b29e141b956fe9}
-      \strng{authorbibnamehash}{c7cbab67dbcc01efa0b29e141b956fe9}
-      \strng{authornamehash}{c7cbab67dbcc01efa0b29e141b956fe9}
-      \strng{authorfullhash}{c7cbab67dbcc01efa0b29e141b956fe9}
-      \field{sortinit}{4}
-      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{abstract}{One of the most successful frameworks in computational neuroscience is modeling visual processing using the statistical structure of natural images. In this framework, the visual system of the brain constructs a model of the statistical regularities of the incoming visual data. This enables the visual system to perform efficient probabilistic inference. The same framework is also very useful in engineering applications such as image processing and computer vision. This book is the first comprehensive introduction to the multidisciplinary field of natural image statistics. The book starts with a review of background material in signal processing and neuroscience, which makes it accessible to a wide audience. The book then explains both the basic theory and the most recent advances in a coherent and user-friendly manner. This structure, together with the included exercises and computer assignments, also make it an excellent textbook. "Natural Image Statistics" is a timely and valuable resource for advanced students and researchers in any discipline related to vision, such as neuroscience, computer science, psychology, electrical engineering, cognitive science or statistics.}
-      \field{edition}{1st}
-      \field{isbn}{1848824904}
-      \field{title}{Natural Image Statistics: A Probabilistic Approach to Early Computational Vision.}
-      \field{year}{2009}
-    \endentry
-    \entry{doi:https://doi.org/10.1002/9781118711743.ch3}{inbook}{}
-      \list{publisher}{1}{%
-        {John Wiley & Sons, Ltd}%
-      }
-      \field{sortinit}{5}
-      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
-      \field{labeltitlesource}{title}
-      \field{abstract}{Summary This chapter traces the development of video coding from the early theoretical concepts, many of which were first proposed in the 1970s and 1980s, through the first industry standards, the emergence of mass-market applications, the rise of internet and mobile video, to the present day. It looks at when and how were the early concepts of video coding developed? and how did these concepts evolve into the well-known block-based video codec model? A video coding standard specifies a bitstream format for compressed video and a method of decoding the bitstream to produce a decoded video sequence. H.261 was the first of the industry standards for video coding to have an appreciable commercial impact. The chapter also looks at how did the video coding standards contribute to or influence the changing patterns of digital video usage, from television and DVDs to video streaming?}
-      \field{booktitle}{Coding Video}
-      \field{chapter}{3}
-      \field{isbn}{9781118711743}
-      \field{title}{A History of Video Coding and Video Coding Standards}
-      \field{year}{2024}
-      \field{pages}{43\bibrangedash 68}
-      \range{pages}{26}
-      \verb{doi}
-      \verb https://doi.org/10.1002/9781118711743.ch3
-      \endverb
-      \verb{eprint}
-      \verb https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781118711743.ch3
-      \endverb
-      \verb{urlraw}
-      \verb https://onlinelibrary.wiley.com/doi/abs/10.1002/9781118711743.ch3
-      \endverb
-      \verb{url}
-      \verb https://onlinelibrary.wiley.com/doi/abs/10.1002/9781118711743.ch3
-      \endverb
-      \keyw{bitstream format,digital video usage,mass-market applications,video coding,video coding standards}
-    \endentry
-    \entry{earlyaecompression}{article}{}
-      \name{author}{3}{}{%
-        {{hash=b2c816b9cde48822a4674168b0e134e2}{%
-           family={Cottrell},
-           familyi={C\bibinitperiod},
-           given={Garrison},
-           giveni={G\bibinitperiod}}}%
-        {{hash=6ec7fdaba9681d7bd9984c3db09fab6b}{%
-           family={Munro},
-           familyi={M\bibinitperiod},
-           given={Paul},
-           giveni={P\bibinitperiod}}}%
-        {{hash=97e849840775eb11c150164bbbd7cffe}{%
-           family={Zipser},
-           familyi={Z\bibinitperiod},
-           given={D.},
-           giveni={D\bibinitperiod}}}%
-      }
-      \strng{namehash}{286938fc0aba0424e3ba0155eecb9adc}
-      \strng{fullhash}{286938fc0aba0424e3ba0155eecb9adc}
-      \strng{bibnamehash}{286938fc0aba0424e3ba0155eecb9adc}
-      \strng{authorbibnamehash}{286938fc0aba0424e3ba0155eecb9adc}
-      \strng{authornamehash}{286938fc0aba0424e3ba0155eecb9adc}
-      \strng{authorfullhash}{286938fc0aba0424e3ba0155eecb9adc}
-      \field{sortinit}{6}
-      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{month}{01}
-      \field{title}{Learning Internal Representations from Gray-Scale Images: An Example of Extensional Programming}
-      \field{year}{1987}
     \endentry
     \entry{he2021checkerboardcontextmodelefficient}{misc}{}
       \name{author}{5}{}{%
@@ -299,8 +389,8 @@
       \strng{authorbibnamehash}{cddd226b5003306434d7474b8d18f7fc}
       \strng{authornamehash}{90aa8a5f44acf6f2da0e78e4283b7d83}
       \strng{authorfullhash}{cddd226b5003306434d7474b8d18f7fc}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{eprintclass}{eess.IV}
@@ -336,8 +426,8 @@
       \strng{authorbibnamehash}{7d47b8f6df5cfe597280f14a9ffb6143}
       \strng{authornamehash}{7d47b8f6df5cfe597280f14a9ffb6143}
       \strng{authorfullhash}{7d47b8f6df5cfe597280f14a9ffb6143}
-      \field{sortinit}{8}
-      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{eprintclass}{cs.LG}
@@ -383,8 +473,8 @@
       \strng{authorbibnamehash}{ec9428d9935447b301a1b2422e7350ff}
       \strng{authornamehash}{65a9d75dea06471338cd0b8918d66d03}
       \strng{authorfullhash}{ec9428d9935447b301a1b2422e7350ff}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{eprintclass}{cs.CV}
@@ -747,8 +837,8 @@
       \strng{authorbibnamehash}{167c601dc0d34faad16775eda5ce1f81}
       \strng{authornamehash}{167c601dc0d34faad16775eda5ce1f81}
       \strng{authorfullhash}{167c601dc0d34faad16775eda5ce1f81}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{month}{12}
@@ -791,8 +881,8 @@
       \strng{authornamehash}{e884a2c9c5fa5f797247cb104b8bf8db}
       \strng{authorfullhash}{e884a2c9c5fa5f797247cb104b8bf8db}
       \field{extraname}{2}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Proceedings of the IEEE Asilomar Conference Signals, Systems and Computers}
@@ -822,8 +912,8 @@
       \strng{authorbibnamehash}{1e33c0f913368961809035a635f71e06}
       \strng{authornamehash}{1e33c0f913368961809035a635f71e06}
       \strng{authorfullhash}{1e33c0f913368961809035a635f71e06}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{issn}{1804-0462}

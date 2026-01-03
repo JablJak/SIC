@@ -2,33 +2,18 @@ import argparse
 import datetime
 import gc
 import os
-import random
-import numpy as np
 import torch
 from torchmetrics.functional.image import peak_signal_noise_ratio, structural_similarity_index_measure
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
+
 from src.losses.rdloss import RDLoss
 from src.models.gdn_swin_transformer import LinearScheduler, GradualIntroductionLayer
 from src.train.experiment import Experiment
 from src.utils import clearml_helpers
 from src.utils.checkpoint_helpers import save_training_state_with_clearml, load_training_state_with_clearml_from_file
 from src.utils.clearml_helpers import  start_experiment
-from src.utils.const import MODEL_CHECKPOINT_PATH, EXPERIMENTS_CONFIG_PATH, \
-    MODEL_OUTPUT_PATH, ARTIFACTS_PATH
+from src.utils.const import MODEL_CHECKPOINT_PATH, EXPERIMENTS_CONFIG_PATH, MODEL_OUTPUT_PATH, ARTIFACTS_PATH
 from src.utils.initializers import read_config, dataloader_from_config
-
-
-def _scaled_lambda(current_iter, start_iter, num_iters, start_lambda, end_lambda,
-                   current_lambda, mode='log'):
-    if mode == 'log':
-        if current_iter < start_iter:
-            return current_lambda
-        if current_iter > start_iter + num_iters:
-            return end_lambda
-        else:
-            lambda_exp = np.exp(np.log(end_lambda / start_lambda) / num_iters)
-            return start_lambda * lambda_exp ** (current_iter - start_iter)
-
 
 def _train(model, train_dataloader, val_dataloader, test_dataloader, criterion, optimizer, aux_optimizer,
            aux_scheduler, num_epochs, device, scheduler, logger=None, task=None, start_epoch=1, global_step=0,
@@ -38,7 +23,7 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, criterion, 
     optimize_bpp = False
     max_norm_value = 2
     temp_checkpoint_frequency = 1000
-    persist_checkpoint_frequency = 5000
+    persist_checkpoint_frequency = 1000
     eval_frequency = 500
     test_frequency = 1000
     torch.cuda.empty_cache()
@@ -71,7 +56,7 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, criterion, 
 
             loss_scaled = loss / accumulation_steps
             loss_scaled.backward()
-            
+
             if aux_optimizer is not None:
                 aux_loss = model.aux_loss()
                 scaled_aux_loss = aux_loss / accumulation_steps
@@ -327,15 +312,6 @@ if __name__ == '__main__':
     else:
         task = None
 
-    # ===== Disable randomness =====
-    seed = 81
-    torch.manual_seed(seed)
-    random.seed(seed)
-    np.random.seed(seed)
-
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    # ==============================
     torch.backends.cudnn.benchmark = True
     torch.set_float32_matmul_precision('high')
     device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
@@ -368,14 +344,13 @@ if __name__ == '__main__':
             model,
             optimizer,
             aux_optimizer,
-            None,
+            scheduler,
             aux_scheduler,
             device
         )
 
     logger = task.get_logger() if task is not None else None
     overwrite_lrs(optimizer, aux_optimizer, experiment)
-
     trained_model = _train(
         model=model,
         train_dataloader=train_dataloader,

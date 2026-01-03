@@ -5,7 +5,7 @@ train_dataset:
       args:
         mean: [0.448, 0.429, 0.392]
         std: [0.240, 0.230, 0.242]
-        normalize: true
+        normalize: false
         crop_size: [384, 384]
   target_transform:
     - module: src.data.transforms.RGBCompression
@@ -26,7 +26,7 @@ val_dataset:
       args:
         mean: [0.448, 0.429, 0.392]
         std: [0.240, 0.230, 0.242]
-        normalize: true
+        normalize: false
         crop_size: [384, 384]
   target_transform:
     - module: src.data.transforms.RGBCompression
@@ -47,7 +47,7 @@ test_dataset:
       args:
         mean: [0.448, 0.429, 0.392]
         std: [0.240, 0.230, 0.242]
-        normalize: true
+        normalize: false
         crop_size: [512, 512]
   target_transform:
     - module: src.data.transforms.RGBCompression
@@ -88,7 +88,7 @@ dataloader:
   args:
     batch_size: 8
     shuffle: true
-    num_workers: 4
+    num_workers: 2
     pin_memory: false
     drop_last: true
 
@@ -103,17 +103,17 @@ optimizer:
 
 scheduler:
   module: torch.optim.lr_scheduler.LinearLR
-  enabled: true
+  enabled: false
   args:
     total_iters: 5000
-    start_factor: 0.001
+    start_factor: 0.0001
     end_factor: 1.0
     last_epoch: -1
 
 aux_optimizer:
   module: torch.optim.Adam
   args:
-    lr: !!float 1e-3
+    lr: !!float 5e-3
 
 aux_scheduler:
   module: torch.optim.lr_scheduler.CosineAnnealingLR
@@ -129,7 +129,7 @@ loss:
 
 rd_loss:
   enabled: true
-  lambda: !!float 0.18
+  lambda: !!float 0.16
 
 epochs: 5000
 log_frequency: 100

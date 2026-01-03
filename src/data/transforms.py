@@ -1,11 +1,14 @@
 import random
+from math import ceil, floor
 from typing import Tuple, Optional
 
 import torch
 import torch.nn as nn
+import torchvision.transforms.v2
 from torch import Tensor
 from torchvision.transforms import InterpolationMode, functional
-from torchvision.transforms.v2 import functional as f, RandomCrop
+from torchvision.transforms.v2 import RandomResizedCrop, Transform
+from torchvision.transforms.v2.functional import pad
 
 RGB_IMAGENET_MEAN = (0.485, 0.456, 0.406)
 RGB_IMAGENET_STD = (0.229, 0.224, 0.225)
@@ -32,8 +35,8 @@ class RGBCompression(nn.Module):
             mean: Tuple[float, ...] = RGB_COCO_MEAN,
             std: Tuple[float, ...] = RGB_COCO_STD,
             interpolation: InterpolationMode = InterpolationMode.BICUBIC,
-            crop_size: list[int] = [256],
-            resize_size: list[int] = [256],
+            crop_size: list[int] = [256, 256],
+            resize_size: list[int] = [256, 256],
             antialias: Optional[bool] = True,
             noresize = False,
             normalize = True
@@ -47,14 +50,13 @@ class RGBCompression(nn.Module):
         self.antialias = antialias
         self.noresize = noresize
         self.normalize = normalize
-        self.crop = RandomCrop(self.crop_size, pad_if_needed=True)
+        self.crop = RandomResizedCropInScales(size=self.crop_size)
 
     def forward(self, img: Tensor) -> Tuple[Tensor, Tensor]:
-        if not self.noresize:
-            # img = functional.resize(img, self.resize_size, interpolation=self.interpolation, antialias=self.antialias)
-            img = self.crop(img)
         if not isinstance(img, Tensor):
             img = functional.pil_to_tensor(img)
+        if not self.noresize:
+            img = self.crop(img)
         img = functional.convert_image_dtype(img, torch.float)
         norm_img = functional.normalize(img, mean=list(self.mean), std=list(self.std))
         return norm_img, img
@@ -150,6 +152,56 @@ class YCbCrDecompression(nn.Module):
             return pil_images[0]
         else:
             return pil_images
+
+class RandomResizedCropInScales(nn.Module):
+    def __init__(self,
+                 size: int | tuple[int, int],
+                 scales: tuple[float, ...] = (1.0, 2.0, 4.0),
+                 interpolation: InterpolationMode | str = "area"
+                 ):
+        super().__init__()
+        self.size = size
+        self.scales = scales
+        self.interpolation = interpolation
+
+        if isinstance(self.size, (tuple, list)):
+            self.target_H, self.target_W = self.size
+        else:
+            self.target_H = self.target_W = self.size
+
+    def forward(self, img: Tensor) -> Tensor:
+        H, W = img.shape[-2:]
+        scales = self._eligible_scales(img)
+        if len(scales) == 0:
+            w_pad = max(0, self.target_W - W)
+            h_pad = max(0, self.target_H - H)
+            l_pad, r_pad = floor(w_pad / 2), ceil(w_pad / 2)
+            t_pad, b_pad = floor(h_pad / 2), ceil(h_pad / 2)
+            img = functional.pad(img, [l_pad, t_pad, r_pad, b_pad], padding_mode="reflect")
+            H, W = img.shape[-2:]
+            selected_scale = 1.0
+        else:
+            selected_scale = random.choice(scales)
+        downscaled_img = functional.resize(img, [round(H / selected_scale), round(W / selected_scale)],
+                                           interpolation=InterpolationMode.BOX, antialias=False)
+
+        ds_H, ds_W = downscaled_img.shape[-2:]
+
+        top = random.randint(0, ds_H - self.target_H)
+        left = random.randint(0, ds_W - self.target_W)
+
+        crop = functional.crop(img=downscaled_img, top=top, left=left, height=self.target_H, width=self.target_W)
+
+        return crop
+
+    def _eligible_scales(self, img: Tensor) -> tuple[float, ...]:
+        H, W = img.shape[-2:]
+        eligible_scales = []
+        for scale in self.scales:
+            if H >= self.target_H * scale and W >= self.target_W * scale:
+                eligible_scales.append(scale)
+        return tuple(eligible_scales)
+
 
 
 def denormalize(img: Tensor, mean: Tuple[float, ...], std: Tuple[float, ...]) -> Tensor:

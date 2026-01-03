@@ -65,9 +65,9 @@ Modele były trenowane z użyciem sumy czterech zbiorów obrazów:
 	\item{\textbf{CLIC}} --- zestaw wysokiej jakości zdjęć wykorzystywany w konkursach kompresji obrazu --- 585 obrazów.
 	\item{\textbf{LSDIR}} --- duży zbiór obrazów przeznaczony do ogólnych zadań rekonstrukcji obrazu. --- 5000 obrazów.
 \end{itemize}
-Powszechnie stosowanych w zadaniach kompresji oraz innych polegających na rekonstrukcji obrazów, np. w superrozdzielczości. Charakteryzują się dużą różnorodnością tekstur i struktur, wysoką jakością, a także dość dużą rozdzielczością, w szczególności w zestawieniu z wieloma popularnymi w głębokim uczeniu zbiorami, np. ImageNet, MS COCO, czy Google Open Images. Cechy ta pozwalają sieciom na budowanie wzorców różnorodnych struktur, w tym takich o złożonej szczegółowości. Do sieci przekazywano obrazy o rozmiarze \( 384 \times 384 \) pikseli, dlatego każdy obraz przed wprowadzeniem do sieci kadrowano w losowym miejscu do tego rozmiaru. Użyty zbiór treningowy liczy łącznie 9035 obrazów. W istocie łączna liczba próbek treningowych jest o rzędy wielkości większa, co wynika z zastosowanego dla każdego wejściowego obrazu kadrowania w losowym punkcie, co przekłada się na niemal nieograniczoną liczbę różnych wycinków.
+Powszechnie stosowanych w zadaniach kompresji oraz innych polegających na rekonstrukcji obrazów, np. w superrozdzielczości. Charakteryzują się dużą różnorodnością tekstur i struktur, wysoką jakością, a także dość dużą rozdzielczością, w szczególności w zestawieniu z wieloma popularnymi w głębokim uczeniu zbiorami, np. ImageNet, MS COCO, czy Google Open Images. Cechy ta pozwalają sieciom na budowanie wzorców różnorodnych struktur, w tym takich o złożonej szczegółowości. Do sieci przekazywano obrazy o rozmiarze \( 384 \times 384 \) pikseli, dlatego każdy obraz przed wprowadzeniem do sieci kadrowano w losowym miejscu do tego rozmiaru. Użyty zbiór treningowy liczy łącznie 9035 obrazów. W istocie łączna liczba próbek treningowych jest o rzędy wielkości większa, co wynika z zastosowanego dla każdego wejściowego obrazu kadrowania w losowym punkcie, co przekłada się na niemal nieograniczoną liczbę różnych wycinków. Dodatkowo losowo wybrane próbki wycinano dwu- lub czterokrotnie większe, a następnie skalowane w dół z użyciem interpolacji obszarowej.
 
-Aby uniknąć problemu dużej rozpiętości gradientów, w zależności od wartości w danych wejściowych, obrazy skalowano z zakresu \( \left[ 0; 255 \right]\) do zakresu \( \left[ 0; 1 \right]\). Ponadto, zgodnie z dobrą praktyką, wartości są standaryzowane, co zapewnia stabilniejsze gradienty i szybszą konwergencję\cite{ioffe2015batchnormalizationacceleratingdeep}.
+Aby uniknąć problemu dużej rozpiętości gradientów, w zależności od wartości w danych wejściowych, obrazy skalowano z zakresu \( \left[ 0, 255 \right]\) do zakresu \( \left[ 0, 1 \right]\). Ponadto, zgodnie z dobrą praktyką, wartości są standaryzowane, co zapewnia stabilniejsze gradienty i szybszą konwergencję\cite{ioffe2015batchnormalizationacceleratingdeep}.
 
 \subsubsection{Struktura kodu źródłowego}
 Katalog projektu gromadzi wiele plików, m.in. pliki źródłowe czy konfiguracje treningów, dlatego zostały one umieszczone w strukturze podkatalogów:
@@ -119,14 +119,14 @@ Celem optymalizacji wskazanej sieci neuronowej jest optymalizacja kompromisu pom
 \end{equation}
 \noindent gdzie:
 \begin{itemize}
-	\item $f : \mathcal{X} \to \mathbb{R}^d$ — funkcja kodująca enkoder,
-	\item $\mathbf{u} \sim \mathcal{U}(-\frac{1}{2}, \frac{1}{2})^{d}$ — szum w przestrzeni ukrytej,
-	\item $g : \mathbb{R}^d \to \mathcal{X}$ — funkcja dekodująca,
-	\item $\rho(\cdot,\cdot)$ — funkcja błędu rekonstrukcji,
-	\item $\lambda > 0$ — współczynnik kontrolujący kompromis między średnią bitową a zniekształceniem.
+	\item $f : \mathcal{X} \to \mathbb{R}^d$ --- funkcja kodująca enkoder,
+	\item $\mathbf{u} \sim \mathcal{U}(-\frac{1}{2}, \frac{1}{2})^{d}$ --- szum w przestrzeni ukrytej,
+	\item $g : \mathbb{R}^d \to \mathcal{X}$ --- funkcja dekodująca,
+	\item $\rho(\cdot,\cdot)$ --- funkcja błędu rekonstrukcji,
+	\item $\lambda > 0$ --- współczynnik kontrolujący kompromis między średnią bitową a zniekształceniem.
 \end{itemize}
 
-Błąd rekonstrukcji może być wyznaczony na różne sposoby. Najprostszym jest obliczenie różnicy pomiędzy wartościami pikselami obrazu oryginalnego i zrekonstruowanego, wyrażonego najczęściej w postaci MSE i PSNR wprowadzonych w pierwszym rozdziale. Miary te są wygodne w kontekście optymalizacji celu w sieciach neuronowych --- są proste do wyliczenia oraz różniczkowalne, co pozytywnie wpływa na wydajność i konwergencję. Ponadto duże różnice są silnie karane, ze względu na kwadrat, co pełni rolę regularyzacji. Z powodu wskazanych zalet w niniejszej pracy zastosowano MSE jako składnik funkcji celu. 
+Błąd rekonstrukcji może być wyznaczony na różne sposoby. Najprostszym jest obliczenie różnicy pomiędzy wartościami pikselami obrazu oryginalnego i zrekonstruowanego, wyrażonego najczęściej w postaci MSE i PSNR wprowadzonych w pierwszym rozdziale. Miary te są wygodne w kontekście optymalizacji celu w sieciach neuronowych --- są proste do wyliczenia oraz różniczkowalne, co pozytywnie wpływa na wydajność i konwergencję. Ponadto duże różnice są silnie karane, ze względu na kwadrat, co pełni rolę regularyzacji. Z powodu wskazanych zalet w niniejszej pracy zastosowano MSE jako składnik funkcji celu.
 
 Wadą MSE jest to, że niewystarczająco odwzorowuje percepcję obrazów przez ludzi, co powoduje, że rekonstrukcje z niskim błędem mogą być subiektywnie postrzegane jako gorsze niż inne rekonstrukcje o wyższym błędzie\cite{girod1993whatswrongmse}. W odpowiedzi na ten problem opracowano miary SSIM\cite{wang2004ssim} i MS-SSIM\cite{1292216}, które porównują luminancję, kontrast i strukturę obrazu, co w znacznie większym stopniu odpowiada ludzkiej percepcji. Ponadto te techniki analizują obrazy w oknach \( 11 \times 11 \) pikseli, co pomaga wykrywać lokalne artefakty. Mając na uwadze powyższe, w niniejszej pracy przyjęto funkcję błędu rekonstrukcji będącą sumą ważoną MSE i MS-SSIM w proporcji 9:1.
 
