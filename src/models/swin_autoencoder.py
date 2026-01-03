@@ -4,21 +4,23 @@ from torch.utils.checkpoint import checkpoint
 from torch import nn, Tensor
 from torchvision.models.swin_transformer import ShiftedWindowAttentionV2
 from torchvision.ops import StochasticDepth, MLP, Permute
+
 from src.utils.initializers import initialize_weights
+from src.utils.torch_utils import get_boundary_mask
 
 
 class PatchReconstruction(nn.Module):
     def __init__(self, dim):
         super().__init__()
-        self.linear = nn.Linear(dim, 3 * 16)
+        self.upscale = nn.Sequential(
+            nn.Upsample(scale_factor=4, mode='bilinear', align_corners=False),
+            nn.Conv2d(dim, 3, kernel_size=5, padding=2)
+        )
         self.leaky_clamp = LeakyClamp(0.0, 1.0, 0.01)
-        self.pixel_shuffle = nn.PixelShuffle(upscale_factor=4)
 
     def forward(self, x):
-        x = self.linear(x)
-
         x = x.permute(0, 3, 1, 2)
-        x = self.pixel_shuffle(x)
+        x = self.upscale(x)
 
         if self.training:
             x = self.leaky_clamp(x)
@@ -65,15 +67,26 @@ class SwinTransformerDecoder(nn.Module):
         self.stages = nn.ModuleList(stages)
         self.reconstruction = PatchReconstruction(stage_dims[-1])
         self.s_proj = nn.Conv2d(bottleneck_dim, stage_dims[0], kernel_size=1)
-
+        self.mask_fusions = nn.ModuleList(
+            [nn.Sequential(
+                Permute([0, 3, 1, 2]),
+                nn.Conv2d(stage_dims[i] + 1, stage_dims[i], kernel_size=1),
+                Permute([0, 2, 3, 1])
+            ) for i in range(n)]
+        )
         initialize_weights(self)
 
     def forward(self, x):
-        x = x.permute(0, 3, 1, 2)
         x = self.s_proj(x)
         x = x.permute(0, 2, 3, 1)
-        for stage in self.stages:
-            x = stage(x)
+        for i in range(len(self.stages)):
+            B, H, W, C = x.shape
+            mask = get_boundary_mask(H, W, x.device)
+            mask = mask.expand(B, -1, -1, -1)
+            x = torch.concat([x, mask], dim=3)
+            x = self.mask_fusions[i](x)
+            x = self.stages[i](x)
+
         x = self.reconstruction(x)
         return x
 
@@ -118,16 +131,27 @@ class SwinTransformerDecoderStage(nn.Module):
             Permute([0, 2, 3, 1])
         )
         self.upscale = nn.Sequential(
-            nn.Linear(in_dim, out_dim * 4),
             Permute([0, 3, 1, 2]),
-            nn.PixelShuffle(upscale_factor=2),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
+            nn.Conv2d(in_dim, out_dim, kernel_size=3, padding=1),
             Permute([0, 2, 3, 1]),
             nn.LayerNorm(out_dim)
+        )
+        self.mask_fusion = nn.Sequential(
+            Permute([0, 3, 1, 2]),
+            nn.Conv2d(in_dim + 1, in_dim, kernel_size=1),
+            Permute([0, 2, 3, 1])
         )
 
     def forward(self, x):
         x = self.igdn(x)
         if self.in_dim != self.out_dim:
+            B, H, W, C = x.shape
+            mask = get_boundary_mask(H, W, x.device)
+            mask = mask.expand(B, -1, -1, -1)
+            x = torch.concat([x, mask], dim=3)
+            x = self.mask_fusion(x)
+
             x = self.upscale(x)
         for i in range(self.depth):
             if self.checkpointing:
@@ -152,7 +176,8 @@ class SwinTransformerDecoderBlock(nn.Module):
         super().__init__()
         self.norm1 = nn.LayerNorm(dim)
         self.norm2 = nn.LayerNorm(dim)
-        self.attn = ShiftedWindowAttentionV2(dim=dim, window_size=window_size, num_heads=num_heads, shift_size=shift_size, attention_dropout=attention_dropout)
+        self.attn = ShiftedWindowAttentionV2(dim=dim, window_size=window_size, num_heads=num_heads,
+                                             shift_size=shift_size, attention_dropout=attention_dropout)
         self.mlp = MLP(dim, [int(dim * mlp_ratio), dim],
                        activation_layer=nn.GELU,
                        inplace=None, dropout=dropout)

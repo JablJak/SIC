@@ -58,8 +58,12 @@ class RGBCompression(nn.Module):
         if not self.noresize:
             img = self.crop(img)
         img = functional.convert_image_dtype(img, torch.float)
-        norm_img = functional.normalize(img, mean=list(self.mean), std=list(self.std))
-        return norm_img, img
+        if self.normalize:
+            norm_img = functional.normalize(img, mean=list(self.mean), std=list(self.std))
+            return norm_img, img
+        else:
+            return img, img
+
 
 
 class RGBDecompression(nn.Module):

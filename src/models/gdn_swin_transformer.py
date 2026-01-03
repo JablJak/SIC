@@ -3,6 +3,7 @@ from typing import Optional, Callable, Any, cast
 
 import torch
 from compressai.layers import GDN, GDN1
+from piqa.utils.functional import downsample
 from torch import nn, Tensor
 from torch.utils.checkpoint import checkpoint_sequential
 from torchvision.models._api import register_model, WeightsEnum
@@ -13,15 +14,15 @@ from torchvision.ops import Permute, MLP
 
 from src.models.swin_autoencoder import SwinTransformerDecoder
 from src.utils.initializers import initialize_weights
+from src.utils.torch_utils import get_boundary_mask
 
 
 class VariableDepthPatchMerging(nn.Module):
-    def __init__(self, in_dim: int, out_dim: int, norm_layer: Callable[..., nn.Module] = nn.LayerNorm):
+    def __init__(self, in_dim: int, out_dim: int):
         super().__init__()
         self.in_dim = in_dim
         self.out_dim = out_dim
-        self.reduction = nn.Linear(in_dim, out_dim, bias=False)
-        self.norm = norm_layer(out_dim)  # difference
+        self.downsample = nn.Conv2d(in_dim, out_dim, kernel_size=3, stride=2, padding=1, bias=False)
 
     def forward(self, x: Tensor):
         """
@@ -30,28 +31,13 @@ class VariableDepthPatchMerging(nn.Module):
         Returns:
             Tensor with layout of [..., H/2, W/2, 2*C]
         """
-        x = _patch_merging_pad(x)
-        x = self.reduction(x)  # ... H/2 W/2 2*C
-        x = self.norm(x)
+        x = x.permute(0, 3, 1, 2)
+        x = self.downsample(x)
+        x = x.permute(0, 2, 3, 1)
         return x
 
 
-class SwinTransformerBlockMixed(SwinTransformerBlock):
-    """
-    Swin Transformer V2 Block.
-    Args:
-        dim (int): Number of input channels.
-        num_heads (int): Number of attention heads.
-        window_size (List[int]): Window size.
-        shift_size (List[int]): Shift size for shifted window attention.
-        mlp_ratio (float): Ratio of mlp hidden dim to embedding dim. Default: 4.0.
-        dropout (float): Dropout rate. Default: 0.0.
-        attention_dropout (float): Attention dropout rate. Default: 0.0.
-        stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
-        norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm.
-        attn_layer (nn.Module): Attention layer. Default: ShiftedWindowAttentionV2.
-    """
-
+class MaskedSwinTransformerBlock(SwinTransformerBlock):
     def __init__(
         self,
         dim: int,
@@ -109,7 +95,8 @@ class GDNSwinTransformer(nn.Module):
 
         self.patch_embed = nn.Sequential(
             nn.Conv2d(
-                3, embed_dim, kernel_size=(patch_size[0], patch_size[1]), stride=(patch_size[0], patch_size[1])
+                3, embed_dim, kernel_size=(patch_size[0]+1, patch_size[1]+1),
+                stride=(patch_size[0], patch_size[1]), padding=((patch_size[0]+1)//2, (patch_size[1]+1)//2),
             ),
             Permute([0, 2, 3, 1]),
             norm_layer(embed_dim),
@@ -118,7 +105,8 @@ class GDNSwinTransformer(nn.Module):
         self.stages = nn.ModuleList()
         self.downsamplers = nn.ModuleList()
         self.gdns = nn.ModuleList()
-        self.a_proj = nn.Conv2d(stage_dims[-1], bottleneck_dim, kernel_size=1)
+        self.a_proj = nn.Conv2d(stage_dims[-1] + 1, bottleneck_dim, kernel_size=1)
+        self.mask_fusions = nn.ModuleList()
 
         total_stage_blocks = sum(depths)
         stage_block_id = 0
@@ -143,30 +131,57 @@ class GDNSwinTransformer(nn.Module):
                 GDN1(stage_dims[i_stage + 1] if i_stage + 1 < len(depths) else stage_dims[i_stage]),
                 Permute([0, 2, 3, 1])
             ))
-
+            self.mask_fusions.append(nn.Sequential(
+                Permute([0, 3, 1, 2]),
+                nn.Conv2d(dim + 1, dim, kernel_size=1),
+                Permute([0, 2, 3, 1])
+            ))
             if i_stage < (len(depths) - 1):
                 next_dim = stage_dims[i_stage+1]
-                self.downsamplers.append(downsample_layer(4 * dim, next_dim, norm_layer))
-
+                self.downsamplers.append(downsample_layer(dim, next_dim))
+        self.mask_fusions.append(nn.Conv2d(bottleneck_dim + 1, bottleneck_dim, kernel_size=1))
         initialize_weights(self)
 
 
     def forward(self, x):
+        x = x - 0.5
         x = self.patch_embed(x)
-
         for i in range(len(self.stages)):
             x = x.to(next(self.stages[i].parameters()).device)
+
+            B, H, W, C = x.shape
+            mask = get_boundary_mask(H, W, x.device)
+            mask = mask.expand(B, -1, -1, -1)
+            x = torch.concat([x, mask], dim=3)
+            x = self.mask_fusions[i](x)
+
             if self.checkpointing:
                 x = checkpoint_sequential(self.stages[i], int(len(cast(nn.Sequential, self.stages[i]))), x, use_reentrant=False)
             else:
                 x = self.stages[i](x)
             if i < len(self.downsamplers):
+                mask = get_boundary_mask(H, W, x.device)
+                mask = mask.expand(B, -1, -1, -1)
+                x = torch.concat([x, mask], dim=3)
+                x = self.mask_fusions[i](x)
+
                 x = self.downsamplers[i](x)
             x = self.gdns[i](x)
 
+
+        B, H, W, C = x.shape
+        mask = get_boundary_mask(H, W, x.device)
+        mask = mask.expand(B, -1, -1, -1)
+        x = torch.concat([x, mask], dim=3)
+
         x = x.permute(0, 3, 1, 2)
         x = self.a_proj(x)
-        x = x.permute(0, 2, 3, 1)
+
+        B, C, H, W = x.shape
+        mask = get_boundary_mask(H, W, x.device, mode="nchw")
+        mask = mask.expand(B, -1, -1, -1)
+        x = torch.concat([x, mask], dim=1)
+        x = self.mask_fusions[-1](x)
         return x
 
 

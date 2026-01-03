@@ -207,10 +207,8 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
     def forward(self, x: Tensor):
         y = self.g_a(x)
         if not self.no_compress:
-            y = y.permute(0, 3, 1, 2)
             y_out = self.latent_codec(y)
             y_hat = y_out["y_hat"]
-            y_hat = y_hat.permute(0, 2, 3, 1)
             x_hat = self.g_s(y_hat)
             return {
                 "x_hat": x_hat,
@@ -226,16 +224,12 @@ class SwinTransformerCompressionAutoencoder(SimpleVAECompressionModel):
 
     def compress(self, x):
         y = self.g_a(x)
-        plt.hist(y.cpu().numpy(), bins=100, density=True, alpha=0.6, label='Faktyczne y (Encoder)')
-        plt.show()
-        y = y.permute(0, 3, 1, 2)
         outputs = self.latent_codec.compress(y)
         return outputs
 
     def decompress(self, *args, **kwargs):
         y_out = self.latent_codec.decompress(*args, **kwargs)
         y_hat = y_out["y_hat"]
-        y_hat = y_hat.permute(0, 2, 3, 1)
         x_hat = self.g_s(y_hat)
         return {
             "x_hat": x_hat,
