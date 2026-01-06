@@ -105,8 +105,9 @@ class GDNSwinTransformer(nn.Module):
         self.stages = nn.ModuleList()
         self.downsamplers = nn.ModuleList()
         self.gdns = nn.ModuleList()
-        self.a_proj = nn.Conv2d(stage_dims[-1] + 1, bottleneck_dim, kernel_size=1)
-        self.mask_fusions = nn.ModuleList()
+        # self.a_proj = nn.Conv2d(stage_dims[-1] + 1, bottleneck_dim, kernel_size=1)
+        self.a_proj = nn.Conv2d(stage_dims[-1], bottleneck_dim, kernel_size=1)
+        # self.mask_fusions = nn.ModuleList()
 
         total_stage_blocks = sum(depths)
         stage_block_id = 0
@@ -131,57 +132,57 @@ class GDNSwinTransformer(nn.Module):
                 GDN1(stage_dims[i_stage + 1] if i_stage + 1 < len(depths) else stage_dims[i_stage]),
                 Permute([0, 2, 3, 1])
             ))
-            self.mask_fusions.append(nn.Sequential(
-                Permute([0, 3, 1, 2]),
-                nn.Conv2d(dim + 1, dim, kernel_size=1),
-                Permute([0, 2, 3, 1])
-            ))
+            # self.mask_fusions.append(nn.Sequential(
+            #     Permute([0, 3, 1, 2]),
+            #     nn.Conv2d(dim + 1, dim, kernel_size=1),
+            #     Permute([0, 2, 3, 1])
+            # ))
             if i_stage < (len(depths) - 1):
                 next_dim = stage_dims[i_stage+1]
                 self.downsamplers.append(downsample_layer(dim, next_dim))
-        self.mask_fusions.append(nn.Conv2d(bottleneck_dim + 1, bottleneck_dim, kernel_size=1))
+        # self.mask_fusions.append(nn.Conv2d(bottleneck_dim + 1, bottleneck_dim, kernel_size=1))
         initialize_weights(self)
 
 
     def forward(self, x):
-        x = x - 0.5
+        x = 2 * x - 1
         x = self.patch_embed(x)
         for i in range(len(self.stages)):
             x = x.to(next(self.stages[i].parameters()).device)
-
-            B, H, W, C = x.shape
-            mask = get_boundary_mask(H, W, x.device)
-            mask = mask.expand(B, -1, -1, -1)
-            x = torch.concat([x, mask], dim=3)
-            x = self.mask_fusions[i](x)
+            #
+            # B, H, W, C = x.shape
+            # mask = get_boundary_mask(H, W, x.device)
+            # mask = mask.expand(B, -1, -1, -1)
+            # x = torch.concat([x, mask], dim=3)
+            # x = self.mask_fusions[i](x)
 
             if self.checkpointing:
                 x = checkpoint_sequential(self.stages[i], int(len(cast(nn.Sequential, self.stages[i]))), x, use_reentrant=False)
             else:
                 x = self.stages[i](x)
             if i < len(self.downsamplers):
-                mask = get_boundary_mask(H, W, x.device)
-                mask = mask.expand(B, -1, -1, -1)
-                x = torch.concat([x, mask], dim=3)
-                x = self.mask_fusions[i](x)
+                # mask = get_boundary_mask(H, W, x.device)
+                # mask = mask.expand(B, -1, -1, -1)
+                # x = torch.concat([x, mask], dim=3)
+                # x = self.mask_fusions[i](x)
 
                 x = self.downsamplers[i](x)
             x = self.gdns[i](x)
 
 
-        B, H, W, C = x.shape
-        mask = get_boundary_mask(H, W, x.device)
-        mask = mask.expand(B, -1, -1, -1)
-        x = torch.concat([x, mask], dim=3)
+        # B, H, W, C = x.shape
+        # mask = get_boundary_mask(H, W, x.device)
+        # mask = mask.expand(B, -1, -1, -1)
+        # x = torch.concat([x, mask], dim=3)
 
         x = x.permute(0, 3, 1, 2)
         x = self.a_proj(x)
 
-        B, C, H, W = x.shape
-        mask = get_boundary_mask(H, W, x.device, mode="nchw")
-        mask = mask.expand(B, -1, -1, -1)
-        x = torch.concat([x, mask], dim=1)
-        x = self.mask_fusions[-1](x)
+        # B, C, H, W = x.shape
+        # mask = get_boundary_mask(H, W, x.device, mode="nchw")
+        # mask = mask.expand(B, -1, -1, -1)
+        # x = torch.concat([x, mask], dim=1)
+        # x = self.mask_fusions[-1](x)
         return x
 
 

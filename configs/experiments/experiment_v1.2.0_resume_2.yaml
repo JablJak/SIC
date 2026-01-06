@@ -65,14 +65,14 @@ model:
     encoder_type: gdn_swin_v2_b
     encoder_embed_dim: 128
     encoder_dims: [ 128, 256, 512 ]
-    encoder_depths: [ 2, 6, 18 ]
+    encoder_depths: [ 2, 6, 20 ]
     encoder_num_heads: [ 4, 8, 16 ]
     encoder_window_size: [8, 8]
     encoder_sd_factor: 0.05
     encoder_mlp_ratio: 4
     encoder_dropout: 0
     encoder_attention_dropout: 0
-    decoder_depths: [ 18, 6, 2 ]
+    decoder_depths: [ 20, 6, 2 ]
     decoder_dims: [ 512, 512, 256, 128 ]
     decoder_num_heads: [ 16, 8, 4 ]
     decoder_window_size: [ [8, 8], [8, 8], [8, 8] ]
@@ -95,18 +95,16 @@ dataloader:
 optimizer:
   module: torch.optim.AdamW
   args:
-    lr: !!float 2e-4
-  first_lr: !!float 2e-4
-  second_lr: !!float 2e-4
-  third_lr: !!float 2e-4
-  fourth_lr: !!float 2e-4
+    lr: !!float 1e-4
+  main_lr: !!float 1.5e-4
+  conv_lr: !!float 5e-5
 
 scheduler:
   module: torch.optim.lr_scheduler.LinearLR
   enabled: true
   args:
-    total_iters: 5000
-    start_factor: 0.00001
+    total_iters: 1000
+    start_factor: 0.01
     end_factor: 1.0
     last_epoch: -1
 
@@ -129,7 +127,7 @@ loss:
 
 rd_loss:
   enabled: true
-  lambda: !!float 0.16
+  lambda: !!float 0.4
 
 epochs: 500
 log_frequency: 100
@@ -142,10 +140,10 @@ dataset_split_ratio: 0.7
 output:
   model:
     name: SWIN-LIC
-    version: 1.1.0
+    version: 1.2.0
 
 project_name: INZ
-task_name: v1.1.0 SWIN-B Transformer Autoencoder based Image Compression
+task_name: v1.2.0 SWIN-B Transformer Autoencoder based Image Compression
 comment: |
  - Binary border channel
  - Conv and upscale for scaling

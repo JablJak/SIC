@@ -19,10 +19,10 @@ if __name__ == '__main__':
     device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
     print("Device:", device)
     models = [
-        ("SWIN-LIC_1.0.1", "gdn_swin_v2_b"),
+        ("SWIN-LIC_1.1.0", "gdn_swin_v2_b"),
     ]
 
-    transform = RGBCompression(crop_size=[512, 512], normalize=True, mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD)
+    transform = RGBCompression(crop_size=[512, 512], normalize=False, mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD)
     target_transform = RGBCompression(crop_size=[512, 512], noresize=True, mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD)
 
     dataset = KodakDataset(transform=transform, target_transform=target_transform)
@@ -32,24 +32,24 @@ if __name__ == '__main__':
         psnr_sum = 0
         bpp_sum = 0
         ssim_sum = 0
-        dataloader_iter = iter(torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=False))
+        dataloader_iter = iter(torch.utils.data.DataLoader(dataset, batch_size=2, shuffle=False, num_workers=4, pin_memory=False))
         model: SwinTransformerCompressionAutoencoder = typing.cast(SwinTransformerCompressionAutoencoder, model_from_config(
             {
                 "module": "src.models.swin_compression.SwinTransformerCompressionAutoencoder",
-                "weights": "SWIN-LIC_1.0.1",
+                # "weights": "SWIN-LIC_1.0.1",
                 "args": {
                     "pretrained_encoder": False,
                     "encoder_type": "gdn_swin_v2_b",
                     "encoder_embed_dim": 128,
                     "encoder_dims": [128, 256, 512],
-                    "encoder_depths": [2, 6, 24],
+                    "encoder_depths": [2, 6, 18],
                     "encoder_num_heads": [4, 8, 16],
                     "encoder_window_size": [8, 8],
                     "encoder_sd_factor": 0.05,
                     "encoder_mlp_ratio": 4,
                     "encoder_dropout": 0,
                     "encoder_attention_dropout": 0,
-                    "decoder_depths": [24, 6, 2],
+                    "decoder_depths": [18, 6, 2],
                     "decoder_dims": [512, 512, 256, 128],
                     "decoder_num_heads": [16, 8, 4],
                     "decoder_window_size": [[8, 8], [8, 8], [8, 8]],
@@ -62,12 +62,12 @@ if __name__ == '__main__':
                     "checkpointing": False,
                 }
             }))
-        # state = torch.load("/run/media/jakub/Dane/Studia/INZ/checkpoint/last_checkpoint.pth", map_location='cpu')
-        # model.load_state_dict(state['model'])
+        state = torch.load("/run/media/jakub/Dane/Studia/INZ/checkpoint/last_checkpoint.pth", map_location='cpu')
+        model.load_state_dict(state['model'])
         # print(state['model'].keys())
         model.eval()
-        # model.update(force=True, update_quantiles=True)
-        # torch.save(model.state_dict(), f"../../models/{m[0]}.pth")
+        model.update(force=True, update_quantiles=True)
+        torch.save(model.state_dict(), f"../../models/{m[0]}.pth")
         print(model)
         model.to(device)
 
@@ -81,7 +81,7 @@ if __name__ == '__main__':
                 b_repr, shape = compress_output['strings'], compress_output['shape']
                 x_recon = model.decompress(b_repr, shape)['x_hat']
 
-            output_transform = RGBDecompression(denorm=True, mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD).to(x_batch.device)
+            output_transform = RGBDecompression(denorm=False, mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD).to(x_batch.device)
 
             in_img: PIL.Image.Image = output_transform(x_batch)[0] # TODO: Examine
             out_img: PIL.Image.Image = to_pil_image(x_recon[0])

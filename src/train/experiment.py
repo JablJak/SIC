@@ -29,48 +29,27 @@ class Experiment:
                 self.loss = initializers.rd_loss_wrapper_from_config(distortion_loss, self.config['rd_loss'])
         except KeyError:
             pass
-        first_group_keys, second_group_keys, third_group_keys, fourth_group_keys, default_group_keys = [], [], [], [], []
-        for name, param in self.model.parameters(named=True):
-            if re.match(r"g_s\.stages\.3.*", name):
-                first_group_keys.append(param)
-            elif re.match(r"g_s\.stages\.2.*", name):
-                second_group_keys.append(param)
-            elif re.match(r"g_a\.(stages|residual_norms_downsamplers)\.[01].*", name):
-                pass
-            elif re.match(r"g_(a\.stages\.2|s\.stages\.1).*", name):
-                third_group_keys.append(param)
-            elif re.match(r"g_(a\.stages\.3|s\.stages\.0).*", name):
-                fourth_group_keys.append(param)
-            else:
-                default_group_keys.append(param)
 
+        ordinary_params_ids = {id(p): p  for n, p in self.model.parameters(named=True)}
+        conv_group_keys = {}
+        for model in self.model.modules():
+            if isinstance(model, (torch.nn.Conv2d, torch.nn.ConvTranspose2d)):
+                for name, param in model.named_parameters():
+                    if id(param) in ordinary_params_ids:
+                        conv_group_keys[id(param)] = param
+
+        remaining_group_keys = {k: v for k, v in ordinary_params_ids.items() if k not in conv_group_keys}
         self.param_groups = [
             {
-                'params': first_group_keys,
-                'lr': self.config['optimizer']['first_lr']
+                'params': remaining_group_keys.values(),
+                'lr': self.config['optimizer']['main_lr']
             },
             {
-                'params': second_group_keys,
-                'lr': self.config['optimizer']['second_lr']
-            },
-            {
-                'params': third_group_keys,
-                'lr': self.config['optimizer']['third_lr']
-            },
-            # {
-            #     'params': fourth_group_keys,
-            #     'lr': self.config['optimizer']['fourth_lr']
-            # },
-            {
-                'params': default_group_keys,
-                'lr': self.config['optimizer']['args']['lr']
+                'params': conv_group_keys.values(),
+                'lr': self.config['optimizer']['conv_lr']
             }
         ]
         self.optimizer = initializers.optimizer_from_config(self.param_groups, self.config['optimizer'])
-        # for i, param_group in enumerate(self.optimizer.param_groups):
-        #     param_group['initial_lr'] = 1e-4
-        # for i, param_group in enumerate(self.optimizer.param_groups):
-        #     param_group['lr'] = 1e-4
         self.scheduler = initializers.scheduler_from_config(self.optimizer, self.config['scheduler'])
         self.aux_lr = self.config['aux_optimizer']['args']['lr']
         self.aux_optimizer = (

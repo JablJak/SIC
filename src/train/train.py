@@ -19,11 +19,10 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, criterion, 
            aux_scheduler, num_epochs, device, scheduler, logger=None, task=None, start_epoch=1, global_step=0,
            log_frequency=100, accumulation_steps=4):
     # Train
-    alpha_scheduler = LinearScheduler(total_steps=100, initial_value=1.0, final_value=1.0)
     optimize_bpp = False
     max_norm_value = 2
     temp_checkpoint_frequency = 1000
-    persist_checkpoint_frequency = 1000
+    persist_checkpoint_frequency = 5000
     eval_frequency = 500
     test_frequency = 1000
     torch.cuda.empty_cache()
@@ -98,7 +97,8 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, criterion, 
                         logger.report_scalar(title="Aux loss", series="train", value=avg_interval_aux_loss, iteration=global_step)
                         logger.report_scalar(title="PSNR", series="train", value=avg_interval_psnr, iteration=global_step)
                         logger.report_scalar(title="SSIM", series="train", value=avg_interval_ssim, iteration=global_step)
-                        logger.report_scalar(title="LR", series="train", value=optimizer.param_groups[3]['lr'], iteration=global_step)
+                        logger.report_scalar(title="LR", series="train", value=optimizer.param_groups[0]['lr'], iteration=global_step)
+                        logger.report_scalar(title="Conv LR", series="train", value=optimizer.param_groups[1]['lr'], iteration=global_step)
                         logger.report_scalar(title="Aux LR", series="train", value=aux_optimizer.param_groups[0]['lr'], iteration=global_step)
                         if avg_interval_bpp != 0:
                             logger.report_scalar(title="bpp", series="train", value=avg_interval_bpp, iteration=global_step)
@@ -205,11 +205,6 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, criterion, 
                     print(message)
                 gc.collect()
                 torch.cuda.empty_cache()
-
-            alpha_scheduler.step()
-            for module in model.modules():
-                if isinstance(module, GradualIntroductionLayer):
-                    module.set_alpha(alpha_scheduler.get_value())
 
             if aux_optimizer is not None and global_step % test_frequency == 0:
                 avg_test_psnr = 0
@@ -350,7 +345,7 @@ if __name__ == '__main__':
         )
 
     logger = task.get_logger() if task is not None else None
-    overwrite_lrs(optimizer, aux_optimizer, experiment)
+    # overwrite_lrs(optimizer, aux_optimizer, experiment)
     trained_model = _train(
         model=model,
         train_dataloader=train_dataloader,

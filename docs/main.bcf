@@ -2375,19 +2375,21 @@
     <bcf:citekey order="8" intorder="1">4082265</bcf:citekey>
     <bcf:citekey order="9" intorder="1">hendrycks2023gaussianerrorlinearunits</bcf:citekey>
     <bcf:citekey order="10" intorder="1">attentionisallyouneed2017</bcf:citekey>
-    <bcf:citekey order="11" intorder="1">he2021checkerboardcontextmodelefficient</bcf:citekey>
-    <bcf:citekey order="12" intorder="1">hendrycks2023gaussianerrorlinearunits</bcf:citekey>
-    <bcf:citekey order="13" intorder="1">begaint2020compressaipytorchlibraryevaluation</bcf:citekey>
-    <bcf:citekey order="14" intorder="1">ioffe2015batchnormalizationacceleratingdeep</bcf:citekey>
-    <bcf:citekey order="15" intorder="1">arezki2024universalendtoendneuralnetwork</bcf:citekey>
-    <bcf:citekey order="16" intorder="1">girod1993whatswrongmse</bcf:citekey>
-    <bcf:citekey order="17" intorder="1">wang2004ssim</bcf:citekey>
-    <bcf:citekey order="18" intorder="1">1292216</bcf:citekey>
-    <bcf:citekey order="19" intorder="1">chen2023symbolicdiscoveryoptimizationalgorithms</bcf:citekey>
-    <bcf:citekey order="20" intorder="1">liu2024sophiascalablestochasticsecondorder</bcf:citekey>
-    <bcf:citekey order="21" intorder="1">cornell_opt_wiki_adamw</bcf:citekey>
-    <bcf:citekey order="22" intorder="1">wangmsssim</bcf:citekey>
-    <bcf:citekey order="23" intorder="1">Popel_2018</bcf:citekey>
+    <bcf:citekey order="11" intorder="1">attentionisallyouneed2017</bcf:citekey>
+    <bcf:citekey order="12" intorder="1">attentionisallyouneed2017</bcf:citekey>
+    <bcf:citekey order="13" intorder="1">he2021checkerboardcontextmodelefficient</bcf:citekey>
+    <bcf:citekey order="14" intorder="1">hendrycks2023gaussianerrorlinearunits</bcf:citekey>
+    <bcf:citekey order="15" intorder="1">begaint2020compressaipytorchlibraryevaluation</bcf:citekey>
+    <bcf:citekey order="16" intorder="1">ioffe2015batchnormalizationacceleratingdeep</bcf:citekey>
+    <bcf:citekey order="17" intorder="1">arezki2024universalendtoendneuralnetwork</bcf:citekey>
+    <bcf:citekey order="18" intorder="1">girod1993whatswrongmse</bcf:citekey>
+    <bcf:citekey order="19" intorder="1">wang2004ssim</bcf:citekey>
+    <bcf:citekey order="20" intorder="1">1292216</bcf:citekey>
+    <bcf:citekey order="21" intorder="1">chen2023symbolicdiscoveryoptimizationalgorithms</bcf:citekey>
+    <bcf:citekey order="22" intorder="1">liu2024sophiascalablestochasticsecondorder</bcf:citekey>
+    <bcf:citekey order="23" intorder="1">cornell_opt_wiki_adamw</bcf:citekey>
+    <bcf:citekey order="24" intorder="1">wangmsssim</bcf:citekey>
+    <bcf:citekey order="25" intorder="1">Popel_2018</bcf:citekey>
   </bcf:section>
   <!-- SORTING TEMPLATES -->
   <bcf:sortingtemplate name="none">
