@@ -105,8 +105,6 @@ class GDNSwinTransformer(nn.Module):
         self.downsamplers = nn.ModuleList()
         self.gdns = nn.ModuleList()
         self.a_proj = nn.Conv2d(stage_dims[-1], bottleneck_dim, kernel_size=1)
-        self.mask_fusions = nn.ModuleList()
-
         total_stage_blocks = sum(depths)
         stage_block_id = 0
 
@@ -130,11 +128,6 @@ class GDNSwinTransformer(nn.Module):
                 GDN1(stage_dims[i_stage + 1] if i_stage + 1 < len(depths) else stage_dims[i_stage]),
                 Permute([0, 2, 3, 1])
             ))
-            self.mask_fusions.append(nn.Sequential(
-                Permute([0, 3, 1, 2]),
-                nn.Conv2d(dim + 1, dim, kernel_size=1),
-                Permute([0, 2, 3, 1])
-            ))
             if i_stage < (len(depths) - 1):
                 next_dim = stage_dims[i_stage+1]
                 self.downsamplers.append(downsample_layer(dim, next_dim))
@@ -146,12 +139,6 @@ class GDNSwinTransformer(nn.Module):
         x = self.patch_embed(x)
         for i in range(len(self.stages)):
             x = x.to(next(self.stages[i].parameters()).device)
-
-            B, H, W, C = x.shape
-            mask = get_boundary_mask(H, W, x.device)
-            mask = mask.expand(B, -1, -1, -1)
-            x = torch.concat([x, mask], dim=3)
-            x = self.mask_fusions[i](x)
 
             if self.checkpointing:
                 x = checkpoint_sequential(self.stages[i], int(len(cast(nn.Sequential, self.stages[i]))), x, use_reentrant=False)

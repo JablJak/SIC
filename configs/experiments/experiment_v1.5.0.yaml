@@ -146,5 +146,4 @@ project_name: INZ
 task_name: v1.5.0 SWIN-LIC
 comment: |
   - Conv and upscale for scaling
-  - Reduced boundary mask with lower value
   - Norm after upscale

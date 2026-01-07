@@ -14,31 +14,31 @@
 \contentsline {subsection}{\numberline {2.4\relax .\enspace }Sztuczne sieci neuronowe}{22}{subsection.2.4}%
 \contentsline {subsubsection}{\numberline {2.4.1\relax .\enspace }Funkcje aktywacji}{22}{subsubsection.2.4.1}%
 \contentsline {subsubsection}{\numberline {2.4.2\relax .\enspace }Struktury i architektury w sieciach neuronowych}{26}{subsubsection.2.4.2}%
-\contentsline {section}{\numberline {3\relax .\enspace }Opis rozwi\k azania}{34}{section.3}%
-\contentsline {subsection}{\numberline {3.1\relax .\enspace }Architektura modelu}{34}{subsection.3.1}%
-\contentsline {subsubsection}{\numberline {3.1.1\relax .\enspace }Og\'olna koncepcja i typ sieci}{34}{subsubsection.3.1.1}%
-\contentsline {subsubsection}{\numberline {3.1.2\relax .\enspace }Budowa sieci}{34}{subsubsection.3.1.2}%
-\contentsline {subsubsection}{\numberline {3.1.3\relax .\enspace }Zastosowane funkcje aktywacji}{36}{subsubsection.3.1.3}%
-\contentsline {subsection}{\numberline {3.2\relax .\enspace }Implementacja sieci neuronowej}{37}{subsection.3.2}%
-\contentsline {subsubsection}{\numberline {3.2.1\relax .\enspace }Wykorzystane technologie i biblioteki}{37}{subsubsection.3.2.1}%
-\contentsline {subsubsection}{\numberline {3.2.2\relax .\enspace }Przygotowanie i przetwarzanie danych}{37}{subsubsection.3.2.2}%
-\contentsline {subsubsection}{\numberline {3.2.3\relax .\enspace }Struktura kodu \'zr\'od\IeC {\l }owego}{38}{subsubsection.3.2.3}%
-\contentsline {subsection}{\numberline {3.3\relax .\enspace }Realizacja treningu sieci}{39}{subsection.3.3}%
-\contentsline {subsubsection}{\numberline {3.3.1\relax .\enspace }Konfiguracje eksperyment\'ow}{39}{subsubsection.3.3.1}%
-\contentsline {subsubsection}{\numberline {3.3.2\relax .\enspace }Funkcja straty i optymalizator}{40}{subsubsection.3.3.2}%
-\contentsline {subsubsection}{\numberline {3.3.3\relax .\enspace }Metryki oceny i monitorowanie treningu}{41}{subsubsection.3.3.3}%
-\contentsline {subsubsection}{\numberline {3.3.4\relax .\enspace }\'Srodowisko obliczeniowe}{41}{subsubsection.3.3.4}%
-\contentsline {section}{\numberline {4\relax .\enspace }Wyniki}{42}{section.4}%
-\contentsline {subsection}{\numberline {4.1\relax .\enspace }Cel i plan eksperyment\'ow}{42}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2\relax .\enspace }Przebieg eksperyment\'ow}{42}{subsection.4.2}%
-\contentsline {subsubsection}{\numberline {4.2.1\relax .\enspace }Analiza procesu uczenia}{43}{subsubsection.4.2.1}%
-\contentsline {subsubsection}{\numberline {4.2.2\relax .\enspace }Wp\IeC {\l }yw hiperparametr\'ow i strategia ich doboru}{44}{subsubsection.4.2.2}%
-\contentsline {subsubsection}{\numberline {4.2.3\relax .\enspace }Zastosowane przekszta\IeC {\l }cenia}{45}{subsubsection.4.2.3}%
-\contentsline {subsection}{\numberline {4.3\relax .\enspace }Ewaluacja modelu}{45}{subsection.4.3}%
-\contentsline {subsection}{\numberline {4.4\relax .\enspace }Wizualna ocena jako\'sci rekonstrukcji}{47}{subsection.4.4}%
-\contentsline {subsection}{\numberline {4.5\relax .\enspace }Mocne i s\IeC {\l }abe strony}{48}{subsection.4.5}%
-\contentsline {section}{\numberline {5\relax .\enspace }Podsumowanie}{53}{section.5}%
-\contentsline {subsection}{\numberline {5.1\relax .\enspace }Wnioski z badania}{53}{subsection.5.1}%
-\contentsline {subsection}{\numberline {5.2\relax .\enspace }Mo\.zliwe usprawnienia}{53}{subsection.5.2}%
-\contentsline {section}{Bibliografia}{55}{section*.26}%
-\contentsline {section}{Spis rysunk\'ow}{57}{section*.26}%
+\contentsline {section}{\numberline {3\relax .\enspace }Opis rozwi\k azania}{35}{section.3}%
+\contentsline {subsection}{\numberline {3.1\relax .\enspace }Architektura modelu}{35}{subsection.3.1}%
+\contentsline {subsubsection}{\numberline {3.1.1\relax .\enspace }Og\'olna koncepcja i typ sieci}{35}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.2\relax .\enspace }Budowa sieci}{35}{subsubsection.3.1.2}%
+\contentsline {subsubsection}{\numberline {3.1.3\relax .\enspace }Zastosowane funkcje aktywacji}{37}{subsubsection.3.1.3}%
+\contentsline {subsection}{\numberline {3.2\relax .\enspace }Implementacja sieci neuronowej}{38}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1\relax .\enspace }Wykorzystane technologie i biblioteki}{38}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2\relax .\enspace }Przygotowanie i przetwarzanie danych}{38}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3\relax .\enspace }Struktura kodu \'zr\'od\IeC {\l }owego}{39}{subsubsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.3\relax .\enspace }Realizacja treningu sieci}{40}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1\relax .\enspace }Konfiguracje eksperyment\'ow}{40}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.2\relax .\enspace }Funkcja straty i optymalizator}{41}{subsubsection.3.3.2}%
+\contentsline {subsubsection}{\numberline {3.3.3\relax .\enspace }Metryki oceny i monitorowanie treningu}{42}{subsubsection.3.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.4\relax .\enspace }\'Srodowisko obliczeniowe}{42}{subsubsection.3.3.4}%
+\contentsline {section}{\numberline {4\relax .\enspace }Wyniki}{43}{section.4}%
+\contentsline {subsection}{\numberline {4.1\relax .\enspace }Cel i plan eksperyment\'ow}{43}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2\relax .\enspace }Przebieg eksperyment\'ow}{43}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1\relax .\enspace }Analiza procesu uczenia}{44}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2\relax .\enspace }Wp\IeC {\l }yw hiperparametr\'ow i strategia ich doboru}{45}{subsubsection.4.2.2}%
+\contentsline {subsubsection}{\numberline {4.2.3\relax .\enspace }Zastosowane przekszta\IeC {\l }cenia}{46}{subsubsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.3\relax .\enspace }Ewaluacja modelu}{46}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4\relax .\enspace }Wizualna ocena jako\'sci rekonstrukcji}{48}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5\relax .\enspace }Mocne i s\IeC {\l }abe strony}{49}{subsection.4.5}%
+\contentsline {section}{\numberline {5\relax .\enspace }Podsumowanie}{54}{section.5}%
+\contentsline {subsection}{\numberline {5.1\relax .\enspace }Wnioski z badania}{54}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2\relax .\enspace }Mo\.zliwe usprawnienia}{54}{subsection.5.2}%
+\contentsline {section}{Bibliografia}{55}{section*.28}%
+\contentsline {section}{Spis rysunk\'ow}{57}{section*.28}%
