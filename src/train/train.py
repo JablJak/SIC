@@ -345,7 +345,7 @@ if __name__ == '__main__':
         )
 
     logger = task.get_logger() if task is not None else None
-    # overwrite_lrs(optimizer, aux_optimizer, experiment)
+    overwrite_lrs(optimizer, aux_optimizer, experiment)
     trained_model = _train(
         model=model,
         train_dataloader=train_dataloader,

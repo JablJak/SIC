@@ -265,7 +265,15 @@ Z tej informacji, która jest reprezentowana przez wektory wzbogacone o informac
 \end{sloppypar}
 
 \paragraph{Transformer wizyjny z przesuwnym oknem.}
-Jako ostatnią wartą omówienia w niniejszej pracy należy wskazać architekturę będącą jej podstawą. Opisany w poprzedniej sekcji transformer został zaprojektowany do pracy nad tekstem, jednak szybko pojawił się nurt w badaniach, aby wykorzystać tę strukturę do zadań w wizji komputerowej. Pierwszy duży sukces odniósł model transformera wizyjnego (ang. Vision Transformer, ViT), który był w stanie pokonać najlepsze modele splotowe w teście wydajności w zadaniu klasyfikacji. Był tylko jeden problem --- ViT wymaga treningu przy użyciu ogromnej mocy obliczeniowej i setek milionów obrazów, aby osiągnąć tak dobre efekty. Dlatego też w niniejszej pracy z niego zrezygnowano, na rzecz wariacji inicjalnego transformera wizyjnego, czyli transformera z oknem przesuwnym (ang. Shifted Window Transformer, Swin Transformer).
+Jako ostatnią wartą omówienia w niniejszej pracy należy wskazać architekturę będącą jej podstawą. Opisany w poprzedniej sekcji transformer został zaprojektowany do pracy nad tekstem, jednak szybko pojawił się nurt w badaniach, aby wykorzystać tę strukturę do zadań w wizji komputerowej. Pierwszy duży sukces odniósł model transformera wizyjnego (ang. Vision Transformer, ViT), który był w stanie pokonać najlepsze modele splotowe w teście wydajności w zadaniu klasyfikacji. Rysunek \ref{fig:vit} przedstawia w uproszczeniu koncepcję działania modelu i schemat architektury. Był tylko jeden problem --- ViT wymaga treningu przy użyciu ogromnej mocy obliczeniowej i setek milionów obrazów, aby osiągnąć tak dobre efekty. Dlatego też w niniejszej pracy z niego zrezygnowano, na rzecz wariacji inicjalnego transformera wizyjnego, czyli transformera z oknem przesuwnym (ang. Shifted Window Transformer, Swin Transformer).
+
+
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=\linewidth]{vit-transformer}
+	\caption{Ogólna koncepcję działania modelu ViT i schemat architektury kodera}
+	\label{fig:vit-transformer}
+\end{figure}
 
 Zasada działania architektury Swin Transformera jest zbliżona do oryginalnego transformera, ale ma zasadnicze różnice. Pierwszą polega na tym, że podczas gdy klasyczny transformer dzieli tekst na tokeny, które to są następnie odwzorowywane na odpowiadające im wektory cech. W przypadku transformera wizyjnego tokenizacja odbywa się najczęściej za pomocą warstwy splotowej, która przekształca obszar obrazu (w przypadku Swin Transformera są to łatki o wymiarze \(4 \times 4 \) pikseli) w jednowymiarowy wektor o długości, na przykład, 96 wartości. Funkcja ta pełni jednocześnie rolę wektora cech, z pominięciem kodowania pozycyjnego. Efektem tej operacji jest przekształcenie obrazu, o najczęściej trzech kanałach RGB, do trójwymiarowej reprezentacji o głębokości, równej długości tych wektorów. W tym miejscu łatwo dostrzec analogię do mapy cech w sieciach splotowych. 
 

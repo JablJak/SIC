@@ -2,27 +2,25 @@ from functools import partial
 from typing import Optional, Callable, Any, cast
 
 import torch
-from compressai.layers import GDN, GDN1
-from piqa.utils.functional import downsample
+from compressai.layers import GDN1
 from torch import nn, Tensor
 from torch.utils.checkpoint import checkpoint_sequential
 from torchvision.models._api import register_model, WeightsEnum
-from torchvision.models._utils import handle_legacy_interface, _ovewrite_named_param
-from torchvision.models.swin_transformer import PatchMergingV2, SwinTransformerBlockV2, Swin_S_Weights, \
-    _patch_merging_pad, ShiftedWindowAttentionV2, SwinTransformerBlock, Swin_V2_S_Weights, Swin_V2_B_Weights
-from torchvision.ops import Permute, MLP
-
-from src.models.swin_autoencoder import SwinTransformerDecoder
+from torchvision.models._utils import handle_legacy_interface
+from torchvision.models.swin_transformer import  SwinTransformerBlockV2, \
+     ShiftedWindowAttentionV2, SwinTransformerBlock, Swin_V2_S_Weights, Swin_V2_B_Weights
+from torchvision.ops import Permute
 from src.utils.initializers import initialize_weights
 from src.utils.torch_utils import get_boundary_mask
 
 
 class VariableDepthPatchMerging(nn.Module):
-    def __init__(self, in_dim: int, out_dim: int):
+    def __init__(self, in_dim: int, out_dim: int, norm: Callable[..., nn.Module] = nn.LayerNorm):
         super().__init__()
         self.in_dim = in_dim
         self.out_dim = out_dim
         self.downsample = nn.Conv2d(in_dim, out_dim, kernel_size=3, stride=2, padding=1, bias=False)
+        self.norm = norm(out_dim)
 
     def forward(self, x: Tensor):
         """
@@ -34,6 +32,7 @@ class VariableDepthPatchMerging(nn.Module):
         x = x.permute(0, 3, 1, 2)
         x = self.downsample(x)
         x = x.permute(0, 2, 3, 1)
+        x = self.norm(x)
         return x
 
 
@@ -105,8 +104,7 @@ class GDNSwinTransformer(nn.Module):
         self.stages = nn.ModuleList()
         self.downsamplers = nn.ModuleList()
         self.gdns = nn.ModuleList()
-        self.a_proj = nn.Conv2d(stage_dims[-1] + 1, bottleneck_dim, kernel_size=1)
-        # self.a_proj = nn.Conv2d(stage_dims[-1], bottleneck_dim, kernel_size=1)
+        self.a_proj = nn.Conv2d(stage_dims[-1], bottleneck_dim, kernel_size=1)
         self.mask_fusions = nn.ModuleList()
 
         total_stage_blocks = sum(depths)
@@ -140,7 +138,6 @@ class GDNSwinTransformer(nn.Module):
             if i_stage < (len(depths) - 1):
                 next_dim = stage_dims[i_stage+1]
                 self.downsamplers.append(downsample_layer(dim, next_dim))
-        self.mask_fusions.append(nn.Conv2d(bottleneck_dim + 1, bottleneck_dim, kernel_size=1))
         initialize_weights(self)
 
 
@@ -161,28 +158,11 @@ class GDNSwinTransformer(nn.Module):
             else:
                 x = self.stages[i](x)
             if i < len(self.downsamplers):
-                mask = get_boundary_mask(H, W, x.device)
-                mask = mask.expand(B, -1, -1, -1)
-                x = torch.concat([x, mask], dim=3)
-                x = self.mask_fusions[i](x)
-
                 x = self.downsamplers[i](x)
             x = self.gdns[i](x)
 
-
-        B, H, W, C = x.shape
-        mask = get_boundary_mask(H, W, x.device)
-        mask = mask.expand(B, -1, -1, -1)
-        x = torch.concat([x, mask], dim=3)
-
         x = x.permute(0, 3, 1, 2)
         x = self.a_proj(x)
-
-        B, C, H, W = x.shape
-        mask = get_boundary_mask(H, W, x.device, mode="nchw")
-        mask = mask.expand(B, -1, -1, -1)
-        x = torch.concat([x, mask], dim=1)
-        x = self.mask_fusions[-1](x)
         return x
 
 

@@ -137,21 +137,10 @@ class SwinTransformerDecoderStage(nn.Module):
             Permute([0, 2, 3, 1]),
             nn.LayerNorm(out_dim)
         )
-        self.mask_fusion = nn.Sequential(
-            Permute([0, 3, 1, 2]),
-            nn.Conv2d(in_dim + 1, in_dim, kernel_size=1),
-            Permute([0, 2, 3, 1])
-        )
 
     def forward(self, x):
         x = self.igdn(x)
         if self.in_dim != self.out_dim:
-            B, H, W, C = x.shape
-            mask = get_boundary_mask(H, W, x.device)
-            mask = mask.expand(B, -1, -1, -1)
-            x = torch.concat([x, mask], dim=3)
-            x = self.mask_fusion(x)
-
             x = self.upscale(x)
         for i in range(self.depth):
             if self.checkpointing:

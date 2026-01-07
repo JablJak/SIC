@@ -32,7 +32,13 @@ class Experiment:
 
         ordinary_params_ids = {id(p): p  for n, p in self.model.parameters(named=True)}
         conv_group_keys = {}
-        for model in self.model.modules():
+        for model in self.model.g_a.modules():
+            if isinstance(model, (torch.nn.Conv2d, torch.nn.ConvTranspose2d)):
+                for name, param in model.named_parameters():
+                    if id(param) in ordinary_params_ids:
+                        conv_group_keys[id(param)] = param
+
+        for model in self.model.g_s.modules():
             if isinstance(model, (torch.nn.Conv2d, torch.nn.ConvTranspose2d)):
                 for name, param in model.named_parameters():
                     if id(param) in ordinary_params_ids:

@@ -4,10 +4,11 @@
 \contentsline {figure}{\numberline {2.3}{\ignorespaces Diagram sieci AlexNet\relax }}{28}{figure.caption.11}%
 \contentsline {figure}{\numberline {2.4}{\ignorespaces Diagram architektury prostego autoenkodera niedope\IeC {\l }nionego\relax }}{29}{figure.caption.13}%
 \contentsline {figure}{\numberline {2.5}{\ignorespaces Schemat oryginalnej architektury transformera\blx@tocontentsinit {0}\cite {attentionisallyouneed2017}\relax }}{30}{figure.caption.15}%
-\contentsline {figure}{\numberline {3.1}{\ignorespaces Schemat architektury sieci neuronowej\relax }}{36}{figure.caption.17}%
-\contentsline {figure}{\numberline {4.1}{\ignorespaces Wizualizacja przebiegu przyk\IeC {\l }adowego treningu na podstawie warto\'sci metryk\relax }}{43}{figure.caption.18}%
-\contentsline {figure}{\numberline {4.2}{\ignorespaces Por\'ownanie wyniku PSNR wzgl\k edem przep\IeC {\l }ywno\'sci utworzonego modelu z wybranymi metodami kompresji na zbiorze Kodak\relax }}{45}{figure.caption.19}%
-\contentsline {figure}{\numberline {4.3}{\ignorespaces Por\'ownanie wyniku MS-SSIM wzgl\k edem przep\IeC {\l }ywno\'sci utworzonego modelu z wybranymi metodami kompresji na zbiorze Kodak\relax }}{46}{figure.caption.20}%
-\contentsline {figure}{\numberline {4.4}{\ignorespaces Por\'ownanie rekonstrukcji obrazu kobiety w przep\IeC {\l }ywno\'sci na poziomie ok. 0,34 bpp\relax }}{48}{figure.caption.21}%
-\contentsline {figure}{\numberline {4.5}{\ignorespaces Por\'ownanie rekonstrukcji obrazu flisak\'ow na pontonie w przep\IeC {\l }ywno\'sci na poziomie ok. 0,28 bpp\relax }}{50}{figure.caption.23}%
-\contentsline {figure}{\numberline {4.6}{\ignorespaces Por\'ownanie rekonstrukcji obrazu latarni morskiej w przep\IeC {\l }ywno\'sci na poziomie ok. 0,2 bpp\relax }}{51}{figure.caption.24}%
+\contentsline {figure}{\numberline {2.6}{\ignorespaces Og\'olna koncepcj\k e dzia\IeC {\l }ania modelu ViT i schemat architektury kodera\relax }}{32}{figure.caption.17}%
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Schemat architektury sieci neuronowej\relax }}{37}{figure.caption.18}%
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Wizualizacja przebiegu przyk\IeC {\l }adowego treningu na podstawie warto\'sci metryk\relax }}{44}{figure.caption.19}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Por\'ownanie wyniku PSNR wzgl\k edem przep\IeC {\l }ywno\'sci utworzonego modelu z wybranymi metodami kompresji na zbiorze Kodak\relax }}{46}{figure.caption.20}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Por\'ownanie wyniku MS-SSIM wzgl\k edem przep\IeC {\l }ywno\'sci utworzonego modelu z wybranymi metodami kompresji na zbiorze Kodak\relax }}{47}{figure.caption.21}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Por\'ownanie rekonstrukcji obrazu kobiety w przep\IeC {\l }ywno\'sci na poziomie ok. 0,34 bpp\relax }}{49}{figure.caption.22}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces Por\'ownanie rekonstrukcji obrazu flisak\'ow na pontonie w przep\IeC {\l }ywno\'sci na poziomie ok. 0,28 bpp\relax }}{51}{figure.caption.24}%
+\contentsline {figure}{\numberline {4.6}{\ignorespaces Por\'ownanie rekonstrukcji obrazu latarni morskiej w przep\IeC {\l }ywno\'sci na poziomie ok. 0,2 bpp\relax }}{52}{figure.caption.25}%
