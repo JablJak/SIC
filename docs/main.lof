@@ -1,12 +1,12 @@
 \babel@toc {polish}{}\relax 
-\contentsline {figure}{\numberline {2.1}{\ignorespaces Inspiracja sztucznego neuronu biologicznym neuronem \newline \'Zr\'od\IeC {\l }o: https://www.geeksforgeeks.org/machine-learning/difference-between-ann-and-bnn/\relax }}{23}{figure.caption.1}%
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Inspiracja sztucznego neuronu biologicznym neuronem}}{23}{figure.caption.1}%
 \contentsline {figure}{\numberline {2.2}{\ignorespaces Schemat sztucznej sieci neuronowej zbudowanej z warstw w pe\IeC {\l }ni po\IeC {\l }\k aczonych\relax }}{27}{figure.caption.9}%
-\contentsline {figure}{\numberline {2.3}{\ignorespaces Diagram sieci AlexNet\relax }}{28}{figure.caption.11}%
+\contentsline {figure}{\numberline {2.3}{\ignorespaces Diagram sieci AlexNet}}{28}{figure.caption.11}%
 \contentsline {figure}{\numberline {2.4}{\ignorespaces Diagram architektury prostego autoenkodera niedope\IeC {\l }nionego\relax }}{29}{figure.caption.13}%
-\contentsline {figure}{\numberline {2.5}{\ignorespaces Schemat oryginalnej architektury transformera\blx@tocontentsinit {0}\cite {attentionisallyouneed2017}\relax }}{30}{figure.caption.15}%
-\contentsline {figure}{\numberline {2.6}{\ignorespaces Og\'olna koncepcj\k e dzia\IeC {\l }ania modelu ViT i schemat architektury kodera\relax }}{32}{figure.caption.17}%
-\contentsline {figure}{\numberline {2.7}{\ignorespaces Rysunek \subref {fig:swin-hierarchia} przedstawia hierarchiczny charakter analizy dzi\k eki oknom w architekturze Swin Transformer w przeciwie\'nstwie do globalnego w ViT. Rysunek \subref {fig:swin-shift} obrazuje dzia\IeC {\l }anie mechanizmu okien przesuwnych.\relax }}{33}{figure.caption.18}%
-\contentsline {figure}{\numberline {2.8}{\ignorespaces Schemat architektury i przep\IeC {\l }ywu danych w trasformerze z oknem przesuwnym.\relax }}{34}{figure.caption.19}%
+\contentsline {figure}{\numberline {2.5}{\ignorespaces Schemat oryginalnej architektury transformera}}{30}{figure.caption.15}%
+\contentsline {figure}{\numberline {2.6}{\ignorespaces Og\'olna koncepcj\k e dzia\IeC {\l }ania modelu ViT i schemat architektury kodera}}{32}{figure.caption.17}%
+\contentsline {figure}{\numberline {2.7}{\ignorespaces Ilustracja podzia\IeC {\l }u mapy cech na hierarchiczne i przesuwne okna w modelu Swin Transformer}}{33}{figure.caption.18}%
+\contentsline {figure}{\numberline {2.8}{\ignorespaces Schemat architektury i przep\IeC {\l }ywu danych w trasformerze z oknem przesuwnym.}}{34}{figure.caption.19}%
 \contentsline {figure}{\numberline {3.1}{\ignorespaces Schemat architektury sieci neuronowej\relax }}{38}{figure.caption.20}%
 \contentsline {figure}{\numberline {4.1}{\ignorespaces Wizualizacja przebiegu przyk\IeC {\l }adowego treningu na podstawie warto\'sci metryk\relax }}{45}{figure.caption.21}%
 \contentsline {figure}{\numberline {4.2}{\ignorespaces Por\'ownanie wyniku PSNR wzgl\k edem przep\IeC {\l }ywno\'sci utworzonego modelu z wybranymi metodami kompresji na zbiorze Kodak\relax }}{47}{figure.caption.22}%

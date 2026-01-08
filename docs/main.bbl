@@ -197,6 +197,27 @@
       \field{pages}{46\bibrangedash 52}
       \range{pages}{7}
     \endentry
+    \entry{gfg_ann_vs_bnn}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=f1e069787ece74531d112559945c6871}{%
+           family={{GeeksforGeeks}},
+           familyi={G\bibinitperiod}}}%
+      }
+      \strng{namehash}{f1e069787ece74531d112559945c6871}
+      \strng{fullhash}{f1e069787ece74531d112559945c6871}
+      \strng{bibnamehash}{f1e069787ece74531d112559945c6871}
+      \strng{authorbibnamehash}{f1e069787ece74531d112559945c6871}
+      \strng{authornamehash}{f1e069787ece74531d112559945c6871}
+      \strng{authorfullhash}{f1e069787ece74531d112559945c6871}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{https://www.geeksforgeeks.org/machine-learning/difference-between-ann-and-bnn/}}
+      \field{note}{Dostęp: 2026-01-08}
+      \field{title}{Difference between {ANN} and {BNN}}
+      \field{year}{2023}
+    \endentry
     \entry{enwiki:1308010043}{misc}{}
       \name{author}{1}{}{%
         {{hash=b6aea1a416c89509a7df1cbb69249cb6}{%
@@ -209,8 +230,8 @@
       \strng{authorbibnamehash}{b6aea1a416c89509a7df1cbb69249cb6}
       \strng{authornamehash}{b6aea1a416c89509a7df1cbb69249cb6}
       \strng{authorfullhash}{b6aea1a416c89509a7df1cbb69249cb6}
-      \field{sortinit}{6}
-      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{note}{[Online; accessed 23-December-2025]}
@@ -247,8 +268,8 @@
       \strng{authorbibnamehash}{c7a04e84233544814a8e0a7a9a3dbf0c}
       \strng{authornamehash}{c7a04e84233544814a8e0a7a9a3dbf0c}
       \strng{authorfullhash}{c7a04e84233544814a8e0a7a9a3dbf0c}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Journal of Machine Learning Research}
@@ -271,8 +292,8 @@
       \strng{authorbibnamehash}{23d96062ed18321873ac4b8b6e2fc816}
       \strng{authornamehash}{23d96062ed18321873ac4b8b6e2fc816}
       \strng{authorfullhash}{23d96062ed18321873ac4b8b6e2fc816}
-      \field{sortinit}{8}
-      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{IEEE Transactions on Systems Science and Cybernetics}
@@ -286,6 +307,93 @@
       \verb 10.1109/TSSC.1969.300225
       \endverb
       \keyw{Feature extraction;Network synthesis;Biological system modeling;Computational modeling;Computer simulation;Biology computing;Computer networks;Character recognition;Handwriting recognition;Biological systems}
+    \endentry
+    \entry{hendrycks2023gaussianerrorlinearunits}{misc}{}
+      \name{author}{2}{}{%
+        {{hash=86d0b4ecd6b6066d49e7aecde6e5e630}{%
+           family={Hendrycks},
+           familyi={H\bibinitperiod},
+           given={Dan},
+           giveni={D\bibinitperiod}}}%
+        {{hash=6bc70be3492f0800ecee6926d290244f}{%
+           family={Gimpel},
+           familyi={G\bibinitperiod},
+           given={Kevin},
+           giveni={K\bibinitperiod}}}%
+      }
+      \strng{namehash}{7d47b8f6df5cfe597280f14a9ffb6143}
+      \strng{fullhash}{7d47b8f6df5cfe597280f14a9ffb6143}
+      \strng{bibnamehash}{7d47b8f6df5cfe597280f14a9ffb6143}
+      \strng{authorbibnamehash}{7d47b8f6df5cfe597280f14a9ffb6143}
+      \strng{authornamehash}{7d47b8f6df5cfe597280f14a9ffb6143}
+      \strng{authorfullhash}{7d47b8f6df5cfe597280f14a9ffb6143}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{cs.LG}
+      \field{eprinttype}{arXiv}
+      \field{title}{Gaussian Error Linear Units (GELUs)}
+      \field{year}{2023}
+      \verb{eprint}
+      \verb 1606.08415
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/1606.08415
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/1606.08415
+      \endverb
+    \endentry
+    \entry{alexnet}{inproceedings}{}
+      \name{author}{6}{}{%
+        {{hash=d9f8fc34f162d54346f9263ac5ba7c8a}{%
+           family={Shaees},
+           familyi={S\bibinitperiod},
+           given={Shamoil},
+           giveni={S\bibinitperiod}}}%
+        {{hash=c460d9b08a83a7af2fee07080a239a54}{%
+           family={Naeem},
+           familyi={N\bibinitperiod},
+           given={Muhammad\bibnamedelima Rashid},
+           giveni={M\bibinitperiod\bibinitdelim R\bibinitperiod}}}%
+        {{hash=7fb1382520f012d1da5c7921c45bf819}{%
+           family={Naeem},
+           familyi={N\bibinitperiod},
+           given={Hamad},
+           giveni={H\bibinitperiod}}}%
+        {{hash=0b38fbbdd08124cd56b48a2eb0715e0a}{%
+           family={Syed},
+           familyi={S\bibinitperiod},
+           given={Hamza},
+           giveni={H\bibinitperiod}}}%
+        {{hash=aa1cd7f13b89b4845d37aa91dba42e02}{%
+           family={Arslan},
+           familyi={A\bibinitperiod},
+           given={Muhammad},
+           giveni={M\bibinitperiod}}}%
+        {{hash=afa299fe3e8284ca83b487fbbbeabc42}{%
+           family={Aldabbas},
+           familyi={A\bibinitperiod},
+           given={Hamza},
+           giveni={H\bibinitperiod}}}%
+      }
+      \strng{namehash}{8286286a61ba8927eb366a6307c4d2b6}
+      \strng{fullhash}{d516b0fe67e7157eefd6e27147dbc415}
+      \strng{bibnamehash}{d516b0fe67e7157eefd6e27147dbc415}
+      \strng{authorbibnamehash}{d516b0fe67e7157eefd6e27147dbc415}
+      \strng{authornamehash}{8286286a61ba8927eb366a6307c4d2b6}
+      \strng{authorfullhash}{d516b0fe67e7157eefd6e27147dbc415}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{month}{09}
+      \field{title}{Facial Emotion Recognition Using Transfer Learning}
+      \field{year}{2020}
+      \verb{doi}
+      \verb 10.1109/ICCIT-144147971.2020.9213757
+      \endverb
     \endentry
     \entry{attentionisallyouneed2017}{inproceedings}{}
       \name{author}{8}{}{%
@@ -342,8 +450,8 @@
       \strng{authorbibnamehash}{7cc810834e9ba19dd5f8b0a37be3172d}
       \strng{authornamehash}{7cc810834e9ba19dd5f8b0a37be3172d}
       \strng{authorfullhash}{cb26e47f6b8133865271fc8483132297}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{abstract}{The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles, by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.0 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature.}
@@ -354,6 +462,160 @@
       \field{year}{2017}
       \field{pages}{6000\bibrangedash 6010}
       \range{pages}{11}
+    \endentry
+    \entry{dosovitskiy2021imageworth16x16words}{misc}{}
+      \name{author}{12}{}{%
+        {{hash=72308762399d6ab62bbd9391c64c7bfd}{%
+           family={Dosovitskiy},
+           familyi={D\bibinitperiod},
+           given={Alexey},
+           giveni={A\bibinitperiod}}}%
+        {{hash=836254958eac09b30d45dd67a75ce4fa}{%
+           family={Beyer},
+           familyi={B\bibinitperiod},
+           given={Lucas},
+           giveni={L\bibinitperiod}}}%
+        {{hash=6807e3c00242c6bf6a3179905040471b}{%
+           family={Kolesnikov},
+           familyi={K\bibinitperiod},
+           given={Alexander},
+           giveni={A\bibinitperiod}}}%
+        {{hash=b398fca6879fde89a032b8e7de2f26b5}{%
+           family={Weissenborn},
+           familyi={W\bibinitperiod},
+           given={Dirk},
+           giveni={D\bibinitperiod}}}%
+        {{hash=00b950307c7d096765bb6df00c7c5c3a}{%
+           family={Zhai},
+           familyi={Z\bibinitperiod},
+           given={Xiaohua},
+           giveni={X\bibinitperiod}}}%
+        {{hash=1a47640139e63b9b5969c969dfe95def}{%
+           family={Unterthiner},
+           familyi={U\bibinitperiod},
+           given={Thomas},
+           giveni={T\bibinitperiod}}}%
+        {{hash=965baf6fa5686a42b1564330c5e11f2f}{%
+           family={Dehghani},
+           familyi={D\bibinitperiod},
+           given={Mostafa},
+           giveni={M\bibinitperiod}}}%
+        {{hash=06829adce8713f0ace444279dcd7328f}{%
+           family={Minderer},
+           familyi={M\bibinitperiod},
+           given={Matthias},
+           giveni={M\bibinitperiod}}}%
+        {{hash=c95269b4a2e23e1e526be521c7ec6ad4}{%
+           family={Heigold},
+           familyi={H\bibinitperiod},
+           given={Georg},
+           giveni={G\bibinitperiod}}}%
+        {{hash=450963f966620925cb8fecd32f7a6ee1}{%
+           family={Gelly},
+           familyi={G\bibinitperiod},
+           given={Sylvain},
+           giveni={S\bibinitperiod}}}%
+        {{hash=831027ee0ebf22375e2a86afc1881909}{%
+           family={Uszkoreit},
+           familyi={U\bibinitperiod},
+           given={Jakob},
+           giveni={J\bibinitperiod}}}%
+        {{hash=493a532418540859dca92cf3b579de2a}{%
+           family={Houlsby},
+           familyi={H\bibinitperiod},
+           given={Neil},
+           giveni={N\bibinitperiod}}}%
+      }
+      \strng{namehash}{0a3f6c4478b68f8b8711972b238e4acf}
+      \strng{fullhash}{b8c06eaeb698f61fc96ff3e5570552ec}
+      \strng{bibnamehash}{0a3f6c4478b68f8b8711972b238e4acf}
+      \strng{authorbibnamehash}{0a3f6c4478b68f8b8711972b238e4acf}
+      \strng{authornamehash}{0a3f6c4478b68f8b8711972b238e4acf}
+      \strng{authorfullhash}{b8c06eaeb698f61fc96ff3e5570552ec}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{cs.CV}
+      \field{eprinttype}{arXiv}
+      \field{title}{An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale}
+      \field{year}{2021}
+      \verb{eprint}
+      \verb 2010.11929
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/2010.11929
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/2010.11929
+      \endverb
+    \endentry
+    \entry{liu2021swintransformerhierarchicalvision}{misc}{}
+      \name{author}{8}{}{%
+        {{hash=19aabf2deb737584450693431af51cc3}{%
+           family={Liu},
+           familyi={L\bibinitperiod},
+           given={Ze},
+           giveni={Z\bibinitperiod}}}%
+        {{hash=3c6a54dc09fe06657a89a749043b2133}{%
+           family={Lin},
+           familyi={L\bibinitperiod},
+           given={Yutong},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=5fde2ec473a5900f24f02ea9a11359ed}{%
+           family={Cao},
+           familyi={C\bibinitperiod},
+           given={Yue},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=f19295c2c8bee05248e05cdbfd48b247}{%
+           family={Hu},
+           familyi={H\bibinitperiod},
+           given={Han},
+           giveni={H\bibinitperiod}}}%
+        {{hash=1d41b11667193fc2d6d720337c963955}{%
+           family={Wei},
+           familyi={W\bibinitperiod},
+           given={Yixuan},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=fcdb4c7704baa79893b29d652aecc77f}{%
+           family={Zhang},
+           familyi={Z\bibinitperiod},
+           given={Zheng},
+           giveni={Z\bibinitperiod}}}%
+        {{hash=eb40fa909f02eebf8c76aedeab111038}{%
+           family={Lin},
+           familyi={L\bibinitperiod},
+           given={Stephen},
+           giveni={S\bibinitperiod}}}%
+        {{hash=5635e5718e86c9052afcaa71d2097959}{%
+           family={Guo},
+           familyi={G\bibinitperiod},
+           given={Baining},
+           giveni={B\bibinitperiod}}}%
+      }
+      \strng{namehash}{f848e09e8b592f4caa0efd6e910149df}
+      \strng{fullhash}{4573863b62d52acb9c29e180e6f47f26}
+      \strng{bibnamehash}{f848e09e8b592f4caa0efd6e910149df}
+      \strng{authorbibnamehash}{f848e09e8b592f4caa0efd6e910149df}
+      \strng{authornamehash}{f848e09e8b592f4caa0efd6e910149df}
+      \strng{authorfullhash}{4573863b62d52acb9c29e180e6f47f26}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{cs.CV}
+      \field{eprinttype}{arXiv}
+      \field{title}{Swin Transformer: Hierarchical Vision Transformer using Shifted Windows}
+      \field{year}{2021}
+      \verb{eprint}
+      \verb 2103.14030
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/2103.14030
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/2103.14030
+      \endverb
     \endentry
     \entry{he2021checkerboardcontextmodelefficient}{misc}{}
       \name{author}{5}{}{%
@@ -389,8 +651,8 @@
       \strng{authorbibnamehash}{cddd226b5003306434d7474b8d18f7fc}
       \strng{authornamehash}{90aa8a5f44acf6f2da0e78e4283b7d83}
       \strng{authorfullhash}{cddd226b5003306434d7474b8d18f7fc}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{eprintclass}{eess.IV}
@@ -405,43 +667,6 @@
       \endverb
       \verb{url}
       \verb https://arxiv.org/abs/2103.15306
-      \endverb
-    \endentry
-    \entry{hendrycks2023gaussianerrorlinearunits}{misc}{}
-      \name{author}{2}{}{%
-        {{hash=86d0b4ecd6b6066d49e7aecde6e5e630}{%
-           family={Hendrycks},
-           familyi={H\bibinitperiod},
-           given={Dan},
-           giveni={D\bibinitperiod}}}%
-        {{hash=6bc70be3492f0800ecee6926d290244f}{%
-           family={Gimpel},
-           familyi={G\bibinitperiod},
-           given={Kevin},
-           giveni={K\bibinitperiod}}}%
-      }
-      \strng{namehash}{7d47b8f6df5cfe597280f14a9ffb6143}
-      \strng{fullhash}{7d47b8f6df5cfe597280f14a9ffb6143}
-      \strng{bibnamehash}{7d47b8f6df5cfe597280f14a9ffb6143}
-      \strng{authorbibnamehash}{7d47b8f6df5cfe597280f14a9ffb6143}
-      \strng{authornamehash}{7d47b8f6df5cfe597280f14a9ffb6143}
-      \strng{authorfullhash}{7d47b8f6df5cfe597280f14a9ffb6143}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{eprintclass}{cs.LG}
-      \field{eprinttype}{arXiv}
-      \field{title}{Gaussian Error Linear Units (GELUs)}
-      \field{year}{2023}
-      \verb{eprint}
-      \verb 1606.08415
-      \endverb
-      \verb{urlraw}
-      \verb https://arxiv.org/abs/1606.08415
-      \endverb
-      \verb{url}
-      \verb https://arxiv.org/abs/1606.08415
       \endverb
     \endentry
     \entry{begaint2020compressaipytorchlibraryevaluation}{misc}{}
@@ -473,8 +698,8 @@
       \strng{authorbibnamehash}{ec9428d9935447b301a1b2422e7350ff}
       \strng{authornamehash}{65a9d75dea06471338cd0b8918d66d03}
       \strng{authorfullhash}{ec9428d9935447b301a1b2422e7350ff}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{eprintclass}{cs.CV}
@@ -510,8 +735,8 @@
       \strng{authorbibnamehash}{7e8dee717d54c2984b1c6bd3f3c0561f}
       \strng{authornamehash}{7e8dee717d54c2984b1c6bd3f3c0561f}
       \strng{authorfullhash}{7e8dee717d54c2984b1c6bd3f3c0561f}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{eprintclass}{cs.LG}
@@ -552,8 +777,8 @@
       \strng{authorbibnamehash}{a19baa11f6ce9da8450fadf5e7b6a903}
       \strng{authornamehash}{a19baa11f6ce9da8450fadf5e7b6a903}
       \strng{authorfullhash}{a19baa11f6ce9da8450fadf5e7b6a903}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{eprintclass}{eess.IV}
@@ -590,8 +815,8 @@
       \strng{authorbibnamehash}{1fc0cc0d0ebe14a0c7a2a356fd242305}
       \strng{authornamehash}{1fc0cc0d0ebe14a0c7a2a356fd242305}
       \strng{authorfullhash}{1fc0cc0d0ebe14a0c7a2a356fd242305}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Digital Images and Human Vision}
@@ -630,8 +855,8 @@
       \strng{authorbibnamehash}{4eadc44b73c932989cbd36a77d356aab}
       \strng{authornamehash}{ebe10ee7c4eeaec343f3054b5db84648}
       \strng{authorfullhash}{4eadc44b73c932989cbd36a77d356aab}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{IEEE Transactions on Image Processing}
@@ -671,8 +896,8 @@
       \strng{authornamehash}{b3cbad8094e208e2873882f43113bf95}
       \strng{authorfullhash}{b3cbad8094e208e2873882f43113bf95}
       \field{extraname}{1}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{The Thrity-Seventh Asilomar Conference on Signals, Systems & Computers, 2003}
@@ -755,8 +980,8 @@
       \strng{authorbibnamehash}{323e84c87a0b5fd6fbdec6e887a7629e}
       \strng{authornamehash}{323e84c87a0b5fd6fbdec6e887a7629e}
       \strng{authorfullhash}{9adbbb0e3f98af57c6a5373f3d94f858}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{eprintclass}{cs.LG}
@@ -807,8 +1032,8 @@
       \strng{authorbibnamehash}{0af994cff1b061300c64dec6f06cc04c}
       \strng{authornamehash}{47fd2e1838b3d5c866ee86bd7d4d4adf}
       \strng{authorfullhash}{0af994cff1b061300c64dec6f06cc04c}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{eprintclass}{cs.LG}
@@ -837,8 +1062,8 @@
       \strng{authorbibnamehash}{167c601dc0d34faad16775eda5ce1f81}
       \strng{authornamehash}{167c601dc0d34faad16775eda5ce1f81}
       \strng{authorfullhash}{167c601dc0d34faad16775eda5ce1f81}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{month}{12}
@@ -881,8 +1106,8 @@
       \strng{authornamehash}{e884a2c9c5fa5f797247cb104b8bf8db}
       \strng{authorfullhash}{e884a2c9c5fa5f797247cb104b8bf8db}
       \field{extraname}{2}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Proceedings of the IEEE Asilomar Conference Signals, Systems and Computers}
@@ -912,8 +1137,8 @@
       \strng{authorbibnamehash}{1e33c0f913368961809035a635f71e06}
       \strng{authornamehash}{1e33c0f913368961809035a635f71e06}
       \strng{authorfullhash}{1e33c0f913368961809035a635f71e06}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{issn}{1804-0462}

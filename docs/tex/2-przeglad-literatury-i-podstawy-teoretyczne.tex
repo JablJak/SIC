@@ -134,12 +134,12 @@ Kolejne badania dużą wagę kładły na optymalizację modelu entropii. Balle w
 Wykorzystanie hiperprior'a pozwoliło na wprowadzenie kontekstu globalnego do modelowania rozkładu latentu, zaś kolejnym usprawnieniem badaczy było pomyślne wdrożenie kontekstu lokalnego. Pierwsze modele z hiperprior'em, gdy pominiemy dostarczone przez niego informacje o rozkładach, nadal traktowały wszystkie elementy reprezentacji cech ukrytych jako niezależne, podczas gdy te w istocie są silnie skorelowane przestrzennie. Znani z poprzednich prac badacze z Google w kolejnej architekturze sieci umieścili dodatkowy komponent --- model kontekstowy --- składający się z warstw splotowych używających maski do wyłączenia elementów następujących. W ten sposób model wykorzystuje wiedzę o już zakodowanych elementach do kodowania następnych, wykorzystując korelacje pomiędzy nimi.
 
 \subsection{Sztuczne sieci neuronowe}
-Jedną z najprostszych definicji sztucznych sieci neuronowych sformułował dr Robert Hecht-Nielsen, jeden z ojców uczenia maszynowego. Zgodnie z jego definicją sztuczna sieć neuronowa to system obliczeniowy złożony z wielu prostych, silnie połączonych ze sobą elementów, które przetwarzają informacje poprzez dynamiczną reakcję na wejścia z zewnątrz\cite{10.5555/38292.38295}. Można to pojęcie sprecyzować i przedefiniować w oparciu o współczesną realizację sieci neuronowych --- sztuczna sieć neuronowa to zbiór jednostek przetwarzających, wykonujących przekształcenia liniowe i nieliniowe. Jednostki te nazywa się neuronami, ponieważ występuje analogia między nimi a komórkami nerwowymi organizmu, czyli przetwarzanie wielu wejściowych informacji w jedną informację, podobnie jak neuron odbiera wiele bodźców przez dendryty i produkuje na ich podstawie aktywację do aksonu. Jednostka sieci neuronowej robi to poprzez ważenie i sumowanie tych informacji, czyli operację liniową, oraz, przeważnie, poddaniu wyniku nieliniowej transformacji. Wynika z tego, że sieć neuronowa jest w istocie złożoną funkcją, będącą kompozycją wielu mniejszych funkcji, których współczynniki są dostosowywane (uczone) w procesie treningu. Na rysunku \ref{fig:neuron} przedstawiono wizualizację sztucznego neuronu i jego podobieństwo do neuronu w układzie nerwowym. 
+Jedną z najprostszych definicji sztucznych sieci neuronowych sformułował dr Robert Hecht-Nielsen, jeden z ojców uczenia maszynowego. Zgodnie z jego definicją sztuczna sieć neuronowa to system obliczeniowy złożony z wielu prostych, silnie połączonych ze sobą elementów, które przetwarzają informacje poprzez dynamiczną reakcję na wejścia z zewnątrz\cite{10.5555/38292.38295}. Można to pojęcie sprecyzować i przedefiniować w oparciu o współczesną realizację sieci neuronowych --- sztuczna sieć neuronowa to zbiór jednostek przetwarzających, wykonujących przekształcenia liniowe i nieliniowe. Jednostki te nazywa się neuronami, ponieważ występuje analogia między nimi a komórkami nerwowymi organizmu, czyli przetwarzanie wielu wejściowych informacji w jedną informację, podobnie jak neuron odbiera wiele bodźców przez dendryty i produkuje na ich podstawie aktywację do aksonu. Jednostka sieci neuronowej robi to poprzez ważenie i sumowanie tych informacji, czyli operację liniową, oraz, przeważnie, poddaniu wyniku nieliniowej transformacji. Wynika z tego, że sieć neuronowa jest w istocie złożoną funkcją, będącą kompozycją wielu mniejszych funkcji, których współczynniki są dostosowywane (uczone) w procesie treningu. Na rysunku \ref{fig:neuron} przedstawiono wizualizację sztucznego neuronu i jego podobieństwo do neuronu w układzie nerwowym.
 
 \begin{figure}[h!]
 	\centering
 	\includegraphics[width=\linewidth]{neuron}
-	\caption{Inspiracja sztucznego neuronu biologicznym neuronem \newline Źródło: https://www.geeksforgeeks.org/machine-learning/difference-between-ann-and-bnn/}
+	\caption[Inspiracja sztucznego neuronu biologicznym neuronem]{Inspiracja sztucznego neuronu biologicznym neuronem\cite{gfg_ann_vs_bnn}}
 	\label{fig:neuron}
 \end{figure}
 
@@ -214,14 +214,14 @@ Technicznie różnią się istotnie od warstw w pełni połączonych. W skład w
 \begin{figure}[t]
 	\centering
 	\includegraphics[width=\linewidth]{alexnet}
-	\caption{Diagram sieci AlexNet}
+	\caption[Diagram sieci AlexNet]{Diagram sieci AlexNet\cite{alexnet}}
 	\label{fig:alexnet}
 \end{figure}
 
 \paragraph{Autoenkoder i autoenkoder wariacyjny.}
 Kiedy zadaniem jest nauczenie sieci neuronowej na podstawie danych, które nie są etykietowane, nazywa się to uczeniem nienadzorowanym. W istocie celem tego procesu jest stworzenie modelu danych, który odkryje ukryte struktury, wzorce i zależności. Tak nauczony model może następnie zostać wykorzystany do klastrowania danych, detekcji anomalii czy redukcji wymiarowości danych. Do takich zadań została opracowana architektura autoenkodera, czyli nienadzorowanej sieci zawierającej funkcję kompresującą --- koder --- i rekonstruującą --- dekoder.
 
-Definicja autoenkodera nie stawia ograniczeń wobec typów danych, na jakich może pracować, pod warunkiem, że zostaną przekształcone do postaci liczbowej. Stąd zarówno koder jak i dekoder mogą się składać z warstw w pełni połączonych, splotowych, rekurencyjnych, czy większych bloków jak perceptron wielowarstwowy. Cechą wspólną każdego autoenkodera jest fakt, że stopniowo kompresują dane wejściowe, najczęściej poprzez zmniejszanie wymiarów warstw --- autoenkoder niedopełniony (patrz rysunek \ref{fig:autonekoder}) --- lub karania sieci za każdy użyty neuron --- autoenkoder rzadki.
+Definicja autoenkodera nie stawia ograniczeń wobec typów danych, na jakich może pracować, pod warunkiem, że zostaną przekształcone do postaci liczbowej. Stąd zarówno koder jak i dekoder mogą się składać z warstw w pełni połączonych, splotowych, rekurencyjnych, czy większych bloków jak perceptron wielowarstwowy. Cechą wspólną każdego autoenkodera jest fakt, że stopniowo kompresują dane wejściowe, najczęściej poprzez zmniejszanie wymiarów warstw --- autoenkoder niedopełniony (patrz rysunek \ref{fig:autoenkoder}) --- lub karania sieci za każdy użyty neuron --- autoenkoder rzadki.
 
 \begin{figure}[t]
 	\centering
@@ -238,7 +238,7 @@ Szczególną popularność w drugiej dekadzie XXI wieku zyskała architektura tr
 \begin{figure}[t]
 	\centering
 	\includegraphics[width=0.65\linewidth]{transformer}
-	\caption{Schemat oryginalnej architektury transformera\cite{attentionisallyouneed2017}}
+	\caption[Schemat oryginalnej architektury transformera]{Schemat oryginalnej architektury transformera\cite{attentionisallyouneed2017}}
 	\label{fig:transformer}
 \end{figure}
 
@@ -265,12 +265,12 @@ Z tej informacji, która jest reprezentowana przez wektory wzbogacone o informac
 \end{sloppypar}
 
 \paragraph{Transformer wizyjny z przesuwnym oknem.}
-Jako ostatnią wartą omówienia w niniejszej pracy należy wskazać architekturę będącą jej podstawą. Opisany w poprzedniej sekcji transformer został zaprojektowany do pracy nad tekstem, jednak szybko pojawił się nurt w badaniach, aby wykorzystać tę strukturę do zadań w wizji komputerowej. Pierwszy duży sukces odniósł model transformera wizyjnego (ang. Vision Transformer, ViT), który był w stanie pokonać najlepsze modele splotowe w teście wydajności w zadaniu klasyfikacji. Rysunek \ref{fig:vit-transformer} przedstawia w uproszczeniu koncepcję działania modelu i schemat architektury. Był tylko jeden problem --- ViT wymaga treningu przy użyciu ogromnej mocy obliczeniowej i setek milionów obrazów, aby osiągnąć tak dobre efekty. Dlatego też w niniejszej pracy z niego zrezygnowano, na rzecz wariacji inicjalnego transformera wizyjnego, czyli transformera z oknem przesuwnym (ang. Shifted Window Transformer, Swin Transformer).
+Jako ostatnią wartą omówienia w niniejszej pracy należy wskazać architekturę będącą jej podstawą. Opisany w poprzedniej sekcji transformer został zaprojektowany do pracy nad tekstem, jednak szybko pojawił się nurt w badaniach, aby wykorzystać tę strukturę do zadań w wizji komputerowej. Pierwszy duży sukces odniósł model transformera wizyjnego (ang. Vision Transformer, ViT), który był w stanie pokonać najlepsze modele splotowe w teście wydajności w zadaniu klasyfikacji\cite{dosovitskiy2021imageworth16x16words}. Rysunek \ref{fig:vit-transformer} przedstawia w uproszczeniu koncepcję działania modelu i schemat architektury. Był tylko jeden problem --- ViT wymaga treningu przy użyciu ogromnej mocy obliczeniowej i setek milionów obrazów, aby osiągnąć tak dobre efekty. Dlatego też w niniejszej pracy z niego zrezygnowano, na rzecz wariacji inicjalnego transformera wizyjnego, czyli transformera z oknem przesuwnym (ang. Shifted Window Transformer, Swin Transformer)\cite{liu2021swintransformerhierarchicalvision}.
 
 \begin{figure}[t]
 	\centering
 	\includegraphics[width=\linewidth]{vit-transformer}
-	\caption{Ogólna koncepcję działania modelu ViT i schemat architektury kodera}
+	\caption[Ogólna koncepcję działania modelu ViT i schemat architektury kodera]{Ogólna koncepcję działania modelu ViT i schemat architektury kodera\cite{dosovitskiy2021imageworth16x16words}}
 	\label{fig:vit-transformer}
 \end{figure}
 
@@ -278,7 +278,7 @@ Zasada działania architektury Swin Transformera jest zbliżona do oryginalnego 
 
 Uzyskana siatka wektorów trafia do bloku z mechanizmem atencji. Tu leży największa różnica pomiędzy ViT a Swin Transformerem. Podczas gdy ten pierwszy ,,karmi'' mechanizm atencji całą siatką łatek, ten drugi dzieli ją na mniejsze, niezachodzące na siebie okna, np. \(8 \times 8\) łatek, dzięki czemu drastycznie maleje złożoność obliczeniowa. Mechanizm dzielenia na łatki i przesuwania okien ilustruje rysunek \ref{fig:okna-i-latki}. Efektem niepożądanym tego zabiegu jest obniżenie zdolności do modelowania dalekodystansowych zależności. Odpowiedzią twórców na ten problem jest mechanizm przesuwnego okna. W kolejnym mechanizmie atencji siatka okien zostaje przesunięta względem siatki łat o połowę rozmiaru okna, co umożliwia łączenie informacji między sąsiednimi oknami, poprawiając modelowanie zależności dalekodystansowych. Zmodyfikowany mechanizm atencji wprowadza również zależności pozycyjne między łatkami. Kodowanie pozycyjne z początku sieci zostało zastąpione dodaniem uzupełniającej informacji do łatek o relatywnym położeniu względem innych łatek w oknie. Sekwencja mechanizm atencji \(\to\) MLP \(\to\) przesunięty mechanizm atencji \(\to\) MLP nazywa się blokiem transformera Swin.
 
-\begin{figure}[t]
+\begin{figure}[H]
 	\centering
 	\begin{subfigure}{0.75\textwidth}
 		\centering
@@ -287,7 +287,7 @@ Uzyskana siatka wektorów trafia do bloku z mechanizmem atencji. Tu leży najwi�
 		\label{fig:swin-hierarchia}
 	\end{subfigure}
 	
-	\vspace{0.5em}
+	\vspace{1em}
 	
 	\begin{subfigure}{0.75\textwidth}
 		\centering
@@ -295,8 +295,7 @@ Uzyskana siatka wektorów trafia do bloku z mechanizmem atencji. Tu leży najwi�
 		\caption{}
 		\label{fig:swin-shift}
 	\end{subfigure}
-	
-	\caption{Rysunek \subref{fig:swin-hierarchia} przedstawia hierarchiczny charakter analizy dzięki oknom w architekturze Swin Transformer w przeciwieństwie do globalnego w ViT. Rysunek \subref{fig:swin-shift} obrazuje działanie mechanizmu okien przesuwnych.}
+	\caption[Ilustracja podziału mapy cech na hierarchiczne i przesuwne okna w modelu Swin Transformer]{Rysunek \subref{fig:swin-hierarchia} przedstawia hierarchiczny charakter analizy dzięki oknom w architekturze Swin Transformer w przeciwieństwie do globalnego w ViT. Rysunek \subref{fig:swin-shift} obrazuje działanie mechanizmu okien przesuwnych\cite{liu2021swintransformerhierarchicalvision}}
 	\label{fig:okna-i-latki}
 \end{figure}
 
@@ -305,7 +304,7 @@ Swin Transformer składa się z czterech większych bloków, zwanych etapami. Sc
 \begin{figure}[H]
 	\centering
 	\includesvg[width=\linewidth]{diagram-swin}
-	\caption{Schemat architektury i przepływu danych w trasformerze z oknem przesuwnym.}
+	\caption[Schemat architektury i przepływu danych w trasformerze z oknem przesuwnym.]{Schemat architektury i przepływu danych w trasformerze z oknem przesuwnym\cite{liu2021swintransformerhierarchicalvision}}
 	\label{fig:diagram-swin}
 \end{figure}
 

@@ -140,10 +140,10 @@ dataset_split_ratio: 0.7
 output:
   model:
     name: SWIN-LIC
-    version: 1.5.1
+    version: 1.6.0
 
 project_name: INZ
-task_name: v1.5.1 SWIN-LIC
+task_name: v1.6.0 SWIN-LIC
 comment: |
   - Restore mask
   - Conv and upscale for scaling

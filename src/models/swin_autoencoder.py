@@ -67,12 +67,24 @@ class SwinTransformerDecoder(nn.Module):
         self.stages = nn.ModuleList(stages)
         self.reconstruction = PatchReconstruction(stage_dims[-1])
         self.s_proj = nn.Conv2d(bottleneck_dim, stage_dims[0], kernel_size=1)
+        self.mask_fusions = nn.ModuleList(
+            [nn.Sequential(
+                Permute([0, 3, 1, 2]),
+                nn.Conv2d(stage_dims[i] + 1, stage_dims[i], kernel_size=1),
+                Permute([0, 2, 3, 1])
+            ) for i in range(n)]
+        )
         initialize_weights(self)
 
     def forward(self, x):
         x = self.s_proj(x)
         x = x.permute(0, 2, 3, 1)
         for i in range(len(self.stages)):
+            B, H, W, C = x.shape
+            mask = get_boundary_mask(H, W, x.device)
+            mask = mask.expand(B, -1, -1, -1)
+            x = torch.concat([x, mask], dim=3)
+            x = self.mask_fusions[i](x)
             x = self.stages[i](x)
 
         x = self.reconstruction(x)

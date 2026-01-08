@@ -1,3 +1,4 @@
+
 train_dataset:
   module: src.data.mixed_lic_dataset.MixedLICDataset
   transform:
@@ -95,13 +96,13 @@ dataloader:
 optimizer:
   module: torch.optim.AdamW
   args:
-    lr: !!float 1e-4
-  main_lr: !!float 1e-4
-  conv_lr: !!float 1e-4
+    lr: !!float 3e-4
+  main_lr: !!float 3e-4
+  conv_lr: !!float 5e-4
 
 scheduler:
   module: torch.optim.lr_scheduler.LinearLR
-  enabled: true
+  enabled: false
   args:
     total_iters: 5000
     start_factor: 0.00001
@@ -131,7 +132,7 @@ rd_loss:
 
 epochs: 500
 log_frequency: 100
-accumulation_steps: 2
+accumulation_steps: 8
 
 aux_optimizer_delay: 0
 
@@ -140,10 +141,10 @@ dataset_split_ratio: 0.7
 output:
   model:
     name: SWIN-LIC
-    version: 1.5.1
+    version: 1.6.0
 
 project_name: INZ
-task_name: v1.5.1 SWIN-LIC
+task_name: v1.6.0 SWIN-LIC
 comment: |
   - Restore mask
   - Conv and upscale for scaling

@@ -19,7 +19,7 @@ if __name__ == '__main__':
     device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
     print("Device:", device)
     models = [
-        ("SWIN-LIC_1.1.0", "gdn_swin_v2_b"),
+        ("SWIN-LIC_1.6.0", "gdn_swin_v2_b"),
     ]
 
     transform = RGBCompression(crop_size=[512, 512], normalize=False, mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD)
@@ -32,7 +32,7 @@ if __name__ == '__main__':
         psnr_sum = 0
         bpp_sum = 0
         ssim_sum = 0
-        dataloader_iter = iter(torch.utils.data.DataLoader(dataset, batch_size=2, shuffle=False, num_workers=4, pin_memory=False))
+        dataloader_iter = iter(torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=False))
         model: SwinTransformerCompressionAutoencoder = typing.cast(SwinTransformerCompressionAutoencoder, model_from_config(
             {
                 "module": "src.models.swin_compression.SwinTransformerCompressionAutoencoder",
@@ -42,14 +42,14 @@ if __name__ == '__main__':
                     "encoder_type": "gdn_swin_v2_b",
                     "encoder_embed_dim": 128,
                     "encoder_dims": [128, 256, 512],
-                    "encoder_depths": [2, 6, 18],
+                    "encoder_depths": [2, 6, 20],
                     "encoder_num_heads": [4, 8, 16],
                     "encoder_window_size": [8, 8],
                     "encoder_sd_factor": 0.05,
                     "encoder_mlp_ratio": 4,
                     "encoder_dropout": 0,
                     "encoder_attention_dropout": 0,
-                    "decoder_depths": [18, 6, 2],
+                    "decoder_depths": [20, 6, 2],
                     "decoder_dims": [512, 512, 256, 128],
                     "decoder_num_heads": [16, 8, 4],
                     "decoder_window_size": [[8, 8], [8, 8], [8, 8]],
