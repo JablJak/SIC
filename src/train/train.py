@@ -210,7 +210,8 @@ def _train(model, train_dataloader, val_dataloader, test_dataloader, criterion, 
                 avg_test_psnr = 0
                 avg_test_ssim = 0
                 avg_test_bpp = 0
-                update_on_cpu(model)
+                model.update(force=True)
+                torch.cuda.empty_cache()
                 with torch.no_grad():
                     for x_test_in, x_test in test_dataloader:
                         x_test_in, x_test = x_test_in.to(device).detach(), x_test.to(device).detach()
@@ -345,7 +346,7 @@ if __name__ == '__main__':
         )
 
     logger = task.get_logger() if task is not None else None
-    overwrite_lrs(optimizer, aux_optimizer, experiment)
+    # overwrite_lrs(optimizer, aux_optimizer, experiment)
     trained_model = _train(
         model=model,
         train_dataloader=train_dataloader,

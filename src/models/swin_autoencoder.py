@@ -14,7 +14,7 @@ class PatchReconstruction(nn.Module):
         super().__init__()
         self.upscale = nn.Sequential(
             nn.Upsample(scale_factor=4, mode='bilinear', align_corners=False),
-            nn.Conv2d(dim, 3, kernel_size=5, padding=2)
+            nn.Conv2d(dim, 3, kernel_size=1)
         )
         self.leaky_clamp = LeakyClamp(0.0, 1.0, 0.01)
 
