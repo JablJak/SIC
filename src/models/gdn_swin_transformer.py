@@ -7,20 +7,20 @@ from torch import nn, Tensor
 from torch.utils.checkpoint import checkpoint_sequential
 from torchvision.models._api import register_model, WeightsEnum
 from torchvision.models._utils import handle_legacy_interface
-from torchvision.models.swin_transformer import  SwinTransformerBlockV2, \
-     ShiftedWindowAttentionV2, SwinTransformerBlock, Swin_V2_S_Weights, Swin_V2_B_Weights
+from torchvision.models.swin_transformer import SwinTransformerBlockV2, \
+    ShiftedWindowAttentionV2, SwinTransformerBlock, Swin_V2_S_Weights, Swin_V2_B_Weights, _patch_merging_pad
 from torchvision.ops import Permute
 from src.utils.initializers import initialize_weights
 from src.utils.torch_utils import get_boundary_mask
 
 
 class VariableDepthPatchMerging(nn.Module):
-    def __init__(self, in_dim: int, out_dim: int, norm: Callable[..., nn.Module] = nn.LayerNorm):
+    def __init__(self, in_dim: int, out_dim: int, norm_layer: Callable[..., nn.Module] = nn.LayerNorm):
         super().__init__()
         self.in_dim = in_dim
         self.out_dim = out_dim
-        self.downsample = nn.Conv2d(in_dim, out_dim, kernel_size=3, stride=2, padding=1, bias=False)
-        self.norm = norm(out_dim)
+        self.reduction = nn.Linear(4*in_dim, out_dim, bias=False)
+        self.norm = norm_layer(out_dim)  # difference
 
     def forward(self, x: Tensor):
         """
@@ -29,11 +29,11 @@ class VariableDepthPatchMerging(nn.Module):
         Returns:
             Tensor with layout of [..., H/2, W/2, 2*C]
         """
-        x = x.permute(0, 3, 1, 2)
-        x = self.downsample(x)
-        x = x.permute(0, 2, 3, 1)
+        x = _patch_merging_pad(x)
+        x = self.reduction(x)  # ... H/2 W/2 2*C
         x = self.norm(x)
         return x
+
 
 
 class MaskedSwinTransformerBlock(SwinTransformerBlock):
