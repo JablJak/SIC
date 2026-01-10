@@ -13,7 +13,7 @@ class PatchReconstruction(nn.Module):
     def __init__(self, dim):
         super().__init__()
         self.upscale = nn.Sequential(
-            nn.Upsample(scale_factor=4, mode='bilinear', align_corners=False),
+            nn.Upsample(scale_factor=4, mode='nearest'),
             nn.Conv2d(dim, 3, kernel_size=1)
         )
         self.leaky_clamp = LeakyClamp(0.0, 1.0, 0.01)
@@ -132,8 +132,9 @@ class SwinTransformerDecoderStage(nn.Module):
         )
         self.upscale = nn.Sequential(
             Permute([0, 3, 1, 2]),
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
-            nn.Conv2d(in_dim, out_dim, kernel_size=3, padding=1),
+            nn.Conv2d(in_dim, out_dim * 4, kernel_size=3, padding=1),
+            nn.PixelShuffle(2),
+            nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1),
             Permute([0, 2, 3, 1]),
             nn.LayerNorm(out_dim)
         )
