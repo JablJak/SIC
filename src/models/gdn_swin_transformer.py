@@ -11,7 +11,6 @@ from torchvision.models.swin_transformer import SwinTransformerBlockV2, \
     ShiftedWindowAttentionV2, SwinTransformerBlock, Swin_V2_S_Weights, Swin_V2_B_Weights, _patch_merging_pad
 from torchvision.ops import Permute
 from src.utils.initializers import initialize_weights
-from src.utils.torch_utils import get_boundary_mask
 
 
 class VariableDepthPatchMerging(nn.Module):
@@ -19,7 +18,7 @@ class VariableDepthPatchMerging(nn.Module):
         super().__init__()
         self.in_dim = in_dim
         self.out_dim = out_dim
-        self.downsample = nn.Conv2d(in_dim, out_dim, kernel_size=3, stride=2, padding=1, bias=False)
+        self.downsample = nn.Conv2d(in_dim, out_dim, kernel_size=3, stride=2, padding=1)
         self.norm = norm(out_dim)
 
     def forward(self, x: Tensor):
@@ -34,7 +33,6 @@ class VariableDepthPatchMerging(nn.Module):
         x = x.permute(0, 2, 3, 1)
         x = self.norm(x)
         return x
-
 
 
 class MaskedSwinTransformerBlock(SwinTransformerBlock):
@@ -106,7 +104,6 @@ class GDNSwinTransformer(nn.Module):
         self.downsamplers = nn.ModuleList()
         self.gdns = nn.ModuleList()
         self.a_proj = nn.Conv2d(stage_dims[-1], bottleneck_dim, kernel_size=1)
-        self.mask_fusions = nn.ModuleList()
 
         total_stage_blocks = sum(depths)
         stage_block_id = 0
@@ -131,11 +128,6 @@ class GDNSwinTransformer(nn.Module):
                 GDN1(stage_dims[i_stage + 1] if i_stage + 1 < len(depths) else stage_dims[i_stage]),
                 Permute([0, 2, 3, 1])
             ))
-            self.mask_fusions.append(nn.Sequential(
-                Permute([0, 3, 1, 2]),
-                nn.Conv2d(dim + 1, dim, kernel_size=1),
-                Permute([0, 2, 3, 1])
-            ))
             if i_stage < (len(depths) - 1):
                 next_dim = stage_dims[i_stage+1]
                 self.downsamplers.append(downsample_layer(dim, next_dim))
@@ -147,12 +139,6 @@ class GDNSwinTransformer(nn.Module):
         x = self.patch_embed(x)
         for i in range(len(self.stages)):
             x = x.to(next(self.stages[i].parameters()).device)
-
-            B, H, W, C = x.shape
-            mask = get_boundary_mask(H, W, x.device)
-            mask = mask.expand(B, -1, -1, -1)
-            x = torch.concat([x, mask], dim=3)
-            x = self.mask_fusions[i](x)
 
             if self.checkpointing:
                 x = checkpoint_sequential(self.stages[i], int(len(cast(nn.Sequential, self.stages[i]))), x, use_reentrant=False)
