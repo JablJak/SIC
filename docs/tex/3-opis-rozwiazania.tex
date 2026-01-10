@@ -16,10 +16,10 @@ W niniejszej sekcji znajduje się techniczny opis przygotowanej architektury sie
 	\item \textbf{Warstwa wejściowa:} Przyjmuje dane wejściowe w postaci tensora o wymiarach \( \left(B, 3, H, W\right) \), gdzie \( B \) to rozmiar wsadu, \( H \) to wysokość, a \( W \) to szerokość. Zastosowano w tym miejscu strukturę splotową o jądrze rozmiaru \( 4 \times 4 \) pikseli, ze skokiem o 4 piksele, w celu uzyskania siatki łatek o wymiarze przestrzennym \( \frac{H}{4} \times \frac{W}{4} \). Warstwa zawiera 128 filtrów, co definiuje długość wektora cech pojedynczej łatki. W rezultacie wynikowy tensor z warstwy wejściowej ma wymiary \( \left(B, C=128, \nicefrac{H}{4}, \nicefrac{W}{4} \right) \)
 	\item \textbf{Warstwy ukryte kodera:} Po warstwie wejściowej następuje blok transformera Swin złożony z:
 	\begin{itemize}
-		\item wejściowej normalizacji warstwowej
-		\item bloku samoatencji z rozmiarem wektora cech równym 128 i z czterema głowicami, z której każda otrzymuje fragment wektora cech o długości 32
-		\item drugiej warstwy normalizacji
-		\item dwuwarstwowego perceptrona, gdzie warstwa ukryta jest 4 razy głębsza od warstwy wejściowej i wyjściowej
+		\item wejściowej normalizacji warstwowej;
+		\item bloku samoatencji z rozmiarem wektora cech równym 128 i z czterema głowicami, z której każda otrzymuje fragment wektora cech o długości 32;
+		\item drugiej warstwy normalizacji;
+		\item dwuwarstwowego perceptrona, gdzie warstwa ukryta jest 4 razy głębsza od warstwy wejściowej i wyjściowej;
 	\end{itemize}
 	Warstwa wejściowa i blok transformera tworzą razem pierwszy z czterech etapów kodera. Kolejne dwa etapy są zbliżone, a różnią się wymiarem wektora cech i liczbą głów: odpowiednio 256 i 8 oraz 512 i 16. Drugą różnicą jest obecność bloku łączącego łaty w miejscu warstwy splotowej, przed blokiem. Sąsiadujące łatki są w nim grupowane, po cztery na grupę, zmieniając wymiary tensora do \( \left(B, \nicefrac{H}{2}, \nicefrac{W}{2}, 4C \right) \), a następnie poddawane liniowej projekcji do głębokości 2C. To oznacza, że w drugim etapie ma miejsce projekcja z 512 do 256, a w trzecim z 1024 do 512. Ponadto, przed drugim i trzecim etapem zastosowano operację GDN. Ostatnim etapem kodera jest warstwa liniowa dokonująca projekcji z 512 do 384 wymiarów, również poprzedzona normalizacją GDN. Tensor wynikowy po operacjach kodera ma wymiar \( \left(B, 384, \nicefrac{H}{16}, \nicefrac{W}{16} \right) \)
 	\item \textbf{Kodek reprezentacji ukrytej:}
@@ -97,13 +97,13 @@ Ze względu na mnogość przeprowadzonych eksperymentów, już we wczesnej fazi
 
 Oto wybrane parametry zapisywane w plikach konfiguracyjnych:
 \begin{itemize}
-	\item konfiguracje klas wskazujących na zastosowany zbiór treningowy, walidacyjny i testowy, optymalizator, harmonogram współczynnika szybkości uczenia, typ funkcji straty
-	\item wartość współczynnika \( \lambda \)
-	\item współczynniki szybkości uczenia oraz pozostałe parametry optymalizatora
-	\item rozmiar wsadu w pojedynczym kroku treningowym
-	\item przekształcenia danych wejściowych
-	\item wartości hiperparametrów modelu takie jak rozmiar wektora cech, liczba etapów, liczba głów mechanizmu uwagi, rozmiar okna przesuwnego
-	\item metadane eksperymentu: tytuł, wersja
+	\item konfiguracje klas wskazujących na zastosowany zbiór treningowy, walidacyjny i testowy, optymalizator, harmonogram współczynnika szybkości uczenia, typ funkcji straty;
+	\item wartość współczynnika \( \lambda \);
+	\item współczynniki szybkości uczenia oraz pozostałe parametry optymalizatora;
+	\item rozmiar wsadu w pojedynczym kroku treningowym;
+	\item przekształcenia danych wejściowych;
+	\item wartości hiperparametrów modelu takie jak rozmiar wektora cech, liczba etapów, liczba głów mechanizmu uwagi, rozmiar okna przesuwnego;
+	\item metadane eksperymentu: tytuł, wersja;
 \end{itemize}
 
 \subsubsection{Funkcja straty i optymalizator}
