@@ -37,4 +37,9 @@ class MSESSIM(torch.nn.Module):
 
         mse_loss = self.mse(pred, target) * 255 ** 2
         ms_ssim_loss = ms_ssim(pred, target, data_range=1.0) if self.alpha != 0 else 0
-        return self.alpha * (1 - ms_ssim_loss) + (1 - self.alpha) * mse_loss
+        if self.alpha != 0:
+            with torch.no_grad():
+                beta = mse_loss.mean() / ((1 - ms_ssim_loss).mean() + 1e-8)
+        else:
+            beta = 1
+        return self.alpha * beta * (1 - ms_ssim_loss) + (1 - self.alpha) * mse_loss

@@ -18,16 +18,16 @@ bpg_codec = BPGCodec()
 swin_lic_codec = SwinLicCodec()
 
 codecs = [
-    jpeg_codec,
-    jpeg2000_codec,
-    webp_codec,
-    avif_codec,
-    bpg_codec,
+    # jpeg_codec,
+    # jpeg2000_codec,
+    # webp_codec,
+    # avif_codec,
+    # bpg_codec,
     swin_lic_codec,
 ]
 
 pil_test_dataset = KodakDataset(None, None, None, None)
-swin_test_dataset = KodakDataset(RGBCompression(noresize=True, normalize=True, mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD)
+swin_test_dataset = KodakDataset(RGBCompression(noresize=True, normalize=False, mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD)
                                  ,None, None, None)
 
 artifacts_dir = ARTIFACTS_PATH / (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M") + "-14")
@@ -36,8 +36,8 @@ artifacts_dir.mkdir(parents=True, exist_ok=True)
 px = 1/plt.rcParams['figure.dpi']  # pixel in inches
 plt.figure(figsize=(900*px, 600*px))
 for codec in codecs:
-    if isinstance(codec, (PILCodec, BPGCodec)):
-        codec.eval_codec(pil_test_dataset, out_dir=artifacts_dir)
+    # if isinstance(codec, (PILCodec, BPGCodec)):
+    #     codec.eval_codec(pil_test_dataset, out_dir=artifacts_dir)
     if isinstance(codec, SwinLicCodec):
         codec.eval_codec(swin_test_dataset, out_dir=artifacts_dir)
     plt.plot(codec.bpp, codec.psnr, label=codec.label, marker='o')

@@ -23,7 +23,7 @@ from src.data.transforms import RGBCompression, RGB_MIXED_LIC_MEAN, RGB_MIXED_LI
 from src.utils.initializers import model_from_config
 
 pil_test_dataset = KodakDataset(None, None, None, None)
-swin_test_dataset = KodakDataset(RGBCompression(noresize=True, normalize=True, mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD)
+swin_test_dataset = KodakDataset(RGBCompression(noresize=True, normalize=False, mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD)
                                  ,None, None, None)
 class Codec():
     def __init__(self, qualities = None, label = None, bpp = None, psnr = None, msssim = None, type = None):
@@ -72,15 +72,16 @@ class SwinLicCodec(Codec):
     def __init__(self):
         super().__init__()
         self.qualities = [
-                "SWIN-LIC_1.0.1",
-                "SWIN-LIC_1.0.2",
-                "SWIN-LIC_1.0.3",
-                "SWIN-LIC_1.0.4",
-                "SWIN-LIC_1.0.5",
-                "SWIN-LIC_1.0.6",
-                "SWIN-LIC_1.0.7",
-                "SWIN-LIC_1.0.8",
-                "SWIN-LIC_1.0.9"
+                "SWIN-LIC_1.12.0",
+                "SWIN-LIC_1.12.0.1",
+                "SWIN-LIC_1.12.0.2",
+                "SWIN-LIC_1.12.0.3",
+                "SWIN-LIC_1.12.0.4",
+                # "SWIN-LIC_1.12.0.5",
+                # "SWIN-LIC_1.12.0.6",
+                # "SWIN-LIC_1.12.0.7",
+                # "SWIN-LIC_1.12.0.8",
+                # "SWIN-LIC_1.12.0.9"
             ]
         self.label = "SwinLIC"
 
@@ -104,14 +105,14 @@ class SwinLicCodec(Codec):
                         "encoder_type": "gdn_swin_v2_b",
                         "encoder_embed_dim": 128,
                         "encoder_dims": [128, 256, 512],
-                        "encoder_depths": [2, 6, 24],
+                        "encoder_depths": [2, 6, 20],
                         "encoder_num_heads": [4, 8, 16],
                         "encoder_window_size": [8, 8],
                         "encoder_sd_factor": 0.05,
                         "encoder_mlp_ratio": 4,
                         "encoder_dropout": 0,
                         "encoder_attention_dropout": 0,
-                        "decoder_depths": [24, 6, 2],
+                        "decoder_depths": [20, 6, 2],
                         "decoder_dims": [512, 512, 256, 128],
                         "decoder_num_heads": [16, 8, 4],
                         "decoder_window_size": [[8, 8], [8, 8], [8, 8]],

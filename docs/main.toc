@@ -28,17 +28,19 @@
 \contentsline {subsubsection}{\numberline {3.3.2\relax .\enspace }Funkcja straty i optymalizator}{41}{subsubsection.3.3.2}%
 \contentsline {subsubsection}{\numberline {3.3.3\relax .\enspace }Metryki oceny i monitorowanie treningu}{42}{subsubsection.3.3.3}%
 \contentsline {subsubsection}{\numberline {3.3.4\relax .\enspace }\'Srodowisko obliczeniowe}{42}{subsubsection.3.3.4}%
-\contentsline {section}{\numberline {4\relax .\enspace }Wyniki}{43}{section.4}%
-\contentsline {subsection}{\numberline {4.1\relax .\enspace }Cel i plan eksperyment\'ow}{43}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2\relax .\enspace }Przebieg eksperyment\'ow}{43}{subsection.4.2}%
-\contentsline {subsubsection}{\numberline {4.2.1\relax .\enspace }Analiza procesu uczenia}{44}{subsubsection.4.2.1}%
-\contentsline {subsubsection}{\numberline {4.2.2\relax .\enspace }Wp\IeC {\l }yw hiperparametr\'ow i strategia ich doboru}{45}{subsubsection.4.2.2}%
-\contentsline {subsubsection}{\numberline {4.2.3\relax .\enspace }Zastosowane przekszta\IeC {\l }cenia}{46}{subsubsection.4.2.3}%
-\contentsline {subsection}{\numberline {4.3\relax .\enspace }Ewaluacja modelu}{46}{subsection.4.3}%
-\contentsline {subsection}{\numberline {4.4\relax .\enspace }Wizualna ocena jako\'sci rekonstrukcji}{48}{subsection.4.4}%
-\contentsline {subsection}{\numberline {4.5\relax .\enspace }Mocne i s\IeC {\l }abe strony}{49}{subsection.4.5}%
-\contentsline {section}{\numberline {5\relax .\enspace }Podsumowanie}{54}{section.5}%
-\contentsline {subsection}{\numberline {5.1\relax .\enspace }Wnioski z badania}{54}{subsection.5.1}%
-\contentsline {subsection}{\numberline {5.2\relax .\enspace }Mo\.zliwe usprawnienia}{54}{subsection.5.2}%
-\contentsline {section}{Bibliografia}{55}{section*.28}%
-\contentsline {section}{Spis rysunk\'ow}{57}{section*.28}%
+\contentsline {subsection}{\numberline {3.4\relax .\enspace }Por\'ownanie rozwi\k azania z podobnymi pracami}{42}{subsection.3.4}%
+\contentsline {section}{\numberline {4\relax .\enspace }Wyniki}{46}{section.4}%
+\contentsline {subsection}{\numberline {4.1\relax .\enspace }Cel i plan eksperyment\'ow}{46}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2\relax .\enspace }Przebieg eksperyment\'ow}{46}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1\relax .\enspace }Analiza procesu uczenia}{47}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2\relax .\enspace }Wp\IeC {\l }yw hiperparametr\'ow i strategia ich doboru}{48}{subsubsection.4.2.2}%
+\contentsline {subsubsection}{\numberline {4.2.3\relax .\enspace }Zastosowane przekszta\IeC {\l }cenia}{49}{subsubsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.3\relax .\enspace }Ewaluacja modelu}{50}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4\relax .\enspace }Wizualna ocena jako\'sci rekonstrukcji}{53}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5\relax .\enspace }Mocne i s\IeC {\l }abe strony}{53}{subsection.4.5}%
+\contentsline {section}{\numberline {5\relax .\enspace }Podsumowanie}{59}{section.5}%
+\contentsline {subsection}{\numberline {5.1\relax .\enspace }Wnioski z badania}{59}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2\relax .\enspace }Mo\.zliwe usprawnienia}{60}{subsection.5.2}%
+\contentsline {section}{Bibliografia}{61}{section*.29}%
+\contentsline {section}{Wykaz symboli i skr\'ot\'ow}{63}{section*.30}%
+\contentsline {section}{Spis rysunk\'ow}{65}{section*.30}%

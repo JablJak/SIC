@@ -1,53 +1,56 @@
 \clearpage
 \section{Wyniki}
-\subsection{Cel i plan eksperymentów}
-Celem przeprowadzonych eksperymentów było opracowanie oraz ewaluacja modeli stratnej kompresji obrazów opartych na architekturze transformera wizyjnego z mechanizmem okien przesuwnych, opisanej w poprzednim rozdziale. Dążono w nich do osiągnięcia jakości kompresji lepszej od powszechnie stosowanych kodeków, takich jak JPEG, WebP czy AVIF i zbliżenie się lub przekroczenie poziomów wyznaczonych przez wybrane modele kompresji neuronowej. Jako punkt odniesienia w tej materii przyjęto opracowania, stanowiące aktualny stan wiedzy: Ballé i in. (2018), Minnen i in. (2018), Cheng i in. (2020), He i in. (2022). Zarówno wspomniane metody klasyczne, jak i korzystające z sieci neuronowych, operują na krzywej kompromisu R-D, celem było przygotowanie kilku modeli oferujących różne poziomy kompresji, tworzących krzywą dla rozwiązania, będącego tematem niniejszej pracy.
+\subsection{Cel i plan eksperymentów} \label{cel-eksperymentow}
+Celem przeprowadzonych eksperymentów było opracowanie oraz ewaluacja modeli stratnej kompresji obrazów opartych na architekturze transformera wizyjnego z mechanizmem okien przesuwnych, opisanej w poprzednim rozdziale. Dążono w nich do osiągnięcia jakości kompresji lepszej od powszechnie stosowanych kodeków, takich jak JPEG, WebP czy AVIF i zbliżenie się lub przekroczenie poziomów wyznaczonych przez wybrane modele kompresji neuronowej. Jako punkt odniesienia w tej materii przyjęto opracowania, stanowiące aktualny stan wiedzy: Ballé i in. (2018)\cite{balle2018variationalimagecompressionscale}, Minnen i in. (2018)\cite{minnen2018jointautoregressivehierarchicalpriors}, Cheng i in. (2020)\cite{cheng2020learnedimagecompressiondiscretized}, He i in. (2022)\cite{he2022elicefficientlearnedimage}. Zarówno wspomniane metody klasyczne, jak i korzystające z sieci neuronowych, operują na krzywej kompromisu R-D, celem było przygotowanie kilku modeli oferujących różne poziomy kompresji, tworzących krzywą dla rozwiązania, będącego tematem niniejszej pracy.
 
-Plan eksperymentów zakładał ewolucyjne dostrajanie architektury oraz parametrów i technik treningowych, które pozwoliły na stworzenie modelu z minimalnym dla danej szybkości bitowej poziomem zniekształcenia, a następnie przesuwanie się po krzywej kompromisu w kilku dodatkowych iteracjach eksperymentu, poprzez manipulowanie parametrem \( \lambda \) w funkcji straty. Sieć trenowano z wykorzystaniem technik inżynierii uczenia maszynowego do momentu konwergencji funkcji celu. Tak przygotowane modele ostatecznie poddawano ewaluacji końcowej na referencyjnym zbiorze Kodak, który jest jednym ze standardowych punktów odniesienia w testowaniu kodeków stratnej kompresji obrazów, co pozwoliło na weryfikację uzyskanych wyników z wymienionymi wcześniej rozwiązaniami.
+Plan eksperymentów zakładał ewolucyjne dostrajanie architektury oraz parametrów i technik treningowych, które pozwoliły na stworzenie modelu z minimalnym dla danej średniej bitowej poziomem zniekształcenia, a następnie przesuwanie się po krzywej kompromisu w kilku dodatkowych iteracjach eksperymentu, poprzez manipulowanie parametrem \( \lambda \) w funkcji straty. Sieć trenowano z wykorzystaniem technik inżynierii uczenia maszynowego do momentu konwergencji funkcji celu. Tak przygotowane modele ostatecznie poddawano ewaluacji końcowej na referencyjnym zbiorze Kodak, który jest jednym ze standardowych punktów odniesienia w testowaniu kodeków stratnej kompresji obrazów, co pozwoliło na weryfikację uzyskanych wyników z wymienionymi wcześniej rozwiązaniami.
 
 \begin{sloppypar}
 Do oceny jakości rekonstrukcji przyjęto użycie dwóch powszechnie stosowanych w ewaluacji kompresji obrazów miar --- wspominany wcześniej w pracy PSNR oraz miarę MS-SSIM\cite{wangmsssim}. Ta druga jest pochodną, także opisywanego wcześniej, indeksu SSIM, ale uznawana jest za bardziej zbliżoną do subiektywnej oceny obrazu przez człowieka, ponieważ symuluje obserwację obrazu z różnych odległości od medium. W praktyce osiąga się to poprzez obliczanie SSIM na różnych skalach, uzyskiwanych przy pomocy skalowania obrazu w dół. Wyniki z różnych skal są uśrednione, dając końcowy wynik indeksu MS-SSIM, również w zakresie \( \left[ 0, 1 \right] \).
 \end{sloppypar}
 \subsection{Przebieg eksperymentów}
-W poniższym podrozdziale opisano proces uzyskiwania modelu kompresji obrazów dla opisanej w poprzednim rozdziale architektury sieci. Ze względu na konieczność wykonania ogromnej ilości obliczeń, jest to proces mozolny i energochłonny. Ponadto niewielkie zmiany w architekturze czy metodach uczenia maszynowego mogą spowodować, że pojedynczy eksperyment przestaje prowadzić do oczekiwanych wyników i wymaga modyfikacji w trakcie, a często także przerwania. 
+W poniższym podrozdziale opisano proces uzyskiwania modelu kompresji obrazów dla opisanej w poprzednim rozdziale architektury sieci. Ze względu na konieczność wykonania ogromnej ilości obliczeń, jest to proces mozolny i energochłonny. Ponadto niewielkie zmiany w architekturze czy metodach uczenia maszynowego mogą spowodować, że pojedynczy eksperyment przestaje prowadzić do oczekiwanych wyników i wymaga modyfikacji w trakcie, a często także przerwania.
 
-\subsubsection{Analiza procesu uczenia}
+\subsubsection{Analiza procesu uczenia} \label{proces-uczenia}
 We wczesnej fazie eksperymentów koncentrowano się na iteracyjnej eksploracji przestrzeni hiperparametrów, poszukiwaniu optymalnego zestawu danych oraz adaptacji procesu treningowego do zadania i zastosowanej architektury. Zaobserwowano wtedy problem eksplozji gradientów dla zbyt dużych kroków uczenia i osiągania nieoptymalnego minimum lokalnego dla niższych. Jako środek naprawczy zastosowano optymalizację w strategii normalizacji oraz zrezygnowano z niestandardowych optymalizatorów na rzecz AdamW, dostępnego w ramach frameworku PyTorch, co minimalizuje ryzyko nieoptymalnej implementacji. Wdrożono także przycinanie gradientu oraz zrezygnowano z korzystania ze zmniejszonej precyzji liczb zmiennoprzecinkowych, co odbiło się negatywnie na złożoności procesu, ale przyniosło poprawę konwergencji sieci w późnych fazach treningu.
 
-Drugim dużym wyzwaniem okazało się znalezienie kompromisów pomiędzy rozmiarem sieci (głębokością i liczbą parametrów) i przestrzeni ukrytej, a pojemnością modelu i jego zdolnością do generalizacji, przy jednoczesnym zachowaniu ograniczonych zasobów obliczeniowych. Początkowe założenie, że im większy wariant transformera Swin zostanie użyty, tym lepsza będzie zdolność kompresji, okazało się błędne. Szczególnie przejście z wariantu Small do wariantu Base pozwoliło z jednej strony na lepszą analizę i rekonstrukcję obrazu, jednocześnie zwiększając rozmiar przestrzeni ukrytej z 768 do 1024 kanałów, przy zmniejszeniu obu wymiarów przestrzennych trzydziestodwukrotnie w obu przypadkach. W efekcie powstała przestrzeń ukryta była bardzo głęboka i mała przestrzennie, w zderzeniu z przykładowo pracą Cheng et al., gdzie twórcy zaprojektowali przestrzeń ukrytą na 128 i 192 kanały przy szesnastokrotnym zmniejszeniu obu wymiarów przestrzennych. Podjęto decyzję o usunięciu najgłębszych etapów transformerów, tj. ostatniego w koderze i pierwszego w dekoderze, co wyeliminowało także ostatnią operację łączenia łat, zostawiając przestrzeń ukrytą o 512 kanałach, zmniejszoną szesnastokrotnie na wysokości i szerokości. W celu dalszej redukcji głębokości wprowadzono warstwę liniową do 384 kanałów. Wymienione usprawnienia pozwoliły na odzyskanie dużej części pamięci, co przełożyło się na możliwość trenowania obrazów o wymiarach \(384 \times 384\) pikseli we wsadach po 8 obrazów, w porównaniu do wsadu z jednym obrazem uprzednio.
+Drugim dużym wyzwaniem okazało się znalezienie kompromisów pomiędzy rozmiarem sieci (głębokością i liczbą parametrów) i przestrzeni ukrytej, a pojemnością modelu i jego zdolnością do generalizacji, przy jednoczesnym zachowaniu ograniczonych zasobów obliczeniowych. Początkowe założenie, że im większy wariant transformera Swin zostanie użyty, tym lepsza będzie zdolność kompresji, okazało się błędne. Szczególnie przejście z wariantu Small do wariantu Base pozwoliło z jednej strony na lepszą analizę i rekonstrukcję obrazu, jednocześnie zwiększając rozmiar przestrzeni ukrytej z 768 do 1024 kanałów, przy zmniejszeniu obu wymiarów przestrzennych trzydziestodwukrotnie w obu przypadkach. W efekcie powstała przestrzeń ukryta była bardzo głęboka i mała przestrzennie, w zderzeniu z przykładowo pracą Cheng i in., gdzie twórcy zaprojektowali przestrzeń ukrytą na 128 i 192 kanały przy szesnastokrotnym zmniejszeniu obu wymiarów przestrzennych. Podjęto decyzję o usunięciu najgłębszych etapów transformerów, tj. ostatniego w koderze i pierwszego w dekoderze, co wyeliminowało także ostatnią operację łączenia łat, zostawiając przestrzeń ukrytą o 512 kanałach, zmniejszoną szesnastokrotnie na wysokości i szerokości. W celu dalszej redukcji głębokości wprowadzono warstwę liniową do 384 kanałów. Wymienione usprawnienia pozwoliły na odzyskanie dużej części pamięci, co przełożyło się na możliwość trenowania obrazów o wymiarach \(384 \times 384\) pikseli we wsadach po 8 obrazów, w porównaniu do wsadu z jednym obrazem uprzednio.
 
-Wraz z kolejnymi usprawnieniami model zaczął zbiegać w sposób coraz bardziej stabilny. Po wyznaczeniu optymalnych konfiguracji i finalnej implementacji, przebieg uczenia charakteryzował się wciąż wolną, lecz konsekwentną zbieżnością, z jedynie niewielkim poziomem. Trening kontynuowano średnio przed około 300–500 tysięcy iteracji, Powyżej tego momentu, dalszy trening przestawał być uzasadniony z uwagi na rosnące koszty czasowe, obliczeniowe i energetyczne w odniesieniu do niewielkich przyrostów jakości na dostępnym środowisku obliczeniowym. W warunkach domowego laboratorium opisanego w sekcji~\ref{srodowisko-obliczeniowe}, wymaga to bowiem co najmniej kilka dni nieprzerwanych obliczeń z użyciem GPU. Rysunek \ref{fig:przebieg-treningu} przedstawia zmianę wartości funkcji straty oraz wskaźników PSNR, SSIM i szybkości bitowej dla jednego z ostatnich eksperymentów. Wizualizacja ta potwierdza stabilność treningu i stopniową poprawę metryk z kolejnymi iteracjami, a jedyne zaburzenie wynikło ze zwiększenia rozdzielczości obrazów podawanych do sieci około 300 tysięcznej iteracji.
+Wraz z kolejnymi usprawnieniami model zaczął zbiegać w sposób coraz bardziej stabilny. Po wyznaczeniu optymalnych konfiguracji i finalnej implementacji, przebieg uczenia charakteryzował się wciąż wolną, lecz konsekwentną zbieżnością, z jedynie niewielkim poziomem. Trening kontynuowano średnio przed około 300–-500 tysięcy iteracji, gdzie iteracja to pojedynczy przepływ wsadu danych przez sieć. W przypadku wsadu wielkości 8 próbek i 9035 obrazów w zbiorze treningowym daje to około 250--450 epok. Powyżej tego momentu, dalszy trening przestawał być uzasadniony z uwagi na rosnące koszty czasowe, obliczeniowe i energetyczne w odniesieniu do niewielkich przyrostów jakości na dostępnym środowisku obliczeniowym. W warunkach domowego laboratorium opisanego w sekcji \ref{srodowisko-obliczeniowe}, wymaga to bowiem co najmniej kilka dni nieprzerwanych obliczeń z użyciem GPU. Rysunek \ref{fig:przebieg-treningu} przedstawia zmianę wartości funkcji straty oraz wskaźników PSNR, SSIM i średniej bitowej dla jednego z ostatnich eksperymentów. Wizualizacja ta potwierdza stabilność treningu i stopniową poprawę metryk z kolejnymi iteracjami.
 \begin{figure}[h!]
 	\centering
 	\begin{subfigure}{0.495\textwidth}
 		\centering
-		\includegraphics[width=\linewidth]{loss\_0.17.0\_b.png}
-		\caption{Wykres funkcji celu}
+		\includegraphics[width=\linewidth]{loss.png}
+		\caption{Wykres funkcji straty}
+		\label{fig:strata}
 	\end{subfigure}
 	\hfill
 	\begin{subfigure}{0.495\textwidth}
 		\centering
-		\includegraphics[width=\linewidth]{bpp\_0.17.0\_b.png}
-		\caption{Wykres szybkości bitowej [bity na piksel]}
+		\includegraphics[width=\linewidth]{bpp.png}
+		\caption{Wykres średniej bitowej [bity na piksel]}
 	\end{subfigure}
 	
 	\vspace{0.5em}
 
 	\begin{subfigure}{0.495\textwidth}
 		\centering
-		\includegraphics[width=\linewidth]{psnr\_0.17.0\_b.png}
+		\includegraphics[width=\linewidth]{psnr.png}
 		\caption{Wykres PSNR [dB]}
 	\end{subfigure}
 	\hfill
 	\begin{subfigure}{0.495\textwidth}
 		\centering
-		\includegraphics[width=\linewidth]{ssim\_0.17.0\_b.png}
+		\includegraphics[width=\linewidth]{ssim.png}
 		\caption{Wykres SSIM}
 	\end{subfigure}
 	
-	\caption{Wizualizacja przebiegu przykładowego treningu na podstawie wartości metryk}
+	\caption[Wizualizacja przebiegu przykładowego treningu na podstawie wartości metryk]{Wizualizacja przebiegu przykładowego treningu na podstawie wartości metryk. Na rysunku \subref{fig:strata} można dostrzec trzy wyraźne skoki w wykresie funkcji straty. Efekt ten jest konsekwencją sterowania parametrem \(\lambda\) w trakcie eksperymentu, w celu osiągnięcia oczekiwanej średniej bitowej}
 	\label{fig:przebieg-treningu}
 \end{figure}
+
+Ze względu na zastosowaną strategię skalowania w oparciu o nienachodzące na siebie bloki model produkuje rekonstrukcje z artefaktami blokowymi. W celu zredukowania tego efektu podjęto próbę wprowadzenia warstw splotowych w dekoderze, które wygładziłyby przejścia pomiędzy blokami. W tym samym eksperymencie wprowadzono również inną modyfikację. Ze względu na stosowanie wycinków sieć neuronowa ma trudność z odróżnieniem rzeczywistej krawędzi obrazu od sztucznej granicy wycinka. W celu zredukowania wpływu tego efektu na proces treningu i zdolność rekonstrukcji wprowadzono dodatkową mapę binarną informującą o rzeczywistej krawędzi obrazu. W założeniu mogłoby to także pomóc neutralizować negatywny wpływ, gdy występuje dopełnianie obrazu lub mapy cech do określonego wymiaru. Maskę konkatenowano z wejściem każdego etapu kodera i dekodera, jednak ze względu na ścisłe wymaganie rozmiaru wektora w bloku transformera, łączono następnie maskę z wektorem za pomocą splotu. Niestety eksperyment nie przyniósł oczekiwanych rezultatów i wyniki okazały się gorsze od wyników uzyskanych dla opisywanego modelu średnio o ok. 0,5 dB PSNR.
 \subsubsection{Wpływ hiperparametrów i strategia ich doboru}
 Jednym z najistotniejszych dla procesu treningowego hiperparametrów jest współczynnik uczenia. W pierwszych iteracjach implementacji sieć neuronowa była na niego bardzo wrażliwa. Zbyt niski współczynnik uczenia (rzędu \( 10^{-6} \)) powodował zakończenie konwergencji już po kilku tysiącach kroków w bardzo nieoptymalnym minimum lokalnym. Z kolei większy (powyżej \( 10^{-4} \)) powodował nagłe eksplozje gradientu. Po podjęciu stabilizujących działań naprawczych trenowano sieć przez około 200 tysięcy kroków ze współczynnikiem uczenia wynoszącym \( 10^{-4} \), aby umożliwić eksplorację przestrzeni rozwiązań, a następnie stopniowo obniżano do \( 10^{-5} \), co pozwalało na eksploatację lokalnego minimum. Ponadto, zastosowano rozgrzewkowe liniowe zwiększanie współczynnika uczenia od \( 10^{-7} \) do \( 10^{-4} \) przez pierwsze 5000 kroków, zgodnie z zaleceniami trenowania transformerów\cite{Popel_2018} co ma na celu zapobiegnięcie dywergencji sieci.
 
@@ -64,28 +67,52 @@ Ewaluację modeli przeprowadzono za pomocą krzywej jakości rekonstrukcji, w st
 
 Do oceny jakości rekonstrukcji użyto miary PSNR, która wyznacza zgodność obrazu zdekompresowanego, względem obrazu referencyjnego, na poziomie pojedynczych pikseli. Dla poszerzenia analizy porównawczej użyto także drugiej miary jakości --- SSIM --- która lepiej oddaje percepcję jakości obrazu przez ludzki system wzrokowy.
 
-Na wykresach \ref{fig:krzywa-rd-psnr} i \ref{fig:krzywa-rd-ms-ssim} zestawiono krzywe, utworzone przy użyciu przygotowanego modelu, z krzywymi dla trzech najpopularniejszych kodeków kompresji stratnej, nie wykorzystujących technik uczenia maszynowego: JPEG, WebP oraz AVIF. Opracowany model nazwano SwinLIC (\textbf{Swin} (Transformer) \textbf{L}earned \textbf{I}mage \textbf{C}ompression).
+Na wykresach \ref{fig:krzywa-rd-psnr-klasyki} i \ref{fig:krzywa-rd-ms-ssim-klasyki} zestawiono krzywe, utworzone przy użyciu przygotowanego modelu, z krzywymi dla najpopularniejszych kodeków kompresji stratnej, nie wykorzystujących technik uczenia maszynowego: JPEG, JPEG 2000, WebP, BPG oraz AVIF. Opracowany model nazwano SwinLIC (\textbf{Swin} Transformer based \textbf{L}earned \textbf{I}mage \textbf{C}ompression).
 
-Na podstawie pierwszego wyresu można wnioskować, że model ma solidną zdolność rekonstrukcji na poziomie pojedynczych pikseli w bardzo niskim budżecie bitowym, porównywalną do zaawansowanego kodeka AVIF. Z kolei w średnim budżecie bitowym odznacza się wynikiem zbliżonym do kodeka WebP. Niestety, w ogólności model nie wykazuje oczekiwanej zdolności do rekonstruowania referencyjnych obrazów, co widać w punktach leżących na dalszej części krzywej i jego możliwości słabną wraz ze wzrostem przepływności. Powyżej około 1,5 bita na piksel (nie został przygotowany model dla tego punktu, obserwacja ta jest oparta na empirycznej ekstrapolacji krzywej) kodek JPEG przewyższa go jakością rekonstrukcji.
+Na podstawie pierwszego wykresu można wnioskować, że model ma solidną zdolność rekonstrukcji na poziomie pojedynczych pikseli w bardzo niskim budżecie bitowym, porównywalną do zaawansowanego kodeka AVIF. Z kolei w średnim budżecie bitowym odznacza się wynikiem zbliżonym do kodeka WebP. Niestety, w ogólności model nie wykazuje oczekiwanej zdolności do rekonstruowania referencyjnych obrazów, co widać w kolejnych punktach krzywej i jego możliwości słabną wraz ze wzrostem przepływności. Powyżej około 1,5 bita na piksel (nie został przygotowany model dla tego punktu, obserwacja ta jest oparta na empirycznej ekstrapolacji krzywej) kodek JPEG przewyższa go jakością rekonstrukcji.
 
-W teście jakości strukturalnej, którego wyniki przedstawiono na drugim wykresie, opracowany model przewyższa kodeki JPEG oraz WebP w każdym zmierzonym punkcie szybkości bitowej. W porównaniu z kodekiem AVIF osiąga niższą jakość poniżej 0,6 bita na piksel, natomiast powyżej tej wartości krzywe się pokrywają.
+W teście jakości strukturalnej, którego wyniki przedstawiono na drugim wykresie, opracowany model przewyższa kodeki JPEG oraz WebP w każdym zmierzonym punkcie średniej bitowej. W porównaniu z kodekiem AVIF osiąga niższą jakość poniżej 0,6 bita na piksel, natomiast powyżej tej wartości krzywe się pokrywają.
 
-\begin{figure}
+\begin{figure}[p]
 	\centering
-	\includegraphics[width=\linewidth]{rd\_psnr.png}
-	\caption{Porównanie wyniku PSNR względem przepływności utworzonego modelu z wybranymi metodami kompresji na zbiorze Kodak}
-	\label{fig:krzywa-rd-psnr}
+	\begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{classic\_rd\_psnr.png}
+		\caption{}
+		\label{fig:krzywa-rd-psnr-klasyki}
+	\end{subfigure}
+	\vspace{1em}
+	\begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{classic\_rd\_ms\_ssim.png}
+		\caption{}
+		\label{fig:krzywa-rd-ms-ssim-klasyki}
+	\end{subfigure}
+	\caption[Porównanie wyników PSNR i MS-SSIM z wybranymi klasycznymi metodami kompresji na zbiorze Kodak]{Porównanie wyników PSNR \subref{fig:krzywa-rd-psnr-klasyki} i MS-SSIM \subref{fig:krzywa-rd-ms-ssim-klasyki} względem przepływności utworzonego modelu z wybranymi klasycznymi metodami kompresji na zbiorze Kodak}
 \end{figure}
 
-\begin{figure}
+Kolejne dwa wykresy \ref{fig:krzywa-rd-psnr-uczone} i \ref{fig:krzywa-rd-ms-ssim-uczone} przedstawiają wyniki opracowanego modelu, utworzone przy użyciu przygotowanego modelu, z krzywymi dla innych modeli neuronowych, wymienionych w sekcji \ref{cel-eksperymentow}. Wynika z nich, że nie udało się uzyskać porównywalnej efektywności kompresji do efektów najlepszych naukowców. Mimo tego w zakresie średniej bitowej od 0 do 0,6 bita na piksel różnica wierności rekonstrukcji wynosi do 1 dB PSNR w zestawieniu z modelem zespołu Ballé i in. (2018). Z kolei w jakości wyrażonej przez MS-SSIM nie widać istotnych różnic pomiędzy zaproponowanym modelem, a modelami Ballé i Minnen.
+
+\begin{figure}[p]
 	\centering
-	\includegraphics[width=\linewidth]{rd\_ms\_ssim.png}
-	\caption{Porównanie wyniku MS-SSIM względem przepływności utworzonego modelu z wybranymi metodami kompresji na zbiorze Kodak}
-	\label{fig:krzywa-rd-ms-ssim}
+	\begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{neural\_rd\_psnr.png}
+		\caption{}
+		\label{fig:krzywa-rd-psnr-uczone}
+	\end{subfigure}
+	\vspace{1em}
+	\begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{neural\_rd\_ms\_ssim.png}
+		\caption{}
+		\label{fig:krzywa-rd-ms-ssim-uczone}
+	\end{subfigure}
+	\caption[Porównanie wyników PSNR i MS-SSIM z wybranymi neuronowymi metodami kompresji na zbiorze Kodak]{Porównanie wyników PSNR \subref{fig:krzywa-rd-psnr-uczone} i MS-SSIM \subref{fig:krzywa-rd-ms-ssim-uczone} względem przepływności utworzonego modelu z wybranymi neuronowymi metodami kompresji na zbiorze Kodak}
 \end{figure}
 
 \subsection{Wizualna ocena jakości rekonstrukcji}
-Na rysunkach \ref{fig:wizualna-ocena-03-kobieta}, \ref{fig:wizualna-ocena-03-ponton} i \ref{fig:wizualna-ocena-02-latarnia} przedstawiono porównanie obrazów skompresowanych i zdekompresowanych przez, wspomniane wcześniej, klasyczne metody kompresji do obrazu referencyjnego. W porównaniu zastosowano względnie wysoki stopień kompresji (ok. 0,2--0,3 bita na piksel), aby różnice na pełnych, lecz pomniejszonych obrazach, były wyraźnie widoczne. Dla zwiększenia czytelności zrezygnowano z przedstawienia wyników JPEG --- dla zadanej szybkości bitowej jakość rekonstrukcji jest poniżej progu powszechnej użyteczności, ze względu na dużą utratę szczegółów, bardzo wyraźne artefakty blokowe i zniekształcenia zarówno lokalnych jak i globalnych statystyk jasności i barw pikseli.
+Na rysunkach \ref{fig:wizualna-ocena-03-kobieta}, \ref{fig:wizualna-ocena-03-ponton} i \ref{fig:wizualna-ocena-02-latarnia} przedstawiono porównanie obrazów skompresowanych i zdekompresowanych przez, wspomniane wcześniej, klasyczne metody kompresji do obrazu referencyjnego. W porównaniu zastosowano względnie wysoki stopień kompresji (ok. 0,2--0,3 bita na piksel), aby różnice na pełnych, lecz pomniejszonych obrazach, były wyraźnie widoczne. Dla zwiększenia czytelności zrezygnowano z przedstawienia wyników JPEG --- dla zadanej średniej bitowej jakość rekonstrukcji jest poniżej progu powszechnej użyteczności, ze względu na dużą utratę szczegółów, bardzo wyraźne artefakty blokowe i zniekształcenia zarówno lokalnych jak i globalnych statystyk jasności i barw pikseli.
 
 W subiektywnej ocenie wizualnej potwierdzają się wyniki ewaluacji z użyciem miar jakości. Najwyższą wierność rekonstrukcji zachował format AVIF --- nie zniekształcił jasności i barw, odtworzył detale bardzo szczegółowo, oraz nie spowodował powstania rzucających się w oczy artefaktów. Wadą jego rekonstrukcji jest za to duże rozmycie w obszarach o niskiej częstotliwości, co widać na przykładzie skóry kobiety, mimo braku rozmycia na fragmentach o dużej częstotliwości, jak włosy czy tekstura kapelusza. Znacznie mniejszą wiernością w odtwarzaniu szczegółów charakteryzują się obrazy kompresowane z użyciem WebP, co widać gołym okiem na teksturze elewacji latarni czy twarzach flisaków. Wyraźne są także artefakty blokowe na gładkich obszarach.
 

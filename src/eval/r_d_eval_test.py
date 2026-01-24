@@ -19,11 +19,11 @@ if __name__ == '__main__':
     device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
     print("Device:", device)
     models = [
-        ("SWIN-LIC_1.6.0", "gdn_swin_v2_b"),
+        ("SWIN-LIC_1.12.0", "gdn_swin_v2_b"),
     ]
 
-    transform = RGBCompression(crop_size=[512, 512], normalize=False, mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD)
-    target_transform = RGBCompression(crop_size=[512, 512], noresize=True, mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD)
+    transform = RGBCompression(noresize=True, normalize=False, mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD)
+    target_transform = RGBCompression(noresize=True, mean=RGB_MIXED_LIC_MEAN, std=RGB_MIXED_LIC_STD)
 
     dataset = KodakDataset(transform=transform, target_transform=target_transform)
     pic_num = 24

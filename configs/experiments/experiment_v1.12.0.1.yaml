@@ -1,0 +1,151 @@
+
+train_dataset:
+  module: src.data.mixed_lic_dataset.MixedLICDataset
+  transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        mean: [0.448, 0.429, 0.392]
+        std: [0.240, 0.230, 0.242]
+        normalize: false
+        crop_size: [384, 384]
+  target_transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        mean: [0.448, 0.429, 0.392]
+        std: [0.240, 0.230, 0.242]
+        normalize: false
+        crop_size: [384, 384]
+  args:
+    variant: train
+    subset_classes: 25
+    subset_samples: 131072
+
+val_dataset:
+  module: src.data.mixed_lic_dataset.MixedLICDataset
+  transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        mean: [0.448, 0.429, 0.392]
+        std: [0.240, 0.230, 0.242]
+        normalize: false
+        crop_size: [384, 384]
+  target_transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        mean: [0.448, 0.429, 0.392]
+        std: [0.240, 0.230, 0.242]
+        crop_size: [384, 384]
+        normalize: false
+  args:
+    variant: val
+    subset_classes: 1
+    subset_samples: 1024
+
+test_dataset:
+  module: src.data.kodak_dataset.KodakDataset
+  transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        mean: [0.448, 0.429, 0.392]
+        std: [0.240, 0.230, 0.242]
+        normalize: false
+        crop_size: [512, 512]
+  target_transform:
+    - module: src.data.transforms.RGBCompression
+      args:
+        mean: [0.448, 0.429, 0.392]
+        std: [0.240, 0.230, 0.242]
+        normalize: false
+        crop_size: [512, 512]
+  args: {}
+
+model:
+  module: src.models.swin_compression.SwinTransformerCompressionAutoencoder
+  weights: SWIN-LIC_1.12.0
+  args:
+    pretrained_encoder: false
+    encoder_type: gdn_swin_v2_b
+    encoder_embed_dim: 128
+    encoder_dims: [ 128, 256, 512 ]
+    encoder_depths: [ 2, 6, 20 ]
+    encoder_num_heads: [ 4, 8, 16 ]
+    encoder_window_size: [8, 8]
+    encoder_sd_factor: 0.05
+    encoder_mlp_ratio: 4
+    encoder_dropout: 0
+    encoder_attention_dropout: 0
+    decoder_depths: [ 20, 6, 2 ]
+    decoder_dims: [ 512, 512, 256, 128 ]
+    decoder_num_heads: [ 16, 8, 4 ]
+    decoder_window_size: [ [8, 8], [8, 8], [8, 8] ]
+    decoder_mlp_ratio: [ 4, 4, 4 ]
+    decoder_sd_factor: 0.03
+    decoder_dropout: 0
+    decoder_attention_dropout: 0
+    bottleneck_dim: 384
+    no_compress: false
+    checkpointing: true
+
+dataloader:
+  args:
+    batch_size: 8
+    shuffle: true
+    num_workers: 2
+    pin_memory: false
+    drop_last: true
+
+optimizer:
+  module: torch.optim.AdamW
+  args:
+    lr: !!float 5e-5
+  main_lr: !!float 5e-5
+  conv_lr: !!float 5e-5
+
+scheduler:
+  module: torch.optim.lr_scheduler.LinearLR
+  enabled: false
+  args:
+    total_iters: 3000
+    start_factor: 0.00001
+    end_factor: 1.0
+    last_epoch: -1
+
+aux_optimizer:
+  module: torch.optim.Adam
+  args:
+    lr: !!float 5e-3
+
+aux_scheduler:
+  module: torch.optim.lr_scheduler.CosineAnnealingLR
+  enabled: false
+  args:
+    eta_min: 0.0005
+    T_max: 200
+
+loss:
+  module: src.losses.mse_ssim.MSESSIM
+  args:
+    alpha: 0
+
+rd_loss:
+  enabled: true
+  lambda: !!float 0.08
+
+epochs: 1
+log_frequency: 100
+accumulation_steps: 2
+
+aux_optimizer_delay: 0
+
+dataset_split_ratio: 0.7
+
+output:
+  model:
+    name: SWIN-LIC
+    version: 1.12.0.1
+
+project_name: INZ
+task_name: v1.12.0.1 SWIN-LIC
+comment: |
+  - restore original patch split and scaling strategy, keep patch reconstruction with conv
+  - restore mask

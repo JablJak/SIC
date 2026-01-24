@@ -163,6 +163,271 @@
       \field{title}{Learning Internal Representations from Gray-Scale Images: An Example of Extensional Programming}
       \field{year}{1987}
     \endentry
+    \entry{toderici2016variablerateimagecompression}{misc}{}
+      \name{author}{8}{}{%
+        {{hash=61782a3924be97d5dc42427bfd963c92}{%
+           family={Toderici},
+           familyi={T\bibinitperiod},
+           given={George},
+           giveni={G\bibinitperiod}}}%
+        {{hash=b5367959356e6c8e98ef04d97cc11f52}{%
+           family={O'Malley},
+           familyi={O\bibinitperiod},
+           given={Sean\bibnamedelima M.},
+           giveni={S\bibinitperiod\bibinitdelim M\bibinitperiod}}}%
+        {{hash=f1c68f81252dde8b1f24287c039eb553}{%
+           family={Hwang},
+           familyi={H\bibinitperiod},
+           given={Sung\bibnamedelima Jin},
+           giveni={S\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+        {{hash=917cc9d59f6ad3c51ab0377febd20143}{%
+           family={Vincent},
+           familyi={V\bibinitperiod},
+           given={Damien},
+           giveni={D\bibinitperiod}}}%
+        {{hash=5aceb742cdf021564a365f36fd243783}{%
+           family={Minnen},
+           familyi={M\bibinitperiod},
+           given={David},
+           giveni={D\bibinitperiod}}}%
+        {{hash=eec9fdeb0cce98cd518c3406eff1dde1}{%
+           family={Baluja},
+           familyi={B\bibinitperiod},
+           given={Shumeet},
+           giveni={S\bibinitperiod}}}%
+        {{hash=e0d32d52c17c7cee8d9a1580a009d711}{%
+           family={Covell},
+           familyi={C\bibinitperiod},
+           given={Michele},
+           giveni={M\bibinitperiod}}}%
+        {{hash=4df216303596d3f13ec1677ee7718dca}{%
+           family={Sukthankar},
+           familyi={S\bibinitperiod},
+           given={Rahul},
+           giveni={R\bibinitperiod}}}%
+      }
+      \strng{namehash}{cb65b721d5f6666febfa5b35da1a481b}
+      \strng{fullhash}{121cfecccd6bb192e78efd19a03db622}
+      \strng{bibnamehash}{cb65b721d5f6666febfa5b35da1a481b}
+      \strng{authorbibnamehash}{cb65b721d5f6666febfa5b35da1a481b}
+      \strng{authornamehash}{cb65b721d5f6666febfa5b35da1a481b}
+      \strng{authorfullhash}{121cfecccd6bb192e78efd19a03db622}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{cs.CV}
+      \field{eprinttype}{arXiv}
+      \field{title}{Variable Rate Image Compression with Recurrent Neural Networks}
+      \field{year}{2016}
+      \verb{eprint}
+      \verb 1511.06085
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/1511.06085
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/1511.06085
+      \endverb
+    \endentry
+    \entry{toderici2017resolutionimagecompressionrecurrent}{misc}{}
+      \name{author}{7}{}{%
+        {{hash=61782a3924be97d5dc42427bfd963c92}{%
+           family={Toderici},
+           familyi={T\bibinitperiod},
+           given={George},
+           giveni={G\bibinitperiod}}}%
+        {{hash=917cc9d59f6ad3c51ab0377febd20143}{%
+           family={Vincent},
+           familyi={V\bibinitperiod},
+           given={Damien},
+           giveni={D\bibinitperiod}}}%
+        {{hash=1134e9a8181206e5bf1afdf9ba661ea5}{%
+           family={Johnston},
+           familyi={J\bibinitperiod},
+           given={Nick},
+           giveni={N\bibinitperiod}}}%
+        {{hash=f1c68f81252dde8b1f24287c039eb553}{%
+           family={Hwang},
+           familyi={H\bibinitperiod},
+           given={Sung\bibnamedelima Jin},
+           giveni={S\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+        {{hash=5aceb742cdf021564a365f36fd243783}{%
+           family={Minnen},
+           familyi={M\bibinitperiod},
+           given={David},
+           giveni={D\bibinitperiod}}}%
+        {{hash=dde6aa7c5763ede6c27853dafb2f846c}{%
+           family={Shor},
+           familyi={S\bibinitperiod},
+           given={Joel},
+           giveni={J\bibinitperiod}}}%
+        {{hash=e0d32d52c17c7cee8d9a1580a009d711}{%
+           family={Covell},
+           familyi={C\bibinitperiod},
+           given={Michele},
+           giveni={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{5708dc9247fda737fe8166d9a7b4e86e}
+      \strng{fullhash}{096fff33a4811738c75207daa65d5d1b}
+      \strng{bibnamehash}{5708dc9247fda737fe8166d9a7b4e86e}
+      \strng{authorbibnamehash}{5708dc9247fda737fe8166d9a7b4e86e}
+      \strng{authornamehash}{5708dc9247fda737fe8166d9a7b4e86e}
+      \strng{authorfullhash}{096fff33a4811738c75207daa65d5d1b}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{cs.CV}
+      \field{eprinttype}{arXiv}
+      \field{title}{Full Resolution Image Compression with Recurrent Neural Networks}
+      \field{year}{2017}
+      \verb{eprint}
+      \verb 1608.05148
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/1608.05148
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/1608.05148
+      \endverb
+    \endentry
+    \entry{balle2017endtoendoptimizedimagecompression}{misc}{}
+      \name{author}{3}{}{%
+        {{hash=b565c073c7c0ed90dae12ffc2820a66d}{%
+           family={Ballé},
+           familyi={B\bibinitperiod},
+           given={Johannes},
+           giveni={J\bibinitperiod}}}%
+        {{hash=cece8bb3b3fd5f27d94210ceb297643b}{%
+           family={Laparra},
+           familyi={L\bibinitperiod},
+           given={Valero},
+           giveni={V\bibinitperiod}}}%
+        {{hash=027ac5801d4cec598c393e1f9875c60b}{%
+           family={Simoncelli},
+           familyi={S\bibinitperiod},
+           given={Eero\bibnamedelima P.},
+           giveni={E\bibinitperiod\bibinitdelim P\bibinitperiod}}}%
+      }
+      \strng{namehash}{8fabb3fc9c0dcfc5501ac06b6867996b}
+      \strng{fullhash}{8fabb3fc9c0dcfc5501ac06b6867996b}
+      \strng{bibnamehash}{8fabb3fc9c0dcfc5501ac06b6867996b}
+      \strng{authorbibnamehash}{8fabb3fc9c0dcfc5501ac06b6867996b}
+      \strng{authornamehash}{8fabb3fc9c0dcfc5501ac06b6867996b}
+      \strng{authorfullhash}{8fabb3fc9c0dcfc5501ac06b6867996b}
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{cs.CV}
+      \field{eprinttype}{arXiv}
+      \field{title}{End-to-end Optimized Image Compression}
+      \field{year}{2017}
+      \verb{eprint}
+      \verb 1611.01704
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/1611.01704
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/1611.01704
+      \endverb
+    \endentry
+    \entry{balle2018variationalimagecompressionscale}{misc}{}
+      \name{author}{5}{}{%
+        {{hash=b565c073c7c0ed90dae12ffc2820a66d}{%
+           family={Ballé},
+           familyi={B\bibinitperiod},
+           given={Johannes},
+           giveni={J\bibinitperiod}}}%
+        {{hash=5aceb742cdf021564a365f36fd243783}{%
+           family={Minnen},
+           familyi={M\bibinitperiod},
+           given={David},
+           giveni={D\bibinitperiod}}}%
+        {{hash=72046c7dbd4a54893754d1a062d4533d}{%
+           family={Singh},
+           familyi={S\bibinitperiod},
+           given={Saurabh},
+           giveni={S\bibinitperiod}}}%
+        {{hash=f1c68f81252dde8b1f24287c039eb553}{%
+           family={Hwang},
+           familyi={H\bibinitperiod},
+           given={Sung\bibnamedelima Jin},
+           giveni={S\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+        {{hash=1134e9a8181206e5bf1afdf9ba661ea5}{%
+           family={Johnston},
+           familyi={J\bibinitperiod},
+           given={Nick},
+           giveni={N\bibinitperiod}}}%
+      }
+      \strng{namehash}{7e9f22372a2414893689ef211f767f67}
+      \strng{fullhash}{41a583ba06e32df803acc7a0baeacc4a}
+      \strng{bibnamehash}{41a583ba06e32df803acc7a0baeacc4a}
+      \strng{authorbibnamehash}{41a583ba06e32df803acc7a0baeacc4a}
+      \strng{authornamehash}{7e9f22372a2414893689ef211f767f67}
+      \strng{authorfullhash}{41a583ba06e32df803acc7a0baeacc4a}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{eess.IV}
+      \field{eprinttype}{arXiv}
+      \field{title}{Variational image compression with a scale hyperprior}
+      \field{year}{2018}
+      \verb{eprint}
+      \verb 1802.01436
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/1802.01436
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/1802.01436
+      \endverb
+    \endentry
+    \entry{minnen2018jointautoregressivehierarchicalpriors}{misc}{}
+      \name{author}{3}{}{%
+        {{hash=5aceb742cdf021564a365f36fd243783}{%
+           family={Minnen},
+           familyi={M\bibinitperiod},
+           given={David},
+           giveni={D\bibinitperiod}}}%
+        {{hash=b565c073c7c0ed90dae12ffc2820a66d}{%
+           family={Ballé},
+           familyi={B\bibinitperiod},
+           given={Johannes},
+           giveni={J\bibinitperiod}}}%
+        {{hash=61782a3924be97d5dc42427bfd963c92}{%
+           family={Toderici},
+           familyi={T\bibinitperiod},
+           given={George},
+           giveni={G\bibinitperiod}}}%
+      }
+      \strng{namehash}{957989a8680aef3c1675d84000d50b78}
+      \strng{fullhash}{957989a8680aef3c1675d84000d50b78}
+      \strng{bibnamehash}{957989a8680aef3c1675d84000d50b78}
+      \strng{authorbibnamehash}{957989a8680aef3c1675d84000d50b78}
+      \strng{authornamehash}{957989a8680aef3c1675d84000d50b78}
+      \strng{authorfullhash}{957989a8680aef3c1675d84000d50b78}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{cs.CV}
+      \field{eprinttype}{arXiv}
+      \field{title}{Joint Autoregressive and Hierarchical Priors for Learned Image Compression}
+      \field{year}{2018}
+      \verb{eprint}
+      \verb 1809.02736
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/1809.02736
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/1809.02736
+      \endverb
+    \endentry
     \entry{10.5555/38292.38295}{article}{}
       \name{author}{1}{}{%
         {{hash=3df1f0e2db27c956fc5e6fa9c20a020e}{%
@@ -183,8 +448,8 @@
       \strng{authorbibnamehash}{3df1f0e2db27c956fc5e6fa9c20a020e}
       \strng{authornamehash}{3df1f0e2db27c956fc5e6fa9c20a020e}
       \strng{authorfullhash}{3df1f0e2db27c956fc5e6fa9c20a020e}
-      \field{sortinit}{5}
-      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{issn}{0888-3785}
@@ -209,8 +474,8 @@
       \strng{authorbibnamehash}{f1e069787ece74531d112559945c6871}
       \strng{authornamehash}{f1e069787ece74531d112559945c6871}
       \strng{authorfullhash}{f1e069787ece74531d112559945c6871}
-      \field{sortinit}{6}
-      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{howpublished}{\url{https://www.geeksforgeeks.org/machine-learning/difference-between-ann-and-bnn/}}
@@ -230,8 +495,8 @@
       \strng{authorbibnamehash}{b6aea1a416c89509a7df1cbb69249cb6}
       \strng{authornamehash}{b6aea1a416c89509a7df1cbb69249cb6}
       \strng{authorfullhash}{b6aea1a416c89509a7df1cbb69249cb6}
-      \field{sortinit}{8}
-      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{note}{[Online; accessed 23-December-2025]}
@@ -268,8 +533,8 @@
       \strng{authorbibnamehash}{c7a04e84233544814a8e0a7a9a3dbf0c}
       \strng{authornamehash}{c7a04e84233544814a8e0a7a9a3dbf0c}
       \strng{authorfullhash}{c7a04e84233544814a8e0a7a9a3dbf0c}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Journal of Machine Learning Research}
@@ -532,8 +797,8 @@
       \strng{authorbibnamehash}{0a3f6c4478b68f8b8711972b238e4acf}
       \strng{authornamehash}{0a3f6c4478b68f8b8711972b238e4acf}
       \strng{authorfullhash}{b8c06eaeb698f61fc96ff3e5570552ec}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{eprintclass}{cs.CV}
@@ -599,8 +864,8 @@
       \strng{authorbibnamehash}{f848e09e8b592f4caa0efd6e910149df}
       \strng{authornamehash}{f848e09e8b592f4caa0efd6e910149df}
       \strng{authorfullhash}{4573863b62d52acb9c29e180e6f47f26}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{eprintclass}{cs.CV}
@@ -651,8 +916,8 @@
       \strng{authorbibnamehash}{cddd226b5003306434d7474b8d18f7fc}
       \strng{authornamehash}{90aa8a5f44acf6f2da0e78e4283b7d83}
       \strng{authorfullhash}{cddd226b5003306434d7474b8d18f7fc}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{eprintclass}{eess.IV}
@@ -698,8 +963,8 @@
       \strng{authorbibnamehash}{ec9428d9935447b301a1b2422e7350ff}
       \strng{authornamehash}{65a9d75dea06471338cd0b8918d66d03}
       \strng{authorfullhash}{ec9428d9935447b301a1b2422e7350ff}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{eprintclass}{cs.CV}
@@ -735,8 +1000,8 @@
       \strng{authorbibnamehash}{7e8dee717d54c2984b1c6bd3f3c0561f}
       \strng{authornamehash}{7e8dee717d54c2984b1c6bd3f3c0561f}
       \strng{authorfullhash}{7e8dee717d54c2984b1c6bd3f3c0561f}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{eprintclass}{cs.LG}
@@ -777,8 +1042,8 @@
       \strng{authorbibnamehash}{a19baa11f6ce9da8450fadf5e7b6a903}
       \strng{authornamehash}{a19baa11f6ce9da8450fadf5e7b6a903}
       \strng{authorfullhash}{a19baa11f6ce9da8450fadf5e7b6a903}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{eprintclass}{eess.IV}
@@ -815,8 +1080,8 @@
       \strng{authorbibnamehash}{1fc0cc0d0ebe14a0c7a2a356fd242305}
       \strng{authornamehash}{1fc0cc0d0ebe14a0c7a2a356fd242305}
       \strng{authorfullhash}{1fc0cc0d0ebe14a0c7a2a356fd242305}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Digital Images and Human Vision}
@@ -855,8 +1120,8 @@
       \strng{authorbibnamehash}{4eadc44b73c932989cbd36a77d356aab}
       \strng{authornamehash}{ebe10ee7c4eeaec343f3054b5db84648}
       \strng{authorfullhash}{4eadc44b73c932989cbd36a77d356aab}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{IEEE Transactions on Image Processing}
@@ -1062,8 +1327,8 @@
       \strng{authorbibnamehash}{167c601dc0d34faad16775eda5ce1f81}
       \strng{authornamehash}{167c601dc0d34faad16775eda5ce1f81}
       \strng{authorfullhash}{167c601dc0d34faad16775eda5ce1f81}
-      \field{sortinit}{3}
-      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{month}{12}
@@ -1079,6 +1344,194 @@
       \endverb
       \verb{url}
       \verb https://optimization.cbe.cornell.edu/index.php?title=AdamW&oldid=7088
+      \endverb
+    \endentry
+    \entry{lu2021transformerbasedimagecompression}{misc}{}
+      \name{author}{5}{}{%
+        {{hash=d9a8ff26dde5e791fc1d69a6d1c16bd7}{%
+           family={Lu},
+           familyi={L\bibinitperiod},
+           given={Ming},
+           giveni={M\bibinitperiod}}}%
+        {{hash=93cba8b42c663dbf5e4851000cbcf56a}{%
+           family={Guo},
+           familyi={G\bibinitperiod},
+           given={Peiyao},
+           giveni={P\bibinitperiod}}}%
+        {{hash=cd0bb3229a55b1711b68d844b9865b80}{%
+           family={Shi},
+           familyi={S\bibinitperiod},
+           given={Huiqing},
+           giveni={H\bibinitperiod}}}%
+        {{hash=9f17a0b08cb0da1eddb4af0bab5a8f18}{%
+           family={Cao},
+           familyi={C\bibinitperiod},
+           given={Chuntong},
+           giveni={C\bibinitperiod}}}%
+        {{hash=7bd559bfecc35575edcb8badc9a4c864}{%
+           family={Ma},
+           familyi={M\bibinitperiod},
+           given={Zhan},
+           giveni={Z\bibinitperiod}}}%
+      }
+      \strng{namehash}{27be4ea45f4c0f6be2e435e0f875a780}
+      \strng{fullhash}{f6c634c08602db9a6e9a8610eec7a322}
+      \strng{bibnamehash}{f6c634c08602db9a6e9a8610eec7a322}
+      \strng{authorbibnamehash}{f6c634c08602db9a6e9a8610eec7a322}
+      \strng{authornamehash}{27be4ea45f4c0f6be2e435e0f875a780}
+      \strng{authorfullhash}{f6c634c08602db9a6e9a8610eec7a322}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{eess.IV}
+      \field{eprinttype}{arXiv}
+      \field{title}{Transformer-based Image Compression}
+      \field{year}{2021}
+      \verb{eprint}
+      \verb 2111.06707
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/2111.06707
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/2111.06707
+      \endverb
+    \endentry
+    \entry{mudgal2025variablerateimagecompression}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=6c2922253a4906d17a9c54ba382e6ea9}{%
+           family={Mudgal},
+           familyi={M\bibinitperiod},
+           given={Priyanka},
+           giveni={P\bibinitperiod}}}%
+      }
+      \strng{namehash}{6c2922253a4906d17a9c54ba382e6ea9}
+      \strng{fullhash}{6c2922253a4906d17a9c54ba382e6ea9}
+      \strng{bibnamehash}{6c2922253a4906d17a9c54ba382e6ea9}
+      \strng{authorbibnamehash}{6c2922253a4906d17a9c54ba382e6ea9}
+      \strng{authornamehash}{6c2922253a4906d17a9c54ba382e6ea9}
+      \strng{authorfullhash}{6c2922253a4906d17a9c54ba382e6ea9}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{eess.IV}
+      \field{eprinttype}{arXiv}
+      \field{title}{Variable Rate Image Compression via N-Gram Context based Swin-transformer}
+      \field{year}{2025}
+      \verb{eprint}
+      \verb 2510.00058
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/2510.00058
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/2510.00058
+      \endverb
+    \endentry
+    \entry{cheng2020learnedimagecompressiondiscretized}{misc}{}
+      \name{author}{4}{}{%
+        {{hash=f652c693cd7b4e3d6500eddb256a2008}{%
+           family={Cheng},
+           familyi={C\bibinitperiod},
+           given={Zhengxue},
+           giveni={Z\bibinitperiod}}}%
+        {{hash=81926f66ad04d113de17ef67f1fb584f}{%
+           family={Sun},
+           familyi={S\bibinitperiod},
+           given={Heming},
+           giveni={H\bibinitperiod}}}%
+        {{hash=9113daa6d901501c686ba3747fa327d3}{%
+           family={Takeuchi},
+           familyi={T\bibinitperiod},
+           given={Masaru},
+           giveni={M\bibinitperiod}}}%
+        {{hash=9759f7e1f21e24b9d16df8f37b991bb3}{%
+           family={Katto},
+           familyi={K\bibinitperiod},
+           given={Jiro},
+           giveni={J\bibinitperiod}}}%
+      }
+      \strng{namehash}{4d1f7dcb28036d86c367d2e02f0b69a7}
+      \strng{fullhash}{63a80ece25caec125fd1194b7ca12355}
+      \strng{bibnamehash}{63a80ece25caec125fd1194b7ca12355}
+      \strng{authorbibnamehash}{63a80ece25caec125fd1194b7ca12355}
+      \strng{authornamehash}{4d1f7dcb28036d86c367d2e02f0b69a7}
+      \strng{authorfullhash}{63a80ece25caec125fd1194b7ca12355}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{eess.IV}
+      \field{eprinttype}{arXiv}
+      \field{title}{Learned Image Compression with Discretized Gaussian Mixture Likelihoods and Attention Modules}
+      \field{year}{2020}
+      \verb{eprint}
+      \verb 2001.01568
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/2001.01568
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/2001.01568
+      \endverb
+    \endentry
+    \entry{he2022elicefficientlearnedimage}{misc}{}
+      \name{author}{6}{}{%
+        {{hash=1385385ab82f7e738c766ff4284e1c1e}{%
+           family={He},
+           familyi={H\bibinitperiod},
+           given={Dailan},
+           giveni={D\bibinitperiod}}}%
+        {{hash=2e2fbe23358ef7acfaeb9d758fe1e0fa}{%
+           family={Yang},
+           familyi={Y\bibinitperiod},
+           given={Ziming},
+           giveni={Z\bibinitperiod}}}%
+        {{hash=3c221dfc43e7beab3e9e354b82e776b4}{%
+           family={Peng},
+           familyi={P\bibinitperiod},
+           given={Weikun},
+           giveni={W\bibinitperiod}}}%
+        {{hash=a92297e6d0aa8a8a8de4577bac57b151}{%
+           family={Ma},
+           familyi={M\bibinitperiod},
+           given={Rui},
+           giveni={R\bibinitperiod}}}%
+        {{hash=faa8123d39d1da0315a2a8f98d72809e}{%
+           family={Qin},
+           familyi={Q\bibinitperiod},
+           given={Hongwei},
+           giveni={H\bibinitperiod}}}%
+        {{hash=5c786d9afb3cf178271120f1fd926d21}{%
+           family={Wang},
+           familyi={W\bibinitperiod},
+           given={Yan},
+           giveni={Y\bibinitperiod}}}%
+      }
+      \strng{namehash}{410484bae069eb3a7bfb4dd1fc544a5e}
+      \strng{fullhash}{4fce7619de88631c5cf4bc259a66bd83}
+      \strng{bibnamehash}{4fce7619de88631c5cf4bc259a66bd83}
+      \strng{authorbibnamehash}{4fce7619de88631c5cf4bc259a66bd83}
+      \strng{authornamehash}{410484bae069eb3a7bfb4dd1fc544a5e}
+      \strng{authorfullhash}{4fce7619de88631c5cf4bc259a66bd83}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{cs.CV}
+      \field{eprinttype}{arXiv}
+      \field{title}{ELIC: Efficient Learned Image Compression with Unevenly Grouped Space-Channel Contextual Adaptive Coding}
+      \field{year}{2022}
+      \verb{eprint}
+      \verb 2203.10886
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/2203.10886
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/2203.10886
       \endverb
     \endentry
     \entry{wangmsssim}{article}{}
@@ -1106,8 +1559,8 @@
       \strng{authornamehash}{e884a2c9c5fa5f797247cb104b8bf8db}
       \strng{authorfullhash}{e884a2c9c5fa5f797247cb104b8bf8db}
       \field{extraname}{2}
-      \field{sortinit}{3}
-      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Proceedings of the IEEE Asilomar Conference Signals, Systems and Computers}
@@ -1137,8 +1590,8 @@
       \strng{authorbibnamehash}{1e33c0f913368961809035a635f71e06}
       \strng{authornamehash}{1e33c0f913368961809035a635f71e06}
       \strng{authorfullhash}{1e33c0f913368961809035a635f71e06}
-      \field{sortinit}{3}
-      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{issn}{1804-0462}

@@ -13,8 +13,9 @@ class PatchReconstruction(nn.Module):
     def __init__(self, dim):
         super().__init__()
         self.upscale = nn.Sequential(
-            nn.Upsample(scale_factor=4, mode='nearest'),
-            nn.Conv2d(dim, 3, kernel_size=1)
+            nn.Conv2d(dim, 3 * 4 * 4, kernel_size=3, padding=1),
+            nn.PixelShuffle(4),
+            nn.Conv2d(3, 3, kernel_size=3, padding=1)
         )
         self.leaky_clamp = LeakyClamp(0.0, 1.0, 0.01)
 
@@ -67,12 +68,24 @@ class SwinTransformerDecoder(nn.Module):
         self.stages = nn.ModuleList(stages)
         self.reconstruction = PatchReconstruction(stage_dims[-1])
         self.s_proj = nn.Conv2d(bottleneck_dim, stage_dims[0], kernel_size=1)
+        self.mask_fusions = nn.ModuleList(
+            [nn.Sequential(
+                Permute([0, 3, 1, 2]),
+                nn.Conv2d(stage_dims[i] + 1, stage_dims[i], kernel_size=1),
+                Permute([0, 2, 3, 1])
+            ) for i in range(n)]
+        )
         initialize_weights(self)
 
     def forward(self, x):
         x = self.s_proj(x)
         x = x.permute(0, 2, 3, 1)
         for i in range(len(self.stages)):
+            B, H, W, C = x.shape
+            mask = get_boundary_mask(H, W, x.device)
+            mask = mask.expand(B, -1, -1, -1)
+            x = torch.concat([x, mask], dim=3)
+            x = self.mask_fusions[i](x)
             x = self.stages[i](x)
 
         x = self.reconstruction(x)
@@ -119,10 +132,9 @@ class SwinTransformerDecoderStage(nn.Module):
             Permute([0, 2, 3, 1])
         )
         self.upscale = nn.Sequential(
+            nn.Linear(in_dim, out_dim * 4),
             Permute([0, 3, 1, 2]),
-            nn.Conv2d(in_dim, out_dim * 4, kernel_size=3, padding=1),
-            nn.PixelShuffle(2),
-            nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1),
+            nn.PixelShuffle(upscale_factor=2),
             Permute([0, 2, 3, 1]),
             nn.LayerNorm(out_dim)
         )

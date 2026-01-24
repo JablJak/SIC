@@ -340,8 +340,8 @@ if __name__ == '__main__':
             model,
             optimizer,
             aux_optimizer,
-            scheduler,
-            aux_scheduler,
+            None,
+            aux_scheduler, # aux_scheduler,
             device
         )
 
@@ -382,4 +382,4 @@ if __name__ == '__main__':
     torch.save(model.state_dict(), output_model_file_path)
 
     if not args.offline:
-        clearml_helpers.save_model(task, experiment, output_model_file_path)
+        task.mark_completed()
